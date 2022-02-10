@@ -14,8 +14,11 @@ func init() {
 }
 
 type SubmissionPage struct {
-	Title string
-	News  string
+	FName  string
+	LName  string
+	Email  string
+	Title  string
+	Secret string
 }
 
 type LogPage struct {
