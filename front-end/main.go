@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -28,7 +27,6 @@ type LogPage struct {
 
 func main() {
 	http.HandleFunc("/", homeHandler)
-	fmt.Printf("")
 	http.HandleFunc("/submission", submissionHandler)
 	http.HandleFunc("/review", reviewHandler)
 	http.HandleFunc("/log", logHandler)
@@ -39,11 +37,12 @@ func main() {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)
-
+	
 	if err != nil {
 		log.Println("LOGGED", err)
 		http.Error(w, "failuree", http.StatusInternalServerError)
 	}
+	
 }
 
 func submissionHandler(w http.ResponseWriter, r *http.Request) {
