@@ -41,7 +41,6 @@ func main() {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)
-
 	if err != nil {
 		log.Println("LOGGED", err)
 		http.Error(w, "failuree", http.StatusInternalServerError)
