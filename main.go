@@ -11,8 +11,14 @@ import (
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+// don't store key in source code, pass in via a environment variable to avoid accidentally commit it with code
+// func NewCookieStore(keyPairs ...[]byte) *CookieStore
+var store = sessions.NewCookieStore([]byte("super-secret"))
 
 var tpl *template.Template
 var db *sql.DB
@@ -49,6 +55,8 @@ func main() {
 	http.HandleFunc("/upload", uploadFile)
 	http.HandleFunc("/register", registerHandler)
 	http.HandleFunc("/registerauth", registerAuthHandler)
+	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/loginauth", loginAuthHandler)
 	//http.HandleFunc("/claim", swagHandler)
 	http.ListenAndServe(":80", nil)
 }
@@ -108,6 +116,40 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failuree", http.StatusInternalServerError)
 	}
 	fmt.Println("*****registerHandler running*****")
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	err := tpl.ExecuteTemplate(w, "login.gohtml", nil)
+
+	if err != nil {
+		log.Println("LOGGED", err)
+		http.Error(w, "failuree", http.StatusInternalServerError)
+	}
+	fmt.Println("*****loginHandler running*****")
+}
+
+// Auth adds authentication code to handler before returning handler
+// func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request)
+func Auth(HandlerFunc http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, _ := store.Get(r, "session")
+		_, ok := session.Values["userID"]
+		if !ok {
+			http.Redirect(w, r, "/login", 302)
+			return
+		}
+		// ServeHTTP calls f(w, r)
+		// func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request)
+		HandlerFunc.ServeHTTP(w, r)
+	}
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("*****logoutHandler running*****")
+	session, _ := store.Get(r, "session")
+	delete(session.Values, "userID")
+	session.Save(r, w)
+	tpl.ExecuteTemplate(w, "login.gohtml", "Logged Out")
 }
 
 func uploadFile(w http.ResponseWriter, r *http.Request) {
@@ -263,4 +305,41 @@ func registerAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Your account has been successfully created, "+username+".")
 
 	http.Redirect(w, r, "/", 200) //virker ikke helt, men vil have den redirecter efter.
+}
+
+// loginAuthHandler authenticates user login
+func loginAuthHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("*****loginAuthHandler running*****")
+	r.ParseForm()
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+	fmt.Println("username:", username, "password:", password)
+	// retrieve password from db to compare (hash) with user supplied password's hash
+	var userID, hash string
+	stmt := "SELECT UserID, Hash FROM bcrypt WHERE Username = ?"
+	row := db.QueryRow(stmt, username)
+	err := row.Scan(&userID, &hash)
+	fmt.Println("hash from db:", hash)
+	if err != nil {
+		fmt.Println("error selecting Hash in db by Username")
+		tpl.ExecuteTemplate(w, "login.gohtml", "check username and password")
+		return
+	}
+	// func CompareHashAndPassword(hashedPassword, password []byte) error
+	// CompareHashAndPassword() returns err with a value of nil for a match
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	if err == nil {
+		// Get always returns a session, even if empty
+		// returns error if exists and could not be decoded
+		// Get(r *http.Request, name string) (*Session, error)
+		session, _ := store.Get(r, "session")
+		// session struct has field make(map[interface{}]interface{})
+		session.Values["userID"] = userID
+		// save before writing to response/return from handler
+		session.Save(r, w)
+		tpl.ExecuteTemplate(w, "home.gohtml", "Logged In")
+		return
+	}
+	fmt.Println("incorrect password")
+	tpl.ExecuteTemplate(w, "login.gohtml", "check username and password")
 }
