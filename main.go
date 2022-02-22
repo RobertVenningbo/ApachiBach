@@ -11,6 +11,7 @@ import (
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,12 +58,22 @@ func main() {
 	http.HandleFunc("/registerauth", registerAuthHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/loginauth", loginAuthHandler)
+	http.HandleFunc("/logout", logoutHandler)
 	//http.HandleFunc("/claim", swagHandler)
-	http.ListenAndServe(":80", nil)
+	http.ListenAndServe(":80", context.ClearHandler(http.DefaultServeMux))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)
+
+	session, _ := store.Get(r, "session")
+	_, ok := session.Values["userID"]
+	fmt.Println("ok:", ok)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusFound) // http.StatusFound is 302
+		return
+	}
+
+	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)	
 	if err != nil {
 		log.Println("LOGGED", err)
 		http.Error(w, "failuree", http.StatusInternalServerError)
