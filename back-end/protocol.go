@@ -5,6 +5,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/ed25519"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -78,6 +79,8 @@ func Submit(s *Submitter, p *Paper, rs int, rr int){
 
 	fmt.Print(commit1)
 	fmt.Print(commit2)
+
+	
 	
 }
 
@@ -89,7 +92,9 @@ func Submit(Paper p, PC_SK){
 	K_pcs := Ebcr
 
 	submitter := {
-		keys
+		keys := {
+			private = crypto.generatenewkey
+		}
 		rndom := {
 			rs
 			rr
