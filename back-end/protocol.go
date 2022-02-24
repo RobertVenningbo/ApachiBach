@@ -11,7 +11,7 @@ import (
 	"log"
 	_ "log"
 
-	"github.com/mazen160/go-random"
+	random "github.com/mazen160/go-random"
 )
 
 type Reviewer struct {
