@@ -8,6 +8,8 @@ github.com/gorilla/sessions v1.2.1 h1:DHd3rPN5lE3Ts3D8rKkQ8x/0kqfeNmBAaiSi+o7Fsg
 github.com/gorilla/sessions v1.2.1/go.mod h1:dk2InVEVJ0sfLlnXv9EAgkf6ecYs/i80K/zI+bUmuGM=
 github.com/mazen160/go-random v0.0.0-20210308102632-d2b501c85c03 h1:iM7JTVzKOYKWjzhGcgHAgFVQt5QfiHIVrRUaWPfh0Q4=
 github.com/mazen160/go-random v0.0.0-20210308102632-d2b501c85c03/go.mod h1:APoDd0B2pYeB5kU/g7Mw14mFsljp5HfzrC7arsKbi8U=
+github.com/xlab-si/emmy v0.0.0-20200107120908-eab83660737e h1:AKZI1A5Za+nvSKM16zLbBxDAkqBNZD01ToqSpmtJs/Y=
+github.com/xlab-si/emmy v0.0.0-20200107120908-eab83660737e/go.mod h1:9sKdVUKdvtsiC9XKb2faXIX/gnaNiPsF9za3LiPjSEg=
 golang.org/x/crypto v0.0.0-20220214200702-86341886e292 h1:f+lwQ+GtmgoY+A2YaQxlSOnDjXcQ7ZRLWOHbC6HtRqE=
 golang.org/x/crypto v0.0.0-20220214200702-86341886e292/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
