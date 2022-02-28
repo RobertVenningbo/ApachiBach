@@ -88,7 +88,6 @@ import (
 	 return comm, nil
  }
  
-func(c *Comitter) Commit(val *big.Int) (*Publi)
 
  // It returns values x and r (commitment was c = g^x * g^r).
  func (c *Committer) GetDecommitMsg() (*big.Int, *big.Int) {

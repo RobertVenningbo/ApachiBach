@@ -132,38 +132,8 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error){
 	return s.ComittedValue, nil
 }
 
- // Mul computes a * b in PrivateKey. This actually means a + b as this is additive PrivateKey.
- func (g *PrivateKey) Mul(a, b *PublicKey) *PublicKey {
-	// computes (x1, y1) + (x2, y2) as this is g on elliptic curves
-	x, y := g.PublicKey.Curve.Add(a.X, a.Y, b.X, b.Y)
-	return NewPublicKey(x, y)
-}
-
-// Exp computes base^exponent in PrivateKey. This actually means exponent * base as this is
-// additive PrivateKey.
-func (g *PrivateKey) Exp(base *PublicKey, exponent *big.Int) *PublicKey {
-	// computes (x, y) * exponent
-	hx, hy := g.PublicKey.Curve.ScalarMult(base.X, base.Y, exponent.Bytes())
-	return NewPublicKey(hx, hy)
-}
-
-// Exp computes base^exponent in PrivateKey where base is the generator.
-// This actually means exponent * G as this is additive PrivateKey.
-func (g *ecdsa.PrivateKey) ExpBaseG(exponent *big.Int) *ecdsa.PublicKey {
-	// computes g ^^ exponent or better to say g * exponent as this is elliptic ((gx, gy) * exponent)
-	hx, hy := g.Curve.ScalarBaseMult(exponent.Bytes())
-	return NewPublicKey(hx, hy)
-}
 
 
-// Inv computes inverse of x in PrivateKey. This is done by computing x^(order-1) as:
-// x * x^(order-1) = x^order = 1. Note that this actually means x * (order-1) as this is
-// additive PrivateKey.
-func (g *PrivateKey) Inv(x *PublicKey) *PublicKey {
-	orderMinOne := new(big.Int).Sub(g.Q, big.NewInt(1))
-	inv := g.Exp(x, orderMinOne)
-	return inv
-}
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
