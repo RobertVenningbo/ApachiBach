@@ -24,10 +24,11 @@ type Reviewer struct {
 }
 
 type Submitter struct {
-	keys   *ecdsa.PrivateKey
-	rndaom RandomNumber
-	userID string
-	ComittedValue *ecdsa.PublicKey
+	keys               *ecdsa.PrivateKey
+	rndaom             RandomNumber
+	userID             string
+	PaperComittedValue *ecdsa.PublicKey
+	encrypted          []byte
 }
 
 type PC struct {
@@ -46,39 +47,33 @@ type Paper struct {
 	Id int
 }
 
-var( 
-	
+var (
 	pc = PC{
-	 *newKeys(),
-	 RandomNumber{0,0,0,0},
+		*newKeys(),
+		RandomNumber{nil, nil, nil, nil},
 	}
-
-
 )
 
 type SubmitStruct struct {
-	msg []byte
-	rr []byte
-	rs []byte
+	msg       []byte
+	rr        []byte
+	rs        []byte
 	sharedKey []byte
 }
 
-
-
 func Commit(msg []byte, numb *big.Int) {
-	
+
 }
 
 func NIZK() {
 	ec.NewPrivateKey()
 }
 
-
 func generateSharedSecret(pc *PC, submitter *Submitter) string {
 	publicPC := pc.keys.PublicKey
 	privateS := submitter.keys
 	shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
-	
+
 	sharedHash := sha256.Sum256(shared.Bytes())
 
 	return string(sharedHash[:])
@@ -89,8 +84,8 @@ func newKeys() *ecdsa.PrivateKey {
 	return a
 }
 
-func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter{
-	s.keys = *newKeys()
+func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
+	s.keys = newKeys()
 	rr, _ := ecdsa.GenerateKey(c, rand.Reader)
 	rs, _ := ecdsa.GenerateKey(c, rand.Reader)
 
@@ -105,34 +100,30 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter{
 		Encrypt(EncodeToBytes(rs), sharedPCS),
 		encryptedSharedPCS,
 	}
-	
+
 	s.encrypted = Encrypt(EncodeToBytes(msg), s.keys.D.String())
-	
-	
 
 	return s
 }
 
-func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error){
+func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
 	}
 
-	 // c = g^x * h^r
+	// c = g^x * h^r
 	r := ec.GetRandomInt(s.keys.D)
 
-	s.rndaom.Rr = r //nøglen til boksen?
+	s.rndaom.Rr = r   //nøglen til boksen?
 	s.rndaom.Rg = val //den value (random) vi comitter ting til
 	x1, y1 := s.keys.PublicKey.Curve.ScalarBaseMult(val.Bytes())
 	x2, y2 := s.keys.PublicKey.Curve.ScalarMult(s.keys.X, s.keys.Y, val.Bytes())
-	comm1, comm2 := s.keys.Curve.Add(x1, y1, x2, y2) 
-	s.ComittedValue = &ecdsa.PublicKey{nil, comm1, comm2}
+	comm1, comm2 := s.keys.Curve.Add(x1, y1, x2, y2)
+	s.PaperComittedValue = &ecdsa.PublicKey{nil, comm1, comm2}
 
-	return s.ComittedValue, nil
+	return s.PaperComittedValue, nil
 }
-
-
 
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
@@ -144,5 +135,3 @@ func EncodeToBytes(p interface{}) []byte {
 	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
 }
-
-
