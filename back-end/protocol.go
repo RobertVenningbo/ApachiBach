@@ -2,177 +2,198 @@ package backend
 
 import (
 	"bytes"
-	"crypto/hmac"
+	_ "bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/ed25519"
-	"encoding/binary"
-	"errors"
+	"encoding/gob"
+	_ "errors"
 	"fmt"
+	_ "fmt"
+	"io"
+	"log"
 	_ "log"
-
-	"github.com/mazen160/go-random"
+	"math/big"
+	ec "swag/ec"
 )
-	
 
-
+var n25519, _ = new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
 
 type Reviewer struct {
-	Keys Types
+	keys *ecdsa.PrivateKey
 }
 
 type Submitter struct {
-	Keys Types
-	rndaom RandomNumber
-	userID string
+	keys               *ecdsa.PrivateKey
+	random             RandomNumber
+	userID             string
+	SubmitterCommittedValue *ecdsa.PublicKey
+	PaperCommittedValue Paper
+	encrypted          []byte
+	signatureMap	   map[int][]byte
 }
 
 type PC struct {
-	Keys Types
-	rndaom RandomNumber
-}
-
-type Types struct {
-	PrivateK string
-	PublicK string
+	keys   *ecdsa.PrivateKey
+	random RandomNumber
 }
 
 type RandomNumber struct {
-	Rs int
-	Rr int
-	Ri int
-	Rg int
+	Rs *big.Int
+	Rr *big.Int
+	Ri *big.Int
+	Rg *big.Int
 }
 
 type Paper struct {
 	Id int
+	CommittedValue *ecdsa.PublicKey
+	random RandomNumber
 }
-
-func Commit1(){
-
-}
-
-func NIZK(){
-
-}
-
-func Submit(s *Submitter, p *Paper, rs int, rr int){
-	rs, err := random.IntRange(1024, 2048)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(rs)
-
-	rr, err1 := random.IntRange(1024, 2048)
-	if err != nil {
-		fmt.Println(err1)
-	}
-	fmt.Println(rr)
-
-	
-	a, _ := GenCommitmentKey()
-	var bin_buf bytes.Buffer
-	binary.Write(&bin_buf, binary.BigEndian, p)
-	commit1 := Commit(s.userID, []byte(bin_buf.Bytes()), a)
-	b, _ := GenCommitmentKey()
-	commit2 := Commit(s.userID, []byte(bin_buf.Bytes()), b)	
-
-	fmt.Print(commit1)
-	fmt.Print(commit2)
-
-	
-	
-}
-
-
-/*
-func Submit(Paper p, PC_SK){
-	a,b,c := Encrypt(S.submit(p), rs, rr)
-
-	K_pcs := Ebcr
-
-	submitter := {
-		keys := {
-			private = crypto.generatenewkey
-		}
-		rndom := {
-			rs
-			rr
-		}
-	}
-
-	PC := {
-		keys
-		rndom := {
-			rs
-			rr
-		}
-		data := {
-				
-		}
-	}
-	aes.
-}
-*/
-// https://pkg.go.dev/github.com/coniks-sys/coniks-go
-
-
-
-const (
-	// commitmentKeyLen should be robust against the birthday attack.
-	// One commitment is given for each leaf node throughout time.
-	commitmentKeyLen = 16 // 128 bits of security, supports 2^64 nodes.
-	// prefix is a string used to make the commitments from this package unique.
-	prefix = "Key Transparency Commitment"
-)
 
 var (
-	hashAlgo = sha256.New
-	// key is publicly known random fixed key for use in the HMAC function.
-	// This fixed key allows the commitment scheme to be modeled as a random oracle.
-	fixedKey = []byte{0x19, 0x6e, 0x7e, 0x52, 0x84, 0xa7, 0xef, 0x93, 0x0e, 0xcb, 0x9a, 0x19, 0x78, 0x74, 0x97, 0x55}
-	// ErrInvalidCommitment occurs when the commitment doesn't match the profile.
-	ErrInvalidCommitment = errors.New("invalid commitment")
+	pc = PC{
+		newKeys(),
+		RandomNumber{nil, nil, nil, nil},
+	}
+
+
 )
 
-// GenCommitmentKey generates a commitment key for use in Commit. This key must
-// be kept secret in order to prevent an adversary from learning what data has
-// been committed to by a commitment. To unseal and verify a commitment,
-// provide this key, along with the data under commitment to the client.
-//
-// In Key Transparency, the user generates this key, creates a commitment, and
-// signs it.  The user uploads the signed commitment along with this key and
-// the associated data to the server in order for the server to reveal the
-// associated data to senders. This commitment scheme keeps the associated data
-// from leeking to anyone that has not explicitly requested it from the server.
-func GenCommitmentKey() ([]byte, error) {
-	// Generate commitment nonce.
-	nonce := make([]byte, commitmentKeyLen)
-	if _, err := rand.Read(nonce); err != nil {
+type SubmitStruct struct {
+	msg       []byte
+	rr        []byte
+	rs        []byte
+	sharedKey []byte
+}
+
+
+func NIZK() {
+	ec.NewPrivateKey()
+}
+
+func generateSharedSecret(pc *PC, submitter *Submitter) string {
+	publicPC := pc.keys.PublicKey
+	privateS := submitter.keys
+	shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
+
+	sharedHash := sha256.Sum256(shared.Bytes())
+
+	return string(sharedHash[:])
+}
+
+func newKeys() *ecdsa.PrivateKey {
+	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	return a
+}
+
+func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
+	s.keys = newKeys()
+	rr := ec.GetRandomInt(s.keys.D)
+	rs := ec.GetRandomInt(s.keys.D)
+	ri := ec.GetRandomInt(s.keys.D)
+	sharedPCS := generateSharedSecret(&pc, s)
+
+	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X))
+	encryptedSharedPCS := Encrypt([]byte(sharedPCS), string(hashedPublicK[:]))
+
+	msg := SubmitStruct{
+		Encrypt(EncodeToBytes(p), sharedPCS),
+		Encrypt(EncodeToBytes(rr), sharedPCS),
+		Encrypt(EncodeToBytes(rs), sharedPCS),
+		encryptedSharedPCS,
+	}
+
+	s.encrypted = Encrypt(EncodeToBytes(msg), s.keys.D.String()) //encrypted paper and random numbers
+
+	//submitter identity commit
+	s.GetCommitMessage(ri)
+
+	//paper identity commit
+	p.GetCommitMessage(rs)
+	
+	s.PaperCommittedValue = *p
+
+	hashedMsgSubmit, _ := GetMessageHash(EncodeToBytes(s.SubmitterCommittedValue))
+	hashedMsgPaper, _ := GetMessageHash(EncodeToBytes(p.CommittedValue))
+
+	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit) //rand.Reader idk??
+	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)//rand.Reader idk??
+
+
+	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit, signatureSubmit) //testing
+	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgPaper, signaturePaper) //testing
+
+	//TODO log Ks (reveal Ks to all parties?)
+	
+	return s
+}
+
+func GetMessageHash(xd []byte) ([]byte, error){
+	md := sha256.New()
+	return md.Sum(xd), nil
+}
+
+func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
 	}
-	return nonce, nil
-}
 
-// Commit makes a cryptographic commitment under a specific userID to data.
-func Commit(userID string, data, nonce []byte) []byte {
-	mac := hmac.New(hashAlgo, fixedKey)
-	mac.Write([]byte(prefix))
-	mac.Write(nonce)
+	// c = g^x * h^r
+	r := ec.GetRandomInt(s.keys.D)
 
-	// Message
-	binary.Write(mac, binary.BigEndian, uint32(len(userID)))
-	mac.Write([]byte(userID))
-	mac.Write(data)
+	s.random.Rr = r   //nøglen til boksen?
+	s.random.Rg = val //den value (random) vi comitter ting til
+	x1, y1 := s.keys.PublicKey.Curve.ScalarBaseMult(val.Bytes())
+	x2, y2 := s.keys.PublicKey.Curve.ScalarMult(s.keys.X, s.keys.Y, val.Bytes())
+	comm1, comm2 := s.keys.Curve.Add(x1, y1, x2, y2)
+	s.SubmitterCommittedValue = &ecdsa.PublicKey{s.keys.Curve, comm1, comm2}
 
-	return mac.Sum(nil)
-}
+	return s.SubmitterCommittedValue, nil
+} //C(P, r)  C(S, r)
 
-// Verify customizes a commitment with a userID.
-func Verify(userID string, commitment, data, nonce []byte) error {
-	if got, want := Commit(userID, data, nonce),
-		commitment; !hmac.Equal(got, want) {
-		return ErrInvalidCommitment
+
+func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(n25519) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+		return nil, err
 	}
-	return nil
+
+	// c = g^x * h^r
+	r := ec.GetRandomInt(n25519) //check up on this
+
+	p.random.Rr = r   //nøglen til boksen?
+	p.random.Rg = val //den value (random) vi comitter ting til
+	x1, y1 := p.CommittedValue.Curve.ScalarBaseMult(val.Bytes())
+	x2, y2 := p.CommittedValue.Curve.ScalarMult(p.CommittedValue.X, p.CommittedValue.Y, val.Bytes())
+	comm1, comm2 := p.CommittedValue.Curve.Add(x1, y1, x2, y2)
+	p.CommittedValue = &ecdsa.PublicKey{p.CommittedValue.Curve, comm1, comm2}
+
+	return p.CommittedValue, nil
+} //C(P, r)  C(S, r)
+
+//verify
+func (s *Submitter) VerifyTrapdoor(trapdoor *big.Int) bool {
+	hx, hy := s.keys.PublicKey.Curve.ScalarBaseMult(trapdoor.Bytes())
+	key := &ecdsa.PublicKey{s.keys.Curve, hx, hy}
+	return key.Equal(s.keys) 
+	//Equals(key, &s.keys.PublicKey)
+}
+
+
+func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
+	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
+}
+
+func EncodeToBytes(p interface{}) []byte {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
+	return buf.Bytes()
 }
