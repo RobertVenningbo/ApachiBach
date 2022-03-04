@@ -11,11 +11,9 @@ import (
 	_ "errors"
 	"fmt"
 	_ "fmt"
-	"io"
 	"log"
 	_ "log"
 	"math/big"
-	ec "swag/ec"
 )
 
 var n25519, _ = new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
@@ -25,13 +23,13 @@ type Reviewer struct {
 }
 
 type Submitter struct {
-	keys               *ecdsa.PrivateKey
-	random             RandomNumber
-	userID             string
+	keys                    *ecdsa.PrivateKey
+	random                  RandomNumber
+	userID                  string
 	SubmitterCommittedValue *ecdsa.PublicKey
-	PaperCommittedValue Paper
-	encrypted          []byte
-	signatureMap	   map[int][]byte
+	PaperCommittedValue     Paper
+	encrypted               []byte
+	signatureMap            map[int][]byte
 }
 
 type PC struct {
@@ -47,9 +45,9 @@ type RandomNumber struct {
 }
 
 type Paper struct {
-	Id int
+	Id             int
 	CommittedValue *ecdsa.PublicKey
-	random RandomNumber
+	random         RandomNumber
 }
 
 var (
@@ -57,8 +55,6 @@ var (
 		newKeys(),
 		RandomNumber{nil, nil, nil, nil},
 	}
-
-
 )
 
 type SubmitStruct struct {
@@ -66,11 +62,6 @@ type SubmitStruct struct {
 	rr        []byte
 	rs        []byte
 	sharedKey []byte
-}
-
-
-func NIZK() {
-	ec.NewPrivateKey()
 }
 
 func generateSharedSecret(pc *PC, submitter *Submitter) string {
@@ -85,14 +76,18 @@ func generateSharedSecret(pc *PC, submitter *Submitter) string {
 
 func newKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	return a
+	privateKey := ecdsa.PrivateKey{
+		PublicKey: a.PublicKey,
+		D:         a.Params().N,
+	}
+	return &privateKey
 }
 
 func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	s.keys = newKeys()
-	rr := ec.GetRandomInt(s.keys.D)
-	rs := ec.GetRandomInt(s.keys.D)
-	ri := ec.GetRandomInt(s.keys.D)
+	rr := GetRandomInt(s.keys.D)
+	rs := GetRandomInt(s.keys.D)
+	ri := GetRandomInt(s.keys.D)
 	sharedPCS := generateSharedSecret(&pc, s)
 
 	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X))
@@ -112,25 +107,24 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 
 	//paper identity commit
 	p.GetCommitMessage(rs)
-	
+
 	s.PaperCommittedValue = *p
 
 	hashedMsgSubmit, _ := GetMessageHash(EncodeToBytes(s.SubmitterCommittedValue))
 	hashedMsgPaper, _ := GetMessageHash(EncodeToBytes(p.CommittedValue))
 
 	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit) //rand.Reader idk??
-	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)//rand.Reader idk??
-
+	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)   //rand.Reader idk??
 
 	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit, signatureSubmit) //testing
-	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgPaper, signaturePaper) //testing
+	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgPaper, signaturePaper)   //testing
 
 	//TODO log Ks (reveal Ks to all parties?)
-	
+
 	return s
 }
 
-func GetMessageHash(xd []byte) ([]byte, error){
+func GetMessageHash(xd []byte) ([]byte, error) {
 	md := sha256.New()
 	return md.Sum(xd), nil
 }
@@ -142,18 +136,17 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	}
 
 	// c = g^x * h^r
-	r := ec.GetRandomInt(s.keys.D)
+	r := GetRandomInt(s.keys.D)
 
 	s.random.Rr = r   //nøglen til boksen?
 	s.random.Rg = val //den value (random) vi comitter ting til
 	x1, y1 := s.keys.PublicKey.Curve.ScalarBaseMult(val.Bytes())
-	x2, y2 := s.keys.PublicKey.Curve.ScalarMult(s.keys.X, s.keys.Y, val.Bytes())
-	comm1, comm2 := s.keys.Curve.Add(x1, y1, x2, y2)
-	s.SubmitterCommittedValue = &ecdsa.PublicKey{s.keys.Curve, comm1, comm2}
+	x2, y2 := s.keys.PublicKey.Curve.ScalarMult(s.keys.PublicKey.X, s.keys.PublicKey.Y, val.Bytes())
+	comm1, comm2 := s.keys.PublicKey.Curve.Add(x1, y1, x2, y2)
+	s.SubmitterCommittedValue = &ecdsa.PublicKey{s.keys.PublicKey.Curve, comm1, comm2}
 
 	return s.SubmitterCommittedValue, nil
 } //C(P, r)  C(S, r)
-
 
 func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(n25519) == 1 || val.Cmp(big.NewInt(0)) == -1 {
@@ -162,7 +155,7 @@ func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	}
 
 	// c = g^x * h^r
-	r := ec.GetRandomInt(n25519) //check up on this
+	r := GetRandomInt(n25519) //check up on this
 
 	p.random.Rr = r   //nøglen til boksen?
 	p.random.Rg = val //den value (random) vi comitter ting til
@@ -175,13 +168,20 @@ func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 } //C(P, r)  C(S, r)
 
 //verify
-func (s *Submitter) VerifyTrapdoor(trapdoor *big.Int) bool {
+func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
 	hx, hy := s.keys.PublicKey.Curve.ScalarBaseMult(trapdoor.Bytes())
-	key := &ecdsa.PublicKey{s.keys.Curve, hx, hy}
-	return key.Equal(s.keys) 
+	key := &ecdsa.PublicKey{s.keys.PublicKey.Curve, hx, hy}
+	return key.Equal(s.keys.PublicKey)
 	//Equals(key, &s.keys.PublicKey)
 }
 
+//verify
+func (p *Paper) VerifyTrapdoorPaper(trapdoor *big.Int) bool {
+	hx, hy := p.CommittedValue.Curve.ScalarBaseMult(trapdoor.Bytes())
+	key := &ecdsa.PublicKey{p.CommittedValue.Curve, hx, hy}
+	return key.Equal(p.CommittedValue)
+	//Equals(key, &s.keys.PublicKey)
+}
 
 func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
@@ -196,4 +196,12 @@ func EncodeToBytes(p interface{}) []byte {
 	}
 	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
+}
+
+func GetRandomInt(max *big.Int) *big.Int {
+	n, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
 }

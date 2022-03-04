@@ -51,10 +51,10 @@ import (
 	 Q *big.Int
  }
  
- func NewPrivateKey() *PrivateKey {
+ func NewPrivateKey() *ecdsa.PrivateKey {
 	 c, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
 	 privateKey := PrivateKey{
-		 Curve: c.Curve,
+		 PublicKey: c.PublicKey,
 		 Q:     c.Params().N, // order of generator G
 	 }
 	 return &privateKey
@@ -75,7 +75,7 @@ import (
     return n
 }
  // Mul computes a * b in PrivateKey. This actually means a + b as this is additive PrivateKey.
- func (g *PrivateKey) Mul(a, b *PublicKey) *PublicKey {
+ func (g *ecdsa.PrivateKey) Mul(a, b *ecdsa.PublicKey) *ecdsa.PublicKey {
 	 // computes (x1, y1) + (x2, y2) as this is g on elliptic curves
 	 x, y := g.PublicKey.Curve.Add(a.X, a.Y, b.X, b.Y)
 	 return NewPublicKey(x, y)
@@ -91,7 +91,7 @@ import (
  
  // Exp computes base^exponent in PrivateKey where base is the generator.
  // This actually means exponent * G as this is additive PrivateKey.
- func (g *PrivateKey) ExpBaseG(exponent *big.Int) *PublicKey {
+ func (g *ecdsa.PrivateKey) ExpBaseG(exponent *big.Int) *ecdsa.PublicKey {
 	 // computes g ^^ exponent or better to say g * exponent as this is elliptic ((gx, gy) * exponent)
 	 hx, hy := g.Curve.ScalarBaseMult(exponent.Bytes())
 	 return NewPublicKey(hx, hy)
@@ -100,8 +100,8 @@ import (
  // Inv computes inverse of x in PrivateKey. This is done by computing x^(order-1) as:
  // x * x^(order-1) = x^order = 1. Note that this actually means x * (order-1) as this is
  // additive PrivateKey.
- func (g *PrivateKey) Inv(x *PublicKey) *PublicKey {
+ func (g *ecdsa.PrivateKey) Inv(x *ecdsa.PublicKey) *ecdsa.PublicKey {
 	 orderMinOne := new(big.Int).Sub(g.Q, big.NewInt(1))
 	 inv := g.Exp(x, orderMinOne)
 	 return inv
- }
+ } 
