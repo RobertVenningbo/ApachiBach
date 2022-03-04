@@ -36,10 +36,10 @@ func TestGetCommitMessageVerifyTrapdoorSubmitter(t *testing.T) {
 		nil,
 	}
 
-	submitter.random.Ri = GetRandomInt(submitter.keys.D)
+	val := GetRandomInt(submitter.keys.D)
 	fmt.Println(submitter.random.Ri)
 
-	c, _ := submitter.GetCommitMessage(submitter.random.Ri)
+	c, _ := submitter.GetCommitMessage(val)
 
 	submitter.SubmitterCommittedValue = c
 

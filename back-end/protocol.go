@@ -14,6 +14,7 @@ import (
 	"log"
 	_ "log"
 	"math/big"
+	ec "swag/ec"
 )
 
 var n25519, _ = new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
@@ -26,10 +27,16 @@ type Submitter struct {
 	keys                    *ecdsa.PrivateKey
 	random                  RandomNumber
 	userID                  string
-	SubmitterCommittedValue *ecdsa.PublicKey
+	SubmitterCommittedValue *ecdsa.PublicKey //commitstruct
 	PaperCommittedValue     Paper
 	encrypted               []byte
 	signatureMap            map[int][]byte
+}
+
+type CommitStruct struct{
+	CommittedValue *ecdsa.PublicKey
+	r *big.Int
+	val *big.Int
 }
 
 type PC struct {
@@ -76,11 +83,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter) string {
 
 func newKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	privateKey := ecdsa.PrivateKey{
-		PublicKey: a.PublicKey,
-		D:         a.Params().N,
-	}
-	return &privateKey
+	return a
 }
 
 func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
@@ -138,6 +141,25 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	// c = g^x * h^r
 	r := GetRandomInt(s.keys.D)
 
+	s.random.Rr = r   //hiding factor?
+	s.random.Rg = val //den value (random) vi comitter ting til !TODO: ændre i strucsne så det til at finde rundt på
+	x1 := ec.ExpBaseG(s.keys, val)
+	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
+	comm := ec.Mul(s.keys, x1, x2)
+	s.SubmitterCommittedValue = comm
+
+	return comm, nil
+} //C(P, r)  C(S, r)
+
+func (s *Submitter) GetCommitMessageTest(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+		return nil, err
+	}
+
+	// c = g^x * h^r
+	r := GetRandomInt(s.keys.D)
+
 	s.random.Rr = r   //nøglen til boksen?
 	s.random.Rg = val //den value (random) vi comitter ting til
 	x1, y1 := s.keys.PublicKey.Curve.ScalarBaseMult(val.Bytes())
@@ -169,9 +191,8 @@ func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
-	hx, hy := s.keys.PublicKey.Curve.ScalarBaseMult(trapdoor.Bytes())
-	key := &ecdsa.PublicKey{s.keys.PublicKey.Curve, hx, hy}
-	return key.Equal(s.keys.PublicKey)
+	h := ec.ExpBaseG(s.keys, s.keys.D)
+	return Equals(h, &s.keys.PublicKey)
 	//Equals(key, &s.keys.PublicKey)
 }
 
