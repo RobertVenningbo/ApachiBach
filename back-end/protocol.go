@@ -109,7 +109,7 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	s.GetCommitMessage(ri)
 
 	//paper identity commit
-	p.GetCommitMessage(rs)
+	s.GetCommitMessagePaper(rs)
 
 	s.PaperCommittedValue = *p
 
@@ -151,58 +151,43 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-func (s *Submitter) GetCommitMessageTest(val *big.Int) (*ecdsa.PublicKey, error) {
+func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
 	}
 
 	// c = g^x * h^r
-	r := GetRandomInt(s.keys.D)
+	r := GetRandomInt(s.keys.D) //check up on this
 
-	s.random.Rr = r   //nøglen til boksen?
-	s.random.Rg = val //den value (random) vi comitter ting til
-	x1, y1 := s.keys.PublicKey.Curve.ScalarBaseMult(val.Bytes())
-	x2, y2 := s.keys.PublicKey.Curve.ScalarMult(s.keys.PublicKey.X, s.keys.PublicKey.Y, val.Bytes())
-	comm1, comm2 := s.keys.PublicKey.Curve.Add(x1, y1, x2, y2)
-	s.SubmitterCommittedValue = &ecdsa.PublicKey{s.keys.PublicKey.Curve, comm1, comm2}
+	s.PaperCommittedValue.random.Rr = r
+	s.PaperCommittedValue.random.Rg =  val
+	x1 := ec.ExpBaseG(s.keys, val)
+	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
+	comm := ec.Mul(s.keys, x1, x2)
+	s.PaperCommittedValue.CommittedValue = comm
 
-	return s.SubmitterCommittedValue, nil
-} //C(P, r)  C(S, r)
-
-func (p *Paper) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(n25519) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
-
-	// c = g^x * h^r
-	r := GetRandomInt(n25519) //check up on this
-
-	p.random.Rr = r   //nøglen til boksen?
-	p.random.Rg = val //den value (random) vi comitter ting til
-	x1, y1 := p.CommittedValue.Curve.ScalarBaseMult(val.Bytes())
-	x2, y2 := p.CommittedValue.Curve.ScalarMult(p.CommittedValue.X, p.CommittedValue.Y, val.Bytes())
-	comm1, comm2 := p.CommittedValue.Curve.Add(x1, y1, x2, y2)
-	p.CommittedValue = &ecdsa.PublicKey{p.CommittedValue.Curve, comm1, comm2}
-
-	return p.CommittedValue, nil
+	return comm, nil
 } //C(P, r)  C(S, r)
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
-	h := ec.ExpBaseG(s.keys, s.keys.D)
+	h := ec.ExpBaseG(s.keys, trapdoor)
 	return Equals(h, &s.keys.PublicKey)
 	//Equals(key, &s.keys.PublicKey)
 }
-
+/*
 //verify
-func (p *Paper) VerifyTrapdoorPaper(trapdoor *big.Int) bool {
+func (s *Submitter) VerifyTrapdoorPaper(trapdoor *big.Int) bool {
+	h:= ec.ExpBaseG(s.keys, s.keys.D)
+	return Equals(h, &s.Pa)
+
 	hx, hy := p.CommittedValue.Curve.ScalarBaseMult(trapdoor.Bytes())
 	key := &ecdsa.PublicKey{p.CommittedValue.Curve, hx, hy}
 	return key.Equal(p.CommittedValue)
 	//Equals(key, &s.keys.PublicKey)
-}
+
+}*/
 
 func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
