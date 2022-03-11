@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
+	"os"
 	"net/http"
 	ab "swag/back-end"
 	"unicode"
@@ -61,6 +62,13 @@ func main() {
 	http.HandleFunc("/logout", logoutHandler)
 	//http.HandleFunc("/claim", swagHandler)
 	http.ListenAndServe(":80", context.ClearHandler(http.DefaultServeMux))
+
+	file, err1 := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+	log.SetOutput(file)
+
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

@@ -12,5 +12,12 @@ require (
 require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/mazen160/go-random v0.0.0-20210308102632-d2b501c85c03
+	github.com/stretchr/testify v1.7.0
 	github.com/xlab-si/emmy v0.0.0-20200107120908-eab83660737e
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )

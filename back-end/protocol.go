@@ -17,50 +17,41 @@ import (
 	ec "swag/ec"
 )
 
-var n25519, _ = new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
-
 type Reviewer struct {
 	keys *ecdsa.PrivateKey
 }
 
 type Submitter struct {
 	keys                    *ecdsa.PrivateKey
-	random                  RandomNumber
 	userID                  string
-	SubmitterCommittedValue *ecdsa.PublicKey //commitstruct
-	PaperCommittedValue     Paper
+	submitterCommittedValue *CommitStruct //commitstruct
+	paperCommittedValue     *Paper
+	receiver 				*Receiver
 	encrypted               []byte
 	signatureMap            map[int][]byte
 }
 
 type CommitStruct struct{
-	CommittedValue *ecdsa.PublicKey
+	committedValue *ecdsa.PublicKey
 	r *big.Int
 	val *big.Int
 }
 
 type PC struct {
 	keys   *ecdsa.PrivateKey
-	random RandomNumber
-}
+	signatureMap            map[int][]byte
 
-type RandomNumber struct {
-	Rs *big.Int
-	Rr *big.Int
-	Ri *big.Int
-	Rg *big.Int
 }
 
 type Paper struct {
-	Id             int
-	CommittedValue *ecdsa.PublicKey
-	random         RandomNumber
+	id             int
+	committedValue *CommitStruct
 }
 
 var (
 	pc = PC{
 		newKeys(),
-		RandomNumber{nil, nil, nil, nil},
+	    nil,
 	}
 )
 
@@ -70,6 +61,45 @@ type SubmitStruct struct {
 	rs        []byte
 	sharedKey []byte
 }
+
+type Receiver struct {
+	keys *ecdsa.PrivateKey
+	commitment *ecdsa.PublicKey
+}
+
+func NewReceiver(key *ecdsa.PrivateKey) *Receiver {
+	return &Receiver{
+		keys: key,
+	}
+}
+
+func SetCommitment(r *Receiver, comm *ecdsa.PublicKey) {
+	r.commitment = comm
+}
+
+
+func GetTrapdoor(r *Receiver) *big.Int {
+	return r.keys.D
+}
+
+// It returns values x and r (commitment was c = g^x * g^r).
+func (s *Submitter) GetDecommitMsg() (*big.Int, *big.Int) {
+	val := s.submitterCommittedValue.val
+	r := s.submitterCommittedValue.r
+
+	return val, r
+}
+
+// When receiver receives a decommitment, CheckDecommitment verifies it against the stored value
+// (stored by SetCommitment).
+func (r *Receiver) CheckDecommitment(R, val *big.Int) bool {
+	a := ec.ExpBaseG(r.keys, val)		   // g^x
+	b := ec.Exp(r.keys, &r.keys.PublicKey, R) // h^r
+	c := ec.Mul(r.keys, a, b)          // g^x * h^r
+
+	return Equals(c, r.commitment)
+}
+
 
 func generateSharedSecret(pc *PC, submitter *Submitter) string {
 	publicPC := pc.keys.PublicKey
@@ -91,6 +121,12 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
 	ri := GetRandomInt(s.keys.D)
+	
+	log.Println(rr) // shared between all parties
+	log.Println(rs) // shared between S and PC
+	log.Println(ri) // step 2 
+
+
 	sharedPCS := generateSharedSecret(&pc, s)
 
 	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X))
@@ -111,20 +147,42 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	//paper identity commit
 	s.GetCommitMessagePaper(rs)
 
-	s.PaperCommittedValue = *p
+	s.paperCommittedValue = p
 
-	hashedMsgSubmit, _ := GetMessageHash(EncodeToBytes(s.SubmitterCommittedValue))
-	hashedMsgPaper, _ := GetMessageHash(EncodeToBytes(p.CommittedValue))
+	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.committedValue)))
+	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.committedValue.committedValue)))
 
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit) //rand.Reader idk??
-	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)   //rand.Reader idk??
 
-	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit, signatureSubmit) //testing
-	ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgPaper, signaturePaper)   //testing
+	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit)
+	putNextSignatureInMapSubmitter(s, signatureSubmit)
+	
+	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)
+	putNextSignatureInMapSubmitter(s, signaturePaper)
+	
+	log.Printf("\n %s %s", "Ks is revealed to all parties", s.keys.PublicKey) //KS is logged/revealed to all parties??? or is it
 
-	//TODO log Ks (reveal Ks to all parties?)
+	hashedPaperPC, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.committedValue.committedValue)))	
+	signaturePaperPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaperPC)
+	putNextSignatureInMapPC(&pc, signaturePaperPC) //signal next fase
+	log.Println("PC signed a paper (submission) " + string(signaturePaperPC)) //PC signed paper commit to indicate the PC will continue the process of getting the paper reviewed
 
 	return s
+}
+
+func putNextSignatureInMapSubmitter(s *Submitter, slice []byte)  { //not sure if works, test needed.
+	for k, v := range s.signatureMap {
+		if v == nil {
+			s.signatureMap[k] = slice
+		}
+	}
+}
+
+func putNextSignatureInMapPC(p *PC, slice []byte)  {
+	for k, v := range p.signatureMap {
+		if v == nil {
+			pc.signatureMap[k] = slice
+		}
+	}
 }
 
 func GetMessageHash(xd []byte) ([]byte, error) {
@@ -137,16 +195,16 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
 	}
-
+	
 	// c = g^x * h^r
 	r := GetRandomInt(s.keys.D)
 
-	s.random.Rr = r   //hiding factor?
-	s.random.Rg = val //den value (random) vi comitter ting til !TODO: ændre i strucsne så det til at finde rundt på
+	s.submitterCommittedValue.r = r   //hiding factor?
+	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til !TODO: ændre i strucsne så det til at finde rundt på
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
-	s.SubmitterCommittedValue = comm
+	s.submitterCommittedValue.committedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)
@@ -160,12 +218,12 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error
 	// c = g^x * h^r
 	r := GetRandomInt(s.keys.D) //check up on this
 
-	s.PaperCommittedValue.random.Rr = r
-	s.PaperCommittedValue.random.Rg =  val
+	s.paperCommittedValue.committedValue.r = r
+	s.paperCommittedValue.committedValue.val =  val
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
-	s.PaperCommittedValue.CommittedValue = comm
+	s.paperCommittedValue.committedValue.committedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)
