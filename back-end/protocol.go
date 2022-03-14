@@ -33,7 +33,7 @@ type Submitter struct {
 }
 
 type CommitStruct struct {
-	committedValue *ecdsa.PublicKey
+	CommittedValue *ecdsa.PublicKey
 	r              *big.Int
 	val            *big.Int
 }
@@ -44,9 +44,9 @@ type PC struct {
 }
 
 type Paper struct {
-	id             int
-	committedValue *CommitStruct
-	selected       bool
+	Id             int
+	CommittedValue *CommitStruct
+	Selected       bool
 }
 
 var (
@@ -57,10 +57,10 @@ var (
 )
 
 type SubmitStruct struct {
-	msg       []byte
-	rr        []byte
-	rs        []byte
-	sharedKey []byte
+	Msg       []byte
+	Rr        []byte
+	Rs        []byte
+	SharedKey []byte
 }
 
 type Receiver struct {
@@ -86,6 +86,13 @@ func GetTrapdoor(r *Receiver) *big.Int {
 func (s *Submitter) GetDecommitMsg() (*big.Int, *big.Int) {
 	val := s.submitterCommittedValue.val
 	r := s.submitterCommittedValue.r
+
+	return val, r
+}
+
+func (s *Submitter) GetDecommitMsgPaper() (*big.Int, *big.Int) {
+	val := s.paperCommittedValue.CommittedValue.val
+	r := s.paperCommittedValue.CommittedValue.r
 
 	return val, r
 }
@@ -116,7 +123,6 @@ func newKeys() *ecdsa.PrivateKey {
 }
 
 func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
-	s.keys = newKeys()
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
 	ri := GetRandomInt(s.keys.D)
@@ -147,8 +153,8 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 
 	s.paperCommittedValue = p
 
-	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.committedValue)))
-	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.committedValue.committedValue)))
+	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
+	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
 
 	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit)
 	putNextSignatureInMapSubmitter(s, signatureSubmit)
@@ -158,7 +164,7 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 
 	log.Printf("\n %s %s", "Ks is revealed to all parties", s.keys.PublicKey) //KS is logged/revealed to all parties??? or is it
 
-	hashedPaperPC, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.committedValue.committedValue)))
+	hashedPaperPC, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
 	signaturePaperPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaperPC)
 	putNextSignatureInMapPC(&pc, signaturePaperPC)                            //signal next fase
 	log.Println("PC signed a paper (submission) " + string(signaturePaperPC)) //PC signed paper commit to indicate the PC will continue the process of getting the paper reviewed
@@ -227,7 +233,7 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
-	s.submitterCommittedValue.committedValue = comm
+	s.submitterCommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)
@@ -241,12 +247,14 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error
 	// c = g^x * h^r
 	r := GetRandomInt(s.keys.D) //check up on this
 
-	s.paperCommittedValue.committedValue.r = r
-	s.paperCommittedValue.committedValue.val = val
+	s.paperCommittedValue.CommittedValue.r = r
+
+	s.paperCommittedValue.CommittedValue.val = val
+
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
-	s.paperCommittedValue.committedValue.committedValue = comm
+	s.paperCommittedValue.CommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)

@@ -83,6 +83,44 @@ func TestPedersenCommitment(t *testing.T) {
 
 }
 
+func TestPedersenCommitmentPaper(t *testing.T) {
+	keys := newKeys()
+	p := Paper{
+		1,
+		&CommitStruct{},
+		true,
+	}
+	submitter := Submitter{
+		keys,
+		"1", //userID
+		&CommitStruct{},
+		&p,
+		&Receiver{},
+		nil,
+		nil,
+	}
+
+	submitter.receiver = NewReceiver(submitter.keys)
+
+	a := ec.GetRandomInt(submitter.keys.D)
+
+	c, err := submitter.GetCommitMessagePaper(a)
+
+	if err != nil {
+		t.Errorf("Error in GetCommitMsg: %v", err)
+	}
+
+	SetCommitment(submitter.receiver, c)
+	submittedVal, r := submitter.GetDecommitMsgPaper()
+	
+	success := submitter.receiver.CheckDecommitment(r, submittedVal)
+
+	assert.Equal(t, true, success, "pedersen paper commitment failed")
+
+}
+
+
+
 func TestCommitSignatureAndVerify(t *testing.T) {
 	keys := newKeys()
 	s := Submitter{
@@ -109,12 +147,39 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
 
-/*
 
+func TestSubmit(t *testing.T) {
+	keys := newKeys()
+	p := Paper{
+		1,
+		&CommitStruct{},
+		true,
+	}
+	s := Submitter{
+		keys,
+		"1", //userID
+		&CommitStruct{},
+		&p,
+		&Receiver{},
+		nil,
+		nil,
+	}
+	pc := PC{
+		keys,
+		nil,
+	}
+	c := s.keys.Curve
 
-func TestSubmit() {
+	got := Submit(&s, &p, c)
 
+	//fmt.Println(pc)
+	pc.signatureMap = nil //need this or it isn't used
+
+	
+	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
 }
+
+/*
 
 func TestGetMessageHash() {
 
