@@ -118,9 +118,42 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 	assert.Equal(t, true, success, "pedersen paper commitment failed")
 
 }
+/* 
+// ALSO ADD RECEIVER TO COMMITSTRUCT, THEN MAYBE REMOVE FROM SUBMISSIVE SUBMITTER
+func TestPedersenCommitmentPaper1(t *testing.T) {
+	keys := newKeys()
+	submitter := Submitter{
+		keys,
+		"1", //userID
+		&CommitStruct{},
+		&Paper{
+			1,
+			&CommitStruct{},
+			true},
+		&Receiver{},
+		nil,
+		nil,
+	}
 
+	submitter.paperCommittedValue.CommittedValue.receiver = NewReceiver(submitter.keys)
+	rec := *submitter.paperCommittedValue.CommittedValue.receiver
+	a := ec.GetRandomInt(submitter.keys.D)
 
+	c, err := submitter.GetCommitMessagePaper(a)
 
+	if err != nil {
+		t.Errorf("Error in GetCommitMsg: %v", err)
+	}
+
+	SetCommitment(&rec, c)
+	submittedVal, r := submitter.GetDecommitMsgPaper()
+
+	success := rec.CheckDecommitment(r, submittedVal)
+
+	assert.Equal(t, true, success, "pedersen failed")
+
+}
+*/
 func TestCommitSignatureAndVerify(t *testing.T) {
 	keys := newKeys()
 	s := Submitter{
