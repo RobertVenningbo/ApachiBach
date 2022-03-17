@@ -20,6 +20,7 @@ import (
 type Reviewer struct {
 	keys      *ecdsa.PrivateKey
 	paperList []Paper
+	paperMap  map[int][]byte
 }
 
 type Submitter struct {
@@ -54,7 +55,9 @@ var (
 		newKeys(),
 		nil,
 	}
+	paperList []Paper
 )
+
 
 type SubmitStruct struct {
 	Msg       []byte
@@ -107,15 +110,24 @@ func (r *Receiver) CheckDecommitment(R, val *big.Int) bool {
 	return Equals(c, r.commitment)
 }
 
-func generateSharedSecret(pc *PC, submitter *Submitter) string {
+func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
 	publicPC := pc.keys.PublicKey
-	privateS := submitter.keys
-	shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
-
-	sharedHash := sha256.Sum256(shared.Bytes())
+	var sharedHash [32]byte
+	if(reviewer == nil) {
+		privateS := submitter.keys
+		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
+		sharedHash = sha256.Sum256(shared.Bytes())
+		
+	} else {
+		privateR := reviewer.keys
+		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
+		sharedHash = sha256.Sum256(shared.Bytes())
+	}
 
 	return string(sharedHash[:])
 }
+
+
 
 func newKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -131,7 +143,7 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	log.Println(rs) // shared between S and PC
 	log.Println(ri) // step 2
 
-	sharedPCS := generateSharedSecret(&pc, s)
+	sharedPCS := generateSharedSecret(&pc, s, nil)
 
 	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X))
 	encryptedSharedPCS := Encrypt([]byte(sharedPCS), string(hashedPublicK[:]))
@@ -151,7 +163,6 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	//paper identity commit
 	s.GetCommitMessagePaper(rs)
 
-	s.paperCommittedValue = p
 
 	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
 	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
@@ -169,8 +180,11 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	putNextSignatureInMapPC(&pc, signaturePaperPC)                            //signal next fase
 	log.Println("PC signed a paper (submission) " + string(signaturePaperPC)) //PC signed paper commit to indicate the PC will continue the process of getting the paper reviewed
 
+	paperList = append(paperList, *p)
+
 	return s
 }
+
 
 func putNextSignatureInMapSubmitter(s *Submitter, slice []byte) { //not sure if works, test needed.
 	for k, v := range s.signatureMap {
@@ -194,18 +208,45 @@ func GetMessageHash(xd []byte) ([]byte, error) {
 }
 
 //step 4
-func assignPapers(r []Receiver, p []Paper) {
+func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
+	for r := range reviewerSlice {
+		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r])
+		for p := range paperSlice {
+			
+			hashedPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", paperSlice[p])))
+			pcSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaper)
+			putNextSignatureInMapPC(pc, pcSignature)
+			reviewerSlice[r].paperMap[p] = Encrypt([]byte(fmt.Sprintf("%v", paperSlice[p])), Kpcr)
+		}
+	}
+	fmt.Println(reviewerSlice[1].paperMap)
 
-	/*
+}
 
-		foreach receiver in r
-			PC signs the paper with its private key
-			Generate shared key
-			encrypt paper with shared secret key
-				do assign papers to receiver
-					receiver.paperList = p (but encrypted version)
+func getPaperList(pc *PC, reviewer *Reviewer) []Paper {
+	
+	pMap := reviewer.paperMap
+	Kpcr := generateSharedSecret(pc, nil, reviewer)
+	var pList []Paper
+	for k, v := range pMap {
+		var network bytes.Buffer
+		var p Paper
+		gob.Register(&p)
+		decrypted := Decrypt(v, Kpcr)
+		fmt.Println(decrypted)
+		enc := gob.NewEncoder(&network)
+		err1 := enc.Encode(decrypted)
+		if err1 != nil {
+			log.Fatal("encode error:", err1)
+		}
+		fmt.Println(&p)
+		dec := gob.NewDecoder(&network)
+		_ = dec.Decode(&p)
+		fmt.Println(&p)
 
-	*/
+		pList[k] = p
+	}
+	return pList
 }
 
 //step 5
@@ -218,6 +259,7 @@ func createBid(r Receiver) {
 
 	*/
 }
+
 
 func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {

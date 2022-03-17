@@ -9,23 +9,31 @@ import (
 	"crypto/rand"
 )
 
-func TestGenerateSharedSecret(t *testing.T) {
-	// pc := PC{
-	// 	newKeys(),
-	// 	RandomNumber{nil, nil, nil, nil},
-	// }
-	// submitter := Submitter{
-	// 	newKeys(),
-	// 	RandomNumber{nil, nil, nil, nil},
-	// 	"1", //userID
-	// 	nil,
-	// 	Paper{},
-	// 	nil,
-	// 	nil,
-	// }
+var (
+	paperListTest = []Paper{
+		Paper{1, nil, false}, 
+		Paper{2, nil, false},
+	}
+)
 
-	// got := generateSharedSecret(&pc, &submitter)
-	// fmt.Printf(got)
+func TestGenerateSharedSecret(t *testing.T) {
+	pc := PC{
+		newKeys(),
+		nil,
+	}
+	submitter := Submitter{
+		newKeys(),
+		"1", //userID
+		&CommitStruct{},
+		&Paper{},
+		&Receiver{nil, nil},
+		nil,
+		nil,
+	}
+
+	got := generateSharedSecret(&pc, &submitter, nil)
+	want := generateSharedSecret(&pc, &submitter, nil)
+	assert.Equal(t, got, want, "Test failed")
 
 }
 
@@ -210,6 +218,28 @@ func TestSubmit(t *testing.T) {
 
 	
 	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
+}
+
+func TestAssignPapersGetPaperList(t *testing.T) {
+	pc := PC{
+		newKeys(),
+		nil,
+	}
+	reviewer1 := Reviewer{
+		newKeys(),
+		[]Paper{},
+		map[int][]byte{},
+	}
+	reviewer2 := Reviewer{
+		newKeys(),
+		[]Paper{},
+		map[int][]byte{},
+	}
+	assignPapers(&pc, []Reviewer{reviewer1, reviewer2}, paperListTest)
+	got := getPaperList(&pc, &reviewer1)
+	want := paperListTest
+	assert.Equal(t, got, want, "TestAssignPapersGetPaperList failed")
+
 }
 
 /*
