@@ -216,7 +216,9 @@ func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
 			hashedPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", paperSlice[p])))
 			pcSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaper)
 			putNextSignatureInMapPC(pc, pcSignature)
-			reviewerSlice[r].paperMap[p] = Encrypt([]byte(fmt.Sprintf("%v", paperSlice[p])), Kpcr)
+			toBeEncrypted := EncodeToBytes(paperSlice[p])
+			encrypted := Encrypt(toBeEncrypted, Kpcr)
+			reviewerSlice[r].paperMap[p] = encrypted
 		}
 	}
 	fmt.Println(reviewerSlice[1].paperMap)
@@ -227,23 +229,11 @@ func getPaperList(pc *PC, reviewer *Reviewer) []Paper {
 	
 	pMap := reviewer.paperMap
 	Kpcr := generateSharedSecret(pc, nil, reviewer)
-	var pList []Paper
+	pList := []Paper{Paper{}, Paper{}}
 	for k, v := range pMap {
-		var network bytes.Buffer
-		var p Paper
-		gob.Register(&p)
 		decrypted := Decrypt(v, Kpcr)
-		fmt.Println(decrypted)
-		enc := gob.NewEncoder(&network)
-		err1 := enc.Encode(decrypted)
-		if err1 != nil {
-			log.Fatal("encode error:", err1)
-		}
-		fmt.Println(&p)
-		dec := gob.NewDecoder(&network)
-		_ = dec.Decode(&p)
-		fmt.Println(&p)
-
+		p := DecodeToPaper(decrypted)
+		fmt.Println(p)
 		pList[k] = p
 	}
 	return pList
@@ -334,6 +324,17 @@ func EncodeToBytes(p interface{}) []byte {
 	}
 	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
+}
+
+func DecodeToPaper(s []byte) Paper {
+
+	p := Paper{}
+	dec := gob.NewDecoder(bytes.NewReader(s))
+	err := dec.Decode(&p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return p
 }
 
 func GetRandomInt(max *big.Int) *big.Int {

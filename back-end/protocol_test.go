@@ -270,7 +270,7 @@ func TestCommit() {
 func TestEncryptAndDecrypt(t *testing.T) {
 	passphrase := "password"
 
-	stuffToEncrypt := []byte("wauw123")
+	stuffToEncrypt := []byte{6, 189, 116, 133, 88, 195, 101, 218, 69, 205, 49, 94, 107, 156, 84, 78, 157, 178, 189, 211, 132, 69, 199, 190, 147, 60, 231, 10, 14, 71, 92, 168, 121, 157, 21, 128, 145, 192, 40, 78, 189, 231, 197}
 
 	got := Decrypt(Encrypt(stuffToEncrypt, passphrase), passphrase)
 
