@@ -229,11 +229,13 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 		newKeys(),
 		[]Paper{},
 		map[int][]byte{},
+		nil,
 	}
 	reviewer2 := Reviewer{
 		newKeys(),
 		[]Paper{},
 		map[int][]byte{},
+		nil,
 	}
 	assignPapers(&pc, []Reviewer{reviewer1, reviewer2}, paperListTest)
 	got := getPaperList(&pc, &reviewer1)

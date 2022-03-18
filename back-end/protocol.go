@@ -19,8 +19,10 @@ import (
 
 type Reviewer struct {
 	keys      *ecdsa.PrivateKey
-	paperList []Paper
+	biddedPaperList []byte
 	paperMap  map[int][]byte
+	signatureMap map[int][]byte
+	paperCommittedValue     *Paper
 }
 
 type Submitter struct {
@@ -48,6 +50,7 @@ type Paper struct {
 	Id             int
 	CommittedValue *CommitStruct
 	Selected       bool
+	ReviewSignatureByPC []byte
 }
 
 var (
@@ -57,7 +60,6 @@ var (
 	}
 	paperList []Paper
 )
-
 
 type SubmitStruct struct {
 	Msg       []byte
@@ -113,11 +115,11 @@ func (r *Receiver) CheckDecommitment(R, val *big.Int) bool {
 func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
 	publicPC := pc.keys.PublicKey
 	var sharedHash [32]byte
-	if(reviewer == nil) {
+	if reviewer == nil {
 		privateS := submitter.keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
-		
+
 	} else {
 		privateR := reviewer.keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
@@ -126,8 +128,6 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 
 	return string(sharedHash[:])
 }
-
-
 
 func newKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -163,7 +163,6 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	//paper identity commit
 	s.GetCommitMessagePaper(rs)
 
-
 	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
 	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
 
@@ -185,7 +184,6 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 	return s
 }
 
-
 func putNextSignatureInMapSubmitter(s *Submitter, slice []byte) { //not sure if works, test needed.
 	for k, v := range s.signatureMap {
 		if v == nil {
@@ -202,6 +200,14 @@ func putNextSignatureInMapPC(p *PC, slice []byte) {
 	}
 }
 
+func putNextSignatureInMapReviewer(r *Reviewer, slice []byte) {
+	for k, v := range r.signatureMap {
+		if v == nil {
+			r.signatureMap[k] = slice
+		}
+	}
+}
+
 func GetMessageHash(xd []byte) ([]byte, error) {
 	md := sha256.New()
 	return md.Sum(xd), nil
@@ -212,8 +218,8 @@ func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
 	for r := range reviewerSlice {
 		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r])
 		for p := range paperSlice {
-			
-			hashedPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", paperSlice[p])))
+
+			hashedPaper, _ := GetMessageHash(EncodeToBytes(paperSlice[p]))
 			pcSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaper)
 			putNextSignatureInMapPC(pc, pcSignature)
 			toBeEncrypted := EncodeToBytes(paperSlice[p])
@@ -221,35 +227,62 @@ func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
 			reviewerSlice[r].paperMap[p] = encrypted
 		}
 	}
-	fmt.Println(reviewerSlice[1].paperMap)
-
 }
 
 func getPaperList(pc *PC, reviewer *Reviewer) []Paper {
-	
+
 	pMap := reviewer.paperMap
 	Kpcr := generateSharedSecret(pc, nil, reviewer)
-	pList := []Paper{Paper{}, Paper{}}
-	for k, v := range pMap {
+	pList := []Paper{}
+	for _, v := range pMap {
 		decrypted := Decrypt(v, Kpcr)
-		p := DecodeToPaper(decrypted)
-		fmt.Println(p)
-		pList[k] = p
+		p := DecodeToPaper(decrypted)		
+		pList = append(pList, p)
 	}
 	return pList
 }
 
-//step 5
-func createBid(r Receiver) {
-	/*
-		Decrypt papers
-		flip boolean in paper struct signaling if they want it or not
-
-		then sign (private key) and encrypt (shared secret key) the bid?
-
-	*/
+func makeBid(r *Reviewer, pap *Paper) {
+	pList := getPaperList(&pc, r)
+	
+	for _, p := range pList {
+		if p.Id == pap.Id {
+			p.Selected = true
+		}	
+	}
 }
 
+//step 5
+func setEncBidList(r *Reviewer) { //set encrypted bid list
+
+	pList := getPaperList(&pc, r)
+	
+	tmpPaperList := []Paper{}
+	for _, p := range pList {
+		if p.Selected == true {
+			tmpPaperList = append(tmpPaperList, p)
+		}
+	}
+	hashedBiddedPaperList, _ := GetMessageHash(EncodeToBytes(tmpPaperList))
+	rSignature, _ := ecdsa.SignASN1(rand.Reader, r.keys, hashedBiddedPaperList)
+	putNextSignatureInMapReviewer(r, rSignature)
+	Kpcr := generateSharedSecret(&pc, nil, r)
+
+	r.biddedPaperList = Encrypt(EncodeToBytes(tmpPaperList), Kpcr)
+}
+
+/*
+func getBid(reviewerSlice []Reviewer) {
+	for r := range reviewerSlice {
+		reviewerSlice[r].biddedPaperList
+	}
+} */
+
+func matchPaper(reviewerSlice []Reviewer) { //step 6
+	// for i := range reviewerSlice {
+	// 	//getBid(reviewerSlice[r])
+	// }
+}
 
 func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
@@ -261,11 +294,32 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	r := GetRandomInt(s.keys.D)
 
 	s.submitterCommittedValue.r = r     //hiding factor?
-	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til !TODO: ændre i strucsne så det til at finde rundt på
+	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til 
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
 	s.submitterCommittedValue.CommittedValue = comm
+
+	return comm, nil
+} //C(P, r)  C(S, r)
+
+func (s *Reviewer) GetCommitMessageReviewPaper(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+		return nil, err
+	}
+
+	// c = g^x * h^r
+	r := GetRandomInt(s.keys.D)
+
+	s.paperCommittedValue.CommittedValue.r = r
+
+	s.paperCommittedValue.CommittedValue.val = val
+
+	x1 := ec.ExpBaseG(s.keys, val)
+	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
+	comm := ec.Mul(s.keys, x1, x2)
+	s.paperCommittedValue.CommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)
@@ -289,7 +343,7 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error
 	s.paperCommittedValue.CommittedValue.CommittedValue = comm
 
 	return comm, nil
-} //C(P, r)  C(S, r)
+} 
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
