@@ -18,11 +18,11 @@ import (
 )
 
 type Reviewer struct {
-	keys      *ecdsa.PrivateKey
-	biddedPaperList []byte
-	paperMap  map[int][]byte
-	signatureMap map[int][]byte
-	paperCommittedValue     *Paper
+	keys                *ecdsa.PrivateKey
+	biddedPaperMap      map[int][]byte
+	paperMap            map[int][]byte
+	signatureMap        map[int][]byte
+	paperCommittedValue *Paper
 }
 
 type Submitter struct {
@@ -47,9 +47,9 @@ type PC struct {
 }
 
 type Paper struct {
-	Id             int
-	CommittedValue *CommitStruct
-	Selected       bool
+	Id                  int
+	CommittedValue      *CommitStruct
+	Selected            bool
 	ReviewSignatureByPC []byte
 }
 
@@ -208,6 +208,14 @@ func putNextSignatureInMapReviewer(r *Reviewer, slice []byte) {
 	}
 }
 
+func putNextPaperInBidMapReviewer(r *Reviewer, slice []byte) {
+	for k, v := range r.biddedPaperMap {
+		if v == nil {
+			r.biddedPaperMap[k] = slice
+		}
+	}
+}
+
 func GetMessageHash(xd []byte) ([]byte, error) {
 	md := sha256.New()
 	return md.Sum(xd), nil
@@ -236,7 +244,7 @@ func getPaperList(pc *PC, reviewer *Reviewer) []Paper {
 	pList := []Paper{}
 	for _, v := range pMap {
 		decrypted := Decrypt(v, Kpcr)
-		p := DecodeToPaper(decrypted)		
+		p := DecodeToPaper(decrypted)
 		pList = append(pList, p)
 	}
 	return pList
@@ -244,11 +252,11 @@ func getPaperList(pc *PC, reviewer *Reviewer) []Paper {
 
 func makeBid(r *Reviewer, pap *Paper) {
 	pList := getPaperList(&pc, r)
-	
+
 	for _, p := range pList {
 		if p.Id == pap.Id {
 			p.Selected = true
-		}	
+		}
 	}
 }
 
@@ -256,32 +264,92 @@ func makeBid(r *Reviewer, pap *Paper) {
 func setEncBidList(r *Reviewer) { //set encrypted bid list
 
 	pList := getPaperList(&pc, r)
-	
+	Kpcr := generateSharedSecret(&pc, nil, r)
 	tmpPaperList := []Paper{}
 	for _, p := range pList {
 		if p.Selected == true {
 			tmpPaperList = append(tmpPaperList, p)
+			putNextPaperInBidMapReviewer(r, Encrypt(EncodeToBytes(p), Kpcr))
 		}
 	}
-	hashedBiddedPaperList, _ := GetMessageHash(EncodeToBytes(tmpPaperList))
+
+	hashedBiddedPaperList, _ := GetMessageHash(EncodeToBytes(r.biddedPaperMap)) //changed from tmpPaperList to r.bidedPaperMap
 	rSignature, _ := ecdsa.SignASN1(rand.Reader, r.keys, hashedBiddedPaperList)
 	putNextSignatureInMapReviewer(r, rSignature)
-	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	r.biddedPaperList = Encrypt(EncodeToBytes(tmpPaperList), Kpcr)
+	//r.biddedPaperMap = Encrypt(EncodeToBytes(tmpPaperList), Kpcr)
 }
 
-/*
-func getBid(reviewerSlice []Reviewer) {
-	for r := range reviewerSlice {
-		reviewerSlice[r].biddedPaperList
-	}
-} */
+func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 
-func matchPaper(reviewerSlice []Reviewer) { //step 6
-	// for i := range reviewerSlice {
-	// 	//getBid(reviewerSlice[r])
-	// }
+	pList := getPaperList(&pc, &reviewerSlice[0])
+
+	for _, rev := range reviewerSlice{
+		kcpr := generateSharedSecret(&pc, nil, &rev)
+		for i := range rev.biddedPaperMap{
+			decrypted := Decrypt(rev.biddedPaperMap[i], kcpr)
+			paper := DecodeToPaper(decrypted)
+			if paper.Selected {
+				for i, p := range pList{
+					if paper.Id == p.Id{
+						rev.paperCommittedValue = &paper      //assigning paper
+						pList[i] = Paper{-1, nil, false, nil} //removing paper from generic map
+						break
+					}
+				}
+			}			
+		}
+	}
+	// Case for if reviewer weren't assigned paper because 
+	// other reviewer might have gotten the paper beforehand
+	for _, rev := range reviewerSlice{ 
+		if rev.paperCommittedValue == &(Paper{}){
+			for i, v := range pList {
+				if pList[i].Id != -1{ // checking for removed papers
+					//if this statement is true we have a normal paper
+					rev.paperCommittedValue = &v
+					pList[i] = Paper{-1, nil, false, nil} //removing paper from generic map
+					break
+				}
+			}			
+		}else {
+			break
+		}
+	}
+
+	/*
+		//Get biddedPaperList (encrypted), and decrypt
+			//then take first reviewers true boolean and assign that paper
+			//and remove paper from the list of papers.
+				//if no paper is selected/it is removed from earlier iteration
+				//simply take the first paper available.
+
+		PC signs reviewer, r, public key.
+			This is stored within PC signature (right?)
+
+		Generate nonce
+
+		NIZK proof is supplied to ensure that the reviewer and the
+		submitter of a given paper holds the same paper.
+	*/
+}
+
+func finalMatching(reviewers []Reviewer) {
+	for _, r := range reviewers {
+		hash, _ := GetMessageHash(EncodeToBytes(r.paperCommittedValue))
+		signature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hash)
+		putNextSignatureInMapPC(&pc, signature)		
+	}
+	/*
+	
+		//PC signs reviewer, r, public key.
+			//This is stored within PC signature (right?)
+
+		Generate nonce
+
+		NIZK proof is supplied to ensure that the reviewer and the
+		submitter of a given paper holds the same paper.
+	*/
 }
 
 func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
@@ -294,7 +362,7 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	r := GetRandomInt(s.keys.D)
 
 	s.submitterCommittedValue.r = r     //hiding factor?
-	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til 
+	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
@@ -343,7 +411,7 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error
 	s.paperCommittedValue.CommittedValue.CommittedValue = comm
 
 	return comm, nil
-} 
+}
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {

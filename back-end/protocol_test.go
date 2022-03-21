@@ -11,8 +11,8 @@ import (
 
 var (
 	paperListTest = []Paper{
-		Paper{1, nil, false}, 
-		Paper{2, nil, false},
+		Paper{1, nil, false, nil}, 
+		Paper{2, nil, false, nil},
 	}
 )
 
@@ -97,6 +97,7 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 		1,
 		&CommitStruct{},
 		true,
+		nil,
 	}
 	submitter := Submitter{
 		keys,
@@ -195,6 +196,7 @@ func TestSubmit(t *testing.T) {
 		1,
 		&CommitStruct{},
 		true,
+		nil,
 	}
 	s := Submitter{
 		keys,
@@ -227,14 +229,16 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 	}
 	reviewer1 := Reviewer{
 		newKeys(),
-		[]Paper{},
+		nil,
 		map[int][]byte{},
+		nil,
 		nil,
 	}
 	reviewer2 := Reviewer{
 		newKeys(),
-		[]Paper{},
+		nil,
 		map[int][]byte{},
+		nil,
 		nil,
 	}
 	assignPapers(&pc, []Reviewer{reviewer1, reviewer2}, paperListTest)
