@@ -248,6 +248,46 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 
 }
 
+
+func TestSchnorrProof(t *testing.T){
+	p := Paper{
+		1,
+		&CommitStruct{},
+		true,
+		nil,
+	}
+	reviewer := Reviewer{
+		newKeys(),
+		nil,
+		map[int][]byte{},
+		nil,
+		&p,
+	}
+	submitter := Submitter{
+		newKeys(),
+		"1", //userID
+		&CommitStruct{},
+		&p,
+		&Receiver{},
+		nil,
+		nil,
+	}
+
+	a := ec.GetRandomInt(submitter.keys.D)
+	submitter.GetCommitMessagePaper(a)
+
+	b := ec.GetRandomInt(reviewer.keys.D)
+	reviewer.GetCommitMessageReviewPaper(b)
+
+	proof := CreateProof(submitter.keys, reviewer.keys)
+
+	got := VerifyProof(proof)
+
+	want := true
+
+
+	assert.Equal(t, want, got, "Proof failed")
+} 
 /*
 
 func TestGetMessageHash() {

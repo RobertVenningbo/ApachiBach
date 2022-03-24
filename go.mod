@@ -17,7 +17,21 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.0 // indirect
+	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
+	github.com/binance-chain/tss-lib v1.3.3 // indirect
+	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.0 // indirect
+	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/ipfs/go-log v0.0.1 // indirect
+	github.com/lukas1503k/Schnorr-Zero-Knowledge-Proof v0.0.0-20190901185356-aa8a826810c9 // indirect
+	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/mattn/go-isatty v0.0.8 // indirect
+	github.com/opentracing/opentracing-go v1.1.0 // indirect
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/whyrusleeping/go-logging v0.0.0-20170515211332-0457bb6b88fc // indirect
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
+	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
