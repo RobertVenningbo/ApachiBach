@@ -14,15 +14,10 @@ import (
 func (r *Reviewer) FinishReview() { //step 8
 	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	hashedPaper, err := GetMessageHash(EncodeToBytes(r.paperCommittedValue)) //hashing the paper assigned to a reviewer
-	if err != nil {
-		log.Fatal(err)
-	}
-	rSignature, _ := ecdsa.SignASN1(rand.Reader, r.keys, hashedPaper)
-	encrypted := Encrypt(rSignature, Kpcr)
-
-	log.Printf("\n, Reviewer signs reviewed paper and encrypts signature of given paper %s", encrypted)
-	tree.Put("Step 8: ", encrypted)
+	signAndEnc := SignzAndEncrypt(r.keys, r.paperCommittedValue, Kpcr)
+	str := fmt.Sprintf("\n, Reviewer, %s, signs and encrypts paper: %s", r.userID, signAndEnc)
+	log.Printf(str)
+	tree.Put(str, signAndEnc)
 }
 
 //planned to be called for every reviewer in the controller layer or whatever calls it
@@ -32,7 +27,7 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 		log.Fatal(err)
 	}
 
-	nonce := tree.Find("nonce") //find nonce (n_r)
+	nonce := tree.Find("nonce") //find nonce (n_r) - probably wanna decrypt also as getting from log i.e. should be encrypted value
 
 	hashedNonce, _ := GetMessageHash(EncodeToBytes(nonce))
 
@@ -53,40 +48,17 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers *[]Reviewer) {
 
 	rg := GetRandomInt(pc.keys.D) //generating new grade randomness rg for later commits.
 
-	kpBytes := EncodeToBytes(kp)
-
-	hashedKeys, err := GetMessageHash(kpBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	hashedKeysSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedKeys)
-
-	rgBytes := EncodeToBytes(rg)
-
-	hashedRg, err := GetMessageHash(rgBytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	hashedRgSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedRg)
-
-	strHashedKeys := fmt.Sprintf("PC signs Kp with signature %s", hashedKeysSignature)
-	log.Printf("\n" + strHashedKeys)
-	tree.Put(strHashedKeys, hashedKeysSignature)
-
-	strHashedRg := fmt.Sprintf("PC signs Rg with signature %s", hashedRgSignature)
-	log.Printf("\n"+strHashedRg, hashedRgSignature)
-	tree.Put(strHashedRg, hashedRgSignature)
-
 	for _, r := range *reviewers {
 		Kpcr := generateSharedSecret(pc, nil, &r)
+		someSigKp := SignzAndEncrypt(pc.keys, kp, Kpcr) //return string([]byteSignature|someEncryptedString)
 
-		encrypted := Encrypt(kpBytes, Kpcr)
+		str := fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", r.userID)
+		log.Printf("\n" + str + someSigKp)
+		tree.Put(str, someSigKp)
 
-		str := fmt.Sprintf("PC logs Kp encrypted with Kpcr between PC and reviewer id %v", r /*.userID*/) //gul streg pga r ikke er string (endnu)
-		log.Printf("\n" + str)
-		tree.Put(str, encrypted)
-
-		str = fmt.Sprintf("PC logs Rg encrypted with Kpcr between PC and reviewer id %v", r /*.userID*/) //gul streg pga r ikke er string (endnu)
-
+		someSigRg := SignzAndEncrypt(pc.keys, rg, Kpcr) //return string([]byteSignature|someEncryptedString)
+		str = fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", r.userID)
+		log.Printf("\n" + str + someSigRg)
+		tree.Put(str, someSigRg)
 	}
 }

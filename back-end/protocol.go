@@ -14,13 +14,13 @@ import (
 	"log"
 	_ "log"
 	"math/big"
+	"strings"
 
 	"github.com/binance-chain/tss-lib/crypto"
 )
 
-
 type Reviewer struct {
-	userID				string
+	userID              string
 	keys                *ecdsa.PrivateKey
 	biddedPaperMap      map[int][]byte
 	paperMap            map[int][]byte
@@ -58,7 +58,7 @@ type Paper struct {
 
 var (
 	tree = NewTree(DefaultMinItems)
-	pc = PC{
+	pc   = PC{
 		newKeys(),
 		nil,
 	}
@@ -90,7 +90,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	}
-	
+
 	return string(sharedHash[:])
 }
 
@@ -136,8 +136,6 @@ func GetMessageHash(xd []byte) ([]byte, error) {
 	return md.Sum(xd), nil
 }
 
-
-
 func EcdsaToECPoint(pk *ecdsa.PublicKey) (*crypto.ECPoint, error) {
 	return crypto.NewECPoint(pk.Curve, pk.X, pk.Y)
 }
@@ -178,4 +176,24 @@ func GetRandomInt(max *big.Int) *big.Int {
 		log.Fatal(err)
 	}
 	return n
+}
+
+func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
+	bytes := EncodeToBytes(plaintext)
+	
+	hash, _ := GetMessageHash(bytes)
+	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
+
+	encrypted := Encrypt(bytes, passphrase)
+
+	return fmt.Sprint(signature) + "|" + fmt.Sprint(encrypted) // Check if "|" interfere with any binary?
+	//return [213, 123, 12, 392...]|someEncryptedString
+}
+
+func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature, splitArr[1] = encrypted
+	splitArr := strings.Split(str, "|")
+	if len(splitArr) > 2 {
+		log.Panic("panic len > 2")
+	}
+	return splitArr[0], splitArr[1]
 }
