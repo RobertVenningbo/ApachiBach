@@ -211,9 +211,8 @@ func TestSubmit(t *testing.T) {
 		keys,
 		nil,
 	}
-	c := s.keys.Curve
 
-	got := Submit(&s, &p, c)
+	got := Submit(&s, &p)
 
 	//fmt.Println(pc)
 	pc.signatureMap = nil //need this or it isn't used

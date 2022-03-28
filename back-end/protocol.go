@@ -4,7 +4,7 @@ import (
 	"bytes"
 	_ "bytes"
 	"crypto/ecdsa"
-	"crypto/elliptic"
+	_ "crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
@@ -17,6 +17,7 @@ import (
 	ec "swag/ec"
 	"github.com/binance-chain/tss-lib/crypto"
 )
+
 
 type Reviewer struct {
 	keys                *ecdsa.PrivateKey
@@ -54,12 +55,15 @@ type Paper struct {
 	ReviewSignatureByPC []byte
 }
 
+
+
 var (
+	tree = NewTree(DefaultMinItems)
 	pc = PC{
 		newKeys(),
 		nil,
 	}
-	paperList []Paper
+	paperList     []Paper
 	schnorrProofs []SchnorrProof
 )
 
@@ -121,13 +125,12 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 		privateS := submitter.keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
-
 	} else {
 		privateR := reviewer.keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	}
-
+	
 	return string(sharedHash[:])
 }
 
@@ -136,11 +139,18 @@ func newKeys() *ecdsa.PrivateKey {
 	return a
 }
 
-func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
+func Submit(s *Submitter, p *Paper) *Submitter {
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
 	ri := GetRandomInt(s.keys.D)
-
+	
+	log.Printf("\n, %s", "Generate rr from s.keys.D and storing in btree/log")
+	tree.Put("Rr", rr)
+	log.Printf("\n, %s", "Generate rs from s.keys.D and storing in btree/log")
+	tree.Put("Rs", rs)
+	log.Printf("\n, %s", "Generate ri from s.keys.D and storing in btree/log")
+	tree.Put("Ri", ri)
+	
 	log.Println(rr) // shared between all parties
 	log.Println(rs) // shared between S and PC
 	log.Println(ri) // step 2
@@ -156,6 +166,9 @@ func Submit(s *Submitter, p *Paper, c elliptic.Curve) *Submitter {
 		Encrypt(EncodeToBytes(rs), sharedPCS),
 		encryptedSharedPCS,
 	}
+	
+	tree.Put("msg", msg)
+	log.Println("Encrypted paper and random values logged")
 
 	s.encrypted = Encrypt(EncodeToBytes(msg), s.keys.D.String()) //encrypted paper and random numbers
 
@@ -332,8 +345,8 @@ func finalMatching(reviewers []Reviewer, submitters []Submitter) {
 		for _, s := range submitters {
 			paperCommitSubmitter := s.paperCommittedValue.CommittedValue.CommittedValue
 			paperCommitReviewer := r.paperCommittedValue.CommittedValue.CommittedValue
-			if paperCommitSubmitter == paperCommitReviewer{
-				schnorrProofs = append(schnorrProofs, *CreateProof(s.keys, r.keys))
+			if paperCommitSubmitter == paperCommitReviewer {
+				schnorrProofs = append(schnorrProofs, *CreateProof(s.keys, r.keys)) //NOT CORRECT, WAIT FOR ANSWER FROM SUPERVISOR
 
 			}
 		}
