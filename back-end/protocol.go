@@ -14,12 +14,14 @@ import (
 	"log"
 	_ "log"
 	"math/big"
+	"strconv"
 	ec "swag/ec"
 	"github.com/binance-chain/tss-lib/crypto"
 )
 
 
 type Reviewer struct {
+	userID				string
 	keys                *ecdsa.PrivateKey
 	biddedPaperMap      map[int][]byte
 	paperMap            map[int][]byte
@@ -151,50 +153,66 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 	log.Printf("\n, %s", "Generate ri from s.keys.D and storing in btree/log")
 	tree.Put("Ri", ri)
 	
-	log.Println(rr) // shared between all parties
-	log.Println(rs) // shared between S and PC
-	log.Println(ri) // step 2
+	sharedKpcs := generateSharedSecret(&pc, s, nil)  //Shared secret key between Submitter and PC (Kpcs)
 
-	sharedPCS := generateSharedSecret(&pc, s, nil)
+	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X)) //PC's hashed public key
+	encryptedSharedKpcs := Encrypt([]byte(sharedKpcs), string(hashedPublicK[:])) //Encrypted Kpcs with PC's public key
 
-	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X))
-	encryptedSharedPCS := Encrypt([]byte(sharedPCS), string(hashedPublicK[:]))
-
-	msg := SubmitStruct{
-		Encrypt(EncodeToBytes(p), sharedPCS),
-		Encrypt(EncodeToBytes(rr), sharedPCS),
-		Encrypt(EncodeToBytes(rs), sharedPCS),
-		encryptedSharedPCS,
+	EncryptedPaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
+		Encrypt(EncodeToBytes(p), sharedKpcs),
+		Encrypt(EncodeToBytes(rr), sharedKpcs),
+		Encrypt(EncodeToBytes(rs), sharedKpcs),
+		encryptedSharedKpcs,
 	}
+	LoggedMessage := fmt.Sprintf("%#v", EncryptedPaperAndRandomness)
+	tree.Put(LoggedMessage, EncryptedPaperAndRandomness)
+	log.Println(LoggedMessage + " - Encrypted Paper and Random Numbers logged")
 	
-	tree.Put("msg", msg)
-	log.Println("Encrypted paper and random values logged")
 
-	s.encrypted = Encrypt(EncodeToBytes(msg), s.keys.D.String()) //encrypted paper and random numbers
+	s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
+	
+	SubmissionSignature, _ := ecdsa.SignASN1(rand.Reader, s.keys, s.encrypted) //Entire message signed by submission private key
+	SubmitterAsString := fmt.Sprintf("%#v", s)
+	tree.Put(SubmitterAsString + s.userID + "SubmissionSignature", SubmissionSignature)
+	log.Println(SubmitterAsString + s.userID + " " + string(SubmissionSignature) + " - message signed by submission private key")
 
 	//submitter identity commit
-	s.GetCommitMessage(ri)
+	SubmitterIdenityCommit, _ := s.GetCommitMessage(ri)
+	SubmitCommitAsString := fmt.Sprintf("%#v", SubmitterIdenityCommit)
+	tree.Put(SubmitCommitAsString + s.userID, SubmitterIdenityCommit)
+	log.Println(SubmitCommitAsString + s.userID +  " - SubmitterIdenityCommit logged")
 
-	//paper identity commit
-	s.GetCommitMessagePaper(rs)
+	//paper submission commit
+	PaperSubmissionCommit, _ := s.GetCommitMessagePaper(rs)
+	PaperCommitAsString := fmt.Sprintf("%#v", PaperSubmissionCommit)
+	tree.Put(PaperCommitAsString + strconv.Itoa(p.Id), PaperSubmissionCommit)
+	log.Println(PaperCommitAsString + strconv.Itoa(p.Id) + " - PaperSubmissionCommit logged.")
 
-	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
-	hashedMsgPaper, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
+	hashedIdentityCommit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
+	hashedPaperCommit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
 
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit)
-	putNextSignatureInMapSubmitter(s, signatureSubmit)
+	SignatureSubmitterIdenityCommit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedIdentityCommit) //Submitter Idenity Commit signed by submission private key
+	tree.Put(SubmitterAsString + s.userID + "SignatureSubmitterIdentityCommit",  SignatureSubmitterIdenityCommit)
+	log.Println("SignatureSubmitterIdenityCommit from userID: " + s.userID + " logged.")
+	//putNextSignatureInMapSubmitter(s, signatureSubmit)
 
-	signaturePaper, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgPaper)
-	putNextSignatureInMapSubmitter(s, signaturePaper)
+	SignaturePaperCommit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedPaperCommit) //paper commit signed by submission private key
+	tree.Put(SubmitterAsString + s.userID + "SignaturePaperCommit",  SignaturePaperCommit)
+	log.Println("SignaturePaperCommit from userID: " + s.userID + " logged.")
+	//putNextSignatureInMapSubmitter(s, signaturePaper)
 
-	log.Printf("\n %s %s", "Ks is revealed to all parties", s.keys.PublicKey) //KS is logged/revealed to all parties??? or is it
+	KsString := fmt.Sprintf("%#v", s.keys.PublicKey)
+	tree.Put(KsString + s.userID, s.keys.PublicKey) //Submitters public key (Ks) is revealed to all parties
+	log.Println("SubmitterPublicKey from submitter with userID: " + s.userID + " logged.") 
 
 	hashedPaperPC, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
-	signaturePaperPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaperPC)
-	putNextSignatureInMapPC(&pc, signaturePaperPC)                            //signal next fase
-	log.Println("PC signed a paper (submission) " + string(signaturePaperPC)) //PC signed paper commit to indicate the PC will continue the process of getting the paper reviewed
+	SignaturePaperCommitPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaperPC) //PC Signs a paper commit, indicating that the paperis ready to be reviewed.
+	PCsignatureAsString := fmt.Sprintf("%#v", SignaturePaperCommitPC)
+	tree.Put(PCsignatureAsString + strconv.Itoa(p.Id), SignaturePaperCommitPC)
+	log.Println("SignaturePaperCommitPC logged - The PC signed a paper commit.")
+	//putNextSignatureInMapPC(&pc, signaturePaperPC)     
 
-	paperList = append(paperList, *p)
+	paperList = append(paperList, *p) //List of papers, but what is it used for?? TODO
 
 	return s
 }
@@ -237,17 +255,24 @@ func GetMessageHash(xd []byte) ([]byte, error) {
 }
 
 //step 4
-func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
+func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) { 
 	for r := range reviewerSlice {
-		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r])
+		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) - 
 		for p := range paperSlice {
 
-			hashedPaper, _ := GetMessageHash(EncodeToBytes(paperSlice[p]))
-			pcSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaper)
-			putNextSignatureInMapPC(pc, pcSignature)
-			toBeEncrypted := EncodeToBytes(paperSlice[p])
-			encrypted := Encrypt(toBeEncrypted, Kpcr)
-			reviewerSlice[r].paperMap[p] = encrypted
+			hashedPaper, _ := GetMessageHash(EncodeToBytes(paperSlice[p])) 
+			SignedPaperPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaper)
+			PaperAsString := fmt.Sprintf("%#v", paperSlice[p])
+			tree.Put(PaperAsString + strconv.Itoa(paperSlice[p].Id), SignedPaperPC) 
+			log.Println(PaperAsString + strconv.Itoa(paperSlice[p].Id) + "SignedPaperPC logged - The PC signed a paper")
+			//putNextSignatureInMapPC(pc, pcSignature)
+
+			encryptedPaper := Encrypt(EncodeToBytes(paperSlice[p]), Kpcr)
+			encryptedAsString :=fmt.Sprintf("%#v", encryptedPaper)
+			tree.Put(encryptedAsString + strconv.Itoa(paperSlice[p].Id), encryptedPaper) //Encrypted paper logged in tree
+			log.Printf("\n %s %s", encryptedPaper, " encrypted paper logged")
+			
+			reviewerSlice[r].paperMap[p] = encryptedPaper
 		}
 	}
 }
@@ -279,7 +304,7 @@ func makeBid(r *Reviewer, pap *Paper) {
 func setEncBidList(r *Reviewer) { //set encrypted bid list
 
 	pList := getPaperList(&pc, r)
-	Kpcr := generateSharedSecret(&pc, nil, r)
+	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
 	tmpPaperList := []Paper{}
 	for _, p := range pList {
 		if p.Selected == true {
@@ -290,7 +315,9 @@ func setEncBidList(r *Reviewer) { //set encrypted bid list
 
 	hashedBiddedPaperList, _ := GetMessageHash(EncodeToBytes(r.biddedPaperMap)) //changed from tmpPaperList to r.bidedPaperMap
 	rSignature, _ := ecdsa.SignASN1(rand.Reader, r.keys, hashedBiddedPaperList)
-	putNextSignatureInMapReviewer(r, rSignature)
+	tree.Put(r.userID + "SignedBidByReviewer", rSignature)
+	log.Printf("\n %s %s", rSignature, "Signed bid from reviewer: " + r.userID + " logged.")
+	//putNextSignatureInMapReviewer(r, rSignature)
 
 	//r.biddedPaperMap = Encrypt(EncodeToBytes(tmpPaperList), Kpcr)
 }
@@ -298,9 +325,8 @@ func setEncBidList(r *Reviewer) { //set encrypted bid list
 func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 
 	pList := getPaperList(&pc, &reviewerSlice[0])
-
 	for _, rev := range reviewerSlice {
-		kcpr := generateSharedSecret(&pc, nil, &rev)
+		kcpr := generateSharedSecret(&pc, nil, &rev) //Shared secret key between PC and R
 		for i := range rev.biddedPaperMap {
 			decrypted := Decrypt(rev.biddedPaperMap[i], kcpr)
 			paper := DecodeToPaper(decrypted)
@@ -337,17 +363,19 @@ func finalMatching(reviewers []Reviewer, submitters []Submitter) {
 	for _, r := range reviewers {
 		r.GetCommitMessageReviewPaper(GetRandomInt(r.keys.D))
 		nonce := GetRandomInt(r.keys.D)
-		log.Printf("\n, %s, %s", "Nonce, step 6:", nonce)
+		reviewerAsString := fmt.Sprintf("%#v", r)
+		tree.Put(reviewerAsString + "nonce", nonce) //Nonce logged
+		log.Printf("\n, %s, %s", "Nonce from reviewer: " + r.userID + " - ", nonce)
 		hash, _ := GetMessageHash(EncodeToBytes(r.keys.PublicKey))
 		signature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hash)
+		//TODO LOG SIGNATURE AND MESSAGE. CONCATENATED?
 		putNextSignatureInMapPC(&pc, signature)
-
 		for _, s := range submitters {
 			paperCommitSubmitter := s.paperCommittedValue.CommittedValue.CommittedValue
 			paperCommitReviewer := r.paperCommittedValue.CommittedValue.CommittedValue
 			if paperCommitSubmitter == paperCommitReviewer {
 				schnorrProofs = append(schnorrProofs, *CreateProof(s.keys, r.keys)) //NOT CORRECT, WAIT FOR ANSWER FROM SUPERVISOR
-
+				//TODO El Gamal NIZK
 			}
 		}
 	}

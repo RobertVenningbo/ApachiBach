@@ -227,6 +227,7 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 		nil,
 	}
 	reviewer1 := Reviewer{
+		"reviewer1",
 		newKeys(),
 		nil,
 		map[int][]byte{},
@@ -234,6 +235,7 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 		nil,
 	}
 	reviewer2 := Reviewer{
+		"reviewer2",
 		newKeys(),
 		nil,
 		map[int][]byte{},
@@ -255,6 +257,7 @@ func TestSchnorrProof(t *testing.T) {
 		nil,
 	}
 	reviewer := Reviewer{
+		"reviewer",
 		newKeys(),
 		nil,
 		map[int][]byte{},
