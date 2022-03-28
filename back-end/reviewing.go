@@ -55,26 +55,25 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers *[]Reviewer) {
 
 	kpBytes := EncodeToBytes(kp)
 
-	hashedKeys, err := GetMessageHash(kpBytes) 
+	hashedKeys, err := GetMessageHash(kpBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
 	hashedKeysSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedKeys)
-	
+
 	rgBytes := EncodeToBytes(rg)
 
-	hashedRg, err := GetMessageHash(rgBytes) 
+	hashedRg, err := GetMessageHash(rgBytes)
 	if err != nil {
 		log.Fatal(err)
 	}
 	hashedRgSignature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedRg)
 
-	strHashedKeys := fmt.Sprintf("PC signs Kp with signature %s", hashedKeysSignature) 
-	log.Printf("\n"+strHashedKeys)
+	strHashedKeys := fmt.Sprintf("PC signs Kp with signature %s", hashedKeysSignature)
+	log.Printf("\n" + strHashedKeys)
 	tree.Put(strHashedKeys, hashedKeysSignature)
 
-	
-	strHashedRg := fmt.Sprintf("PC signs Rg with signature %s", hashedRgSignature) 
+	strHashedRg := fmt.Sprintf("PC signs Rg with signature %s", hashedRgSignature)
 	log.Printf("\n"+strHashedRg, hashedRgSignature)
 	tree.Put(strHashedRg, hashedRgSignature)
 
@@ -83,11 +82,11 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers *[]Reviewer) {
 
 		encrypted := Encrypt(kpBytes, Kpcr)
 
-		str := fmt.Sprintf("PC logs Kp encrypted with Kpcr between PC and reviewer id %s", r/*.userID*/) //gul streg pga r ikke er string (endnu)
-		log.Printf("\n"+str)
+		str := fmt.Sprintf("PC logs Kp encrypted with Kpcr between PC and reviewer id %v", r /*.userID*/) //gul streg pga r ikke er string (endnu)
+		log.Printf("\n" + str)
 		tree.Put(str, encrypted)
 
-		str = fmt.Sprintf("PC logs Rg encrypted with Kpcr between PC and reviewer id %s", r/*.userID*/) //gul streg pga r ikke er string (endnu)
-	
+		str = fmt.Sprintf("PC logs Rg encrypted with Kpcr between PC and reviewer id %v", r /*.userID*/) //gul streg pga r ikke er string (endnu)
+
 	}
 }
