@@ -326,7 +326,7 @@ func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 
 	pList := getPaperList(&pc, &reviewerSlice[0])
 	for _, rev := range reviewerSlice {
-		kcpr := generateSharedSecret(&pc, nil, &rev)
+		kcpr := generateSharedSecret(&pc, nil, &rev) //Shared secret key between PC and R
 		for i := range rev.biddedPaperMap {
 			decrypted := Decrypt(rev.biddedPaperMap[i], kcpr)
 			paper := DecodeToPaper(decrypted)
@@ -368,14 +368,14 @@ func finalMatching(reviewers []Reviewer, submitters []Submitter) {
 		log.Printf("\n, %s, %s", "Nonce from reviewer: " + r.userID + " - ", nonce)
 		hash, _ := GetMessageHash(EncodeToBytes(r.keys.PublicKey))
 		signature, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hash)
+		//TODO LOG SIGNATURE AND MESSAGE. CONCATENATED?
 		putNextSignatureInMapPC(&pc, signature)
-
 		for _, s := range submitters {
 			paperCommitSubmitter := s.paperCommittedValue.CommittedValue.CommittedValue
 			paperCommitReviewer := r.paperCommittedValue.CommittedValue.CommittedValue
 			if paperCommitSubmitter == paperCommitReviewer {
 				schnorrProofs = append(schnorrProofs, *CreateProof(s.keys, r.keys)) //NOT CORRECT, WAIT FOR ANSWER FROM SUPERVISOR
-
+				//TODO El Gamal NIZK
 			}
 		}
 	}
