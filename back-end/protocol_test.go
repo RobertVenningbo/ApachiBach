@@ -1,17 +1,18 @@
 package backend
 
 import (
+	"crypto/ecdsa"
+	"crypto/rand"
 	"fmt"
 	"swag/ec"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
-	"crypto/ecdsa"
-	"crypto/rand"
 )
 
 var (
 	paperListTest = []Paper{
-		Paper{1, nil, false, nil}, 
+		Paper{1, nil, false, nil},
 		Paper{2, nil, false, nil},
 	}
 )
@@ -84,7 +85,7 @@ func TestPedersenCommitment(t *testing.T) {
 
 	SetCommitment(submitter.receiver, c)
 	submittedVal, r := submitter.GetDecommitMsg()
-	
+
 	success := submitter.receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen failed")
@@ -121,13 +122,14 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 
 	SetCommitment(submitter.receiver, c)
 	submittedVal, r := submitter.GetDecommitMsgPaper()
-	
+
 	success := submitter.receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen paper commitment failed")
 
 }
-/* 
+
+/*
 // ALSO ADD RECEIVER TO COMMITSTRUCT, THEN MAYBE REMOVE FROM SUBMISSIVE SUBMITTER
 func TestPedersenCommitmentPaper1(t *testing.T) {
 	keys := newKeys()
@@ -174,10 +176,10 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 		nil,
 		nil,
 	}
-	
+
 	a := ec.GetRandomInt(s.keys.D)
 	fmt.Println(a)
-	
+
 	c, _ := s.GetCommitMessage(a)
 
 	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
@@ -188,7 +190,6 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
-
 
 func TestSubmit(t *testing.T) {
 	keys := newKeys()
@@ -217,7 +218,6 @@ func TestSubmit(t *testing.T) {
 	//fmt.Println(pc)
 	pc.signatureMap = nil //need this or it isn't used
 
-	
 	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
 }
 
@@ -247,8 +247,7 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 
 }
 
-
-func TestSchnorrProof(t *testing.T){
+func TestSchnorrProof(t *testing.T) {
 	p := Paper{
 		1,
 		&CommitStruct{},
@@ -283,10 +282,10 @@ func TestSchnorrProof(t *testing.T){
 	got := VerifyProof(proof)
 
 	want := true
-
-
+	
 	assert.Equal(t, want, got, "Proof failed")
-} 
+}
+
 /*
 
 func TestGetMessageHash() {
