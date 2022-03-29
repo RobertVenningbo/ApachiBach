@@ -9,6 +9,11 @@ import (
 	"strconv"
 )
 
+type SubmitMessage struct {
+	PaperAndRandomness []byte
+	EncryptedKpcs	   []byte
+}
+
 func Submit(s *Submitter, p *Paper) *Submitter {
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
@@ -24,22 +29,28 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 	sharedKpcs := generateSharedSecret(&pc, s, nil)  //Shared secret key between Submitter and PC (Kpcs)
 
 	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X)) //PC's hashed public key
-	encryptedSharedKpcs := Encrypt([]byte(sharedKpcs), string(hashedPublicK[:])) //Encrypted Kpcs with PC's public key
+	//encryptedSharedKpcs := Encrypt([]byte(sharedKpcs), string(hashedPublicK[:])) //Encrypted Kpcs with PC's public key
 
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
-		EncodeToBytes(p),
-		EncodeToBytes(rr),
-		EncodeToBytes(rs),
-		encryptedSharedKpcs,
+		p,
+		rr,
+		rs,
 	}
-	LoggedMessage := fmt.Sprintf("%#v", PaperAndRandomness)
-	tree.Put(LoggedMessage, PaperAndRandomness)
+	
+	submitMsg := SubmitMessage{
+		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
+		Encrypt(EncodeToBytes(sharedKpcs), pc.keys.PublicKey.X.String()),
+	}
+
+	SignedSubmitMsg := SignzAndEncrypt(s.keys, submitMsg, "")
+
+
+	LoggedMessage := fmt.Sprintf("%#v", submitMsg)
+	tree.Put(LoggedMessage, SignedSubmitMsg)
 	log.Println(LoggedMessage + " - Encrypted Paper and Random Numbers logged")	
 
-	s.encrypted = Encrypt(EncodeToBytes(PaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
+	s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
 	
-	SignzAndEncrypt(s.keys, PaperAndRandomness, sharedKpcs) 
-
 	SubmissionSignature, _ := ecdsa.SignASN1(rand.Reader, s.keys, s.encrypted) //Entire message signed by submission private key
 	SubmitterAsString := fmt.Sprintf("%#v", s)
 	tree.Put(SubmitterAsString + s.userID + "SubmissionSignature", SubmissionSignature)

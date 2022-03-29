@@ -68,11 +68,11 @@ var (
 )
 
 type SubmitStruct struct {
-	Msg       []byte
-	Rr        []byte
-	Rs        []byte
-	SharedKey []byte
+	paper     *Paper
+	Rr        *big.Int
+	Rs        *big.Int
 }
+
 
 type Receiver struct {
 	keys       *ecdsa.PrivateKey
@@ -160,15 +160,15 @@ func EncodeToBytes(p interface{}) []byte {
 	return buf.Bytes()
 }
 
-func DecodeToPaper(s []byte) Paper {
+func DecodeToStruct(s []byte, x struct{}) (interface{}) { //Decodes encoded struct to struct
 
-	p := Paper{}
+	i := x
 	dec := gob.NewDecoder(bytes.NewReader(s))
-	err := dec.Decode(&p)
+	err := dec.Decode(&i)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return p
+	return i
 }
 
 func GetRandomInt(max *big.Int) *big.Int {
@@ -180,6 +180,7 @@ func GetRandomInt(max *big.Int) *big.Int {
 }
 
 func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
+	
 	bytes := EncodeToBytes(plaintext)
 	
 	hash, _ := GetMessageHash(bytes)
@@ -187,7 +188,11 @@ func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase s
 
 	encrypted := Encrypt(bytes, passphrase)
 
-	return fmt.Sprint(signature) + "|" + fmt.Sprint(encrypted) // Check if "|" interfere with any binary?
+	if (passphrase == "") {
+        return fmt.Sprint(signature) + "|" + fmt.Sprint(plaintext) // Check if "|" interfere with any binary?
+    }else{
+        return fmt.Sprint(signature) + "|" + fmt.Sprint(encrypted) // Check if "|" interfere with any binary?
+    }
 	//return [213, 123, 12, 392...]|someEncryptedString
 }
 
