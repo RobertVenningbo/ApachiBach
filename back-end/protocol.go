@@ -152,7 +152,9 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(p)
+	gob.Register(Paper{})
+	gob.Register(ReviewSignedStruct{})
+	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -160,8 +162,7 @@ func EncodeToBytes(p interface{}) []byte {
 	return buf.Bytes()
 }
 
-func DecodeToStruct(s []byte, x struct{}) (interface{}) { //Decodes encoded struct to struct
-
+func DecodeToStruct(s []byte) (x interface{}) { //Decodes encoded struct to struct https://gist.github.com/SteveBate/042960baa7a4795c3565
 	i := x
 	dec := gob.NewDecoder(bytes.NewReader(s))
 	err := dec.Decode(&i)
@@ -170,6 +171,16 @@ func DecodeToStruct(s []byte, x struct{}) (interface{}) { //Decodes encoded stru
 	}
 	return i
 }
+/*
+func DecodeToPaper(s []byte) Paper {
+	p := Paper{}
+	dec := gob.NewDecoder(bytes.NewReader(s))
+	err := dec.Decode(&p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return p
+}*/
 
 func GetRandomInt(max *big.Int) *big.Int {
 	n, err := rand.Int(rand.Reader, max)
@@ -177,6 +188,13 @@ func GetRandomInt(max *big.Int) *big.Int {
 		log.Fatal(err)
 	}
 	return n
+}
+
+func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string {
+	bytes := EncodeToBytes(plaintext)
+	hash, _ := GetMessageHash(bytes)
+	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
+	return fmt.Sprint(signature) + "|" + fmt.Sprint(plaintext)
 }
 
 func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
@@ -188,7 +206,7 @@ func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase s
 
 	encrypted := Encrypt(bytes, passphrase)
 
-	if (passphrase == "") {
+	if (passphrase == "") { 
         return fmt.Sprint(signature) + "|" + fmt.Sprint(plaintext) // Check if "|" interfere with any binary?
     }else{
         return fmt.Sprint(signature) + "|" + fmt.Sprint(encrypted) // Check if "|" interfere with any binary?

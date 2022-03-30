@@ -1,9 +1,6 @@
 package backend
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha256"
 	"fmt"
 	"log"
 	"strconv"
@@ -14,10 +11,15 @@ type SubmitMessage struct {
 	EncryptedKpcs	   []byte
 }
 
+type CommitMsg struct {
+	IdenityCommit	[]byte
+	PaperCommit		[]byte
+}
+
 func Submit(s *Submitter, p *Paper) *Submitter {
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
-	ri := GetRandomInt(s.keys.D)
+	ri := GetRandomInt(s.keys.D) //TODO in the protocol description it says the submitter generates this
 	
 	log.Printf("\n, %s", "Generate rr from s.keys.D and storing in btree/log")
 	tree.Put("Rr", rr)
@@ -27,9 +29,6 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 	tree.Put("Ri", ri)
 	
 	sharedKpcs := generateSharedSecret(&pc, s, nil)  //Shared secret key between Submitter and PC (Kpcs)
-
-	hashedPublicK := sha256.Sum256(EncodeToBytes(pc.keys.PublicKey.X)) //PC's hashed public key
-	//encryptedSharedKpcs := Encrypt([]byte(sharedKpcs), string(hashedPublicK[:])) //Encrypted Kpcs with PC's public key
 
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
 		p,
@@ -42,57 +41,37 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := SignzAndEncrypt(s.keys, submitMsg, "")
-
+	SignedSubmitMsg := SignzAndEncrypt(s.keys, submitMsg, "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 
 	LoggedMessage := fmt.Sprintf("%#v", submitMsg)
-	tree.Put(LoggedMessage, SignedSubmitMsg)
+	tree.Put(LoggedMessage + s.userID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println(LoggedMessage + " - Encrypted Paper and Random Numbers logged")	
 
-	s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
+	//s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
 	
-	SubmissionSignature, _ := ecdsa.SignASN1(rand.Reader, s.keys, s.encrypted) //Entire message signed by submission private key
-	SubmitterAsString := fmt.Sprintf("%#v", s)
-	tree.Put(SubmitterAsString + s.userID + "SubmissionSignature", SubmissionSignature)
-	log.Println(SubmitterAsString + s.userID + " " + string(SubmissionSignature) + " - message signed by submission private key")
-
 	//submitter identity commit
-	SubmitterIdenityCommit, _ := s.GetCommitMessage(ri)
-	SubmitCommitAsString := fmt.Sprintf("%#v", SubmitterIdenityCommit)
-	tree.Put(SubmitCommitAsString + s.userID, SubmitterIdenityCommit)
-	log.Println(SubmitCommitAsString + s.userID +  " - SubmitterIdenityCommit logged")
+	SubmitterIdenityCommit, _ := s.GetCommitMessage(ri) 
 
 	//paper submission commit
 	PaperSubmissionCommit, _ := s.GetCommitMessagePaper(rs)
-	PaperCommitAsString := fmt.Sprintf("%#v", PaperSubmissionCommit)
-	tree.Put(PaperCommitAsString + strconv.Itoa(p.Id), PaperSubmissionCommit)
-	log.Println(PaperCommitAsString + strconv.Itoa(p.Id) + " - PaperSubmissionCommit logged.")
-
-	hashedIdentityCommit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.submitterCommittedValue.CommittedValue)))
-	hashedPaperCommit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
-
-	SignatureSubmitterIdenityCommit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedIdentityCommit) //Submitter Idenity Commit signed by submission private key
-	tree.Put(SubmitterAsString + s.userID + "SignatureSubmitterIdentityCommit",  SignatureSubmitterIdenityCommit)
-	log.Println("SignatureSubmitterIdenityCommit from userID: " + s.userID + " logged.")
-	//putNextSignatureInMapSubmitter(s, signatureSubmit)
-
-	SignaturePaperCommit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedPaperCommit) //paper commit signed by submission private key
-	tree.Put(SubmitterAsString + s.userID + "SignaturePaperCommit",  SignaturePaperCommit)
-	log.Println("SignaturePaperCommit from userID: " + s.userID + " logged.")
-	//putNextSignatureInMapSubmitter(s, signaturePaper)
+	
+	commitMsg := CommitMsg {
+		EncodeToBytes(SubmitterIdenityCommit),
+		EncodeToBytes(PaperSubmissionCommit),
+	}
+	signedCommitMsg := SignzAndEncrypt(s.keys, commitMsg, "")
+	tree.Put("signedCommitMsg" + s.userID, signedCommitMsg)
+	log.Println("signedCommitMsg" + s.userID + " logged") //Both commits signed and logged 
 
 	KsString := fmt.Sprintf("%#v", s.keys.PublicKey)
-	tree.Put(KsString + s.userID, s.keys.PublicKey) //Submitters public key (Ks) is revealed to all parties
+	tree.Put(KsString + s.userID, s.keys.PublicKey) //Submitters public key (Ks) is revealed to all parties (step 2 done)
 	log.Println("SubmitterPublicKey from submitter with userID: " + s.userID + " logged.") 
 
-	hashedPaperPC, _ := GetMessageHash([]byte(fmt.Sprintf("%v", s.paperCommittedValue.CommittedValue.CommittedValue)))
-	SignaturePaperCommitPC, _ := ecdsa.SignASN1(rand.Reader, pc.keys, hashedPaperPC) //PC Signs a paper commit, indicating that the paperis ready to be reviewed.
-	PCsignatureAsString := fmt.Sprintf("%#v", SignaturePaperCommitPC)
-	tree.Put(PCsignatureAsString + strconv.Itoa(p.Id), SignaturePaperCommitPC)
-	log.Println("SignaturePaperCommitPC logged - The PC signed a paper commit.")
-	//putNextSignatureInMapPC(&pc, signaturePaperPC)     
+	PCsignedPaperCommit := SignzAndEncrypt(pc.keys, PaperSubmissionCommit, "")
+	tree.Put("PCsignedPaperCommit" + strconv.Itoa(p.Id), PCsignedPaperCommit)
+	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	paperList = append(paperList, *p) //List of papers, but what is it used for?? TODO
 
-	return s
+	return s //TODO why do we return a submitter?
 }
