@@ -3,7 +3,6 @@ package backend
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"fmt"
 	"swag/ec"
 	"testing"
 
@@ -49,10 +48,7 @@ func TestVerifyTrapdoorSubmitter(t *testing.T) {
 		nil,
 		nil,
 	}
-	//fmt.Println(submitter.random.Rr)
 	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.receiver))
-
-	fmt.Printf("%t", got)
 
 	want := true
 
@@ -178,15 +174,13 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 	}
 
 	a := ec.GetRandomInt(s.keys.D)
-	fmt.Println(a)
-
 	c, _ := s.GetCommitMessage(a)
 
-	hashedMsgSubmit, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
+	hashedMsgSubmit1, _ := GetMessageHash(EncodeToBytes(c))
 
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit) //rand.Reader idk??
+	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit1) //rand.Reader idk??
 
-	got := ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit, signatureSubmit) //testing
+	got := ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
@@ -250,6 +244,7 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 	assert.Equal(t, got, want, "TestAssignPapersGetPaperList failed")
 
 }
+
 /*
 func TestSchnorrProof(t *testing.T) {
 	p := Paper{
@@ -288,33 +283,9 @@ func TestSchnorrProof(t *testing.T) {
 	got := VerifyProof(proof)
 
 	want := true
-	
+
 	assert.Equal(t, want, got, "Proof failed")
 }
-*/
-/*
-
-func TestGetMessageHash() {
-
-}
-
-
-func TestVerifyTrapdoor() {
-
-}
-
-func TestEquals() {
-
-}
-
-func TestGenCommitmentKey() {
-
-}
-
-func TestCommit() {
-
-}
-
 */
 
 func TestEncryptAndDecrypt(t *testing.T) {
@@ -336,14 +307,44 @@ func TestEncryptAndDecrypt(t *testing.T) {
 }
 
 func TestDecodeToStruct(t *testing.T) {
-	p := &Paper{
+	keys := newKeys()
+	c := CommitStruct{
+		&keys.PublicKey,
+		nil,
+		nil}
+	p := Paper{
 		1,
-		&CommitStruct{},
+		&c,
 		true,
 		nil,
 	}
-	EncodedStruct := EncodeToBytes(&p)
-	DecodedStruct := DecodeToStruct(EncodedStruct)
-	assert.Equal(t, DecodedStruct.(Paper), *p, "Test failed")
-	
+	EncodedStruct := EncodeToBytes(p)
+	DecodedStruct := DecodeToStruct1(EncodedStruct, Paper{})
+	assert.Equal(t, DecodedStruct, p, "Test failed")
+
+}
+
+func TestVerifyMethod(t *testing.T) {
+	keys := newKeys()
+	s := Submitter{
+		keys,
+		"1", //userID
+		&CommitStruct{},
+		&Paper{},
+		&Receiver{},
+		nil,
+		nil,
+	}
+
+	a := ec.GetRandomInt(s.keys.D)
+	c, _ := s.GetCommitMessage(a)
+
+	signatureAndPlaintext := Sign(s.keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
+
+	signature, text := SplitSignz(signatureAndPlaintext)
+
+	hashedText, _ := GetMessageHash(EncodeToBytes(text))
+	got := Verify(&s.keys.PublicKey, signature, hashedText)
+
+	assert.Equal(t, true, got, "Sign and Verify failed")
 }

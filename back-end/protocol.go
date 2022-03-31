@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	_ "crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
@@ -26,7 +27,7 @@ type Reviewer struct {
 	paperMap            map[int][]byte
 	signatureMap        map[int][]byte
 	paperCommittedValue *Paper
-	gradedPaperMap		map[int]int
+	gradedPaperMap      map[int]int
 }
 
 type Submitter struct {
@@ -68,11 +69,10 @@ var (
 )
 
 type SubmitStruct struct {
-	paper     *Paper
-	Rr        *big.Int
-	Rs        *big.Int
+	paper *Paper
+	Rr    *big.Int
+	Rs    *big.Int
 }
-
 
 type Receiver struct {
 	keys       *ecdsa.PrivateKey
@@ -154,6 +154,13 @@ func EncodeToBytes(p interface{}) []byte {
 	enc := gob.NewEncoder(&buf)
 	gob.Register(Paper{})
 	gob.Register(ReviewSignedStruct{})
+	gob.Register(CommitStruct{})
+	gob.Register(Submitter{})
+	gob.Register(ecdsa.PublicKey{})
+	gob.Register(elliptic.P256())
+	gob.Register(SubmitStruct{})
+	gob.Register(SubmitMessage{})
+	gob.Register(CommitMsg{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
@@ -171,16 +178,26 @@ func DecodeToStruct(s []byte) (x interface{}) { //Decodes encoded struct to stru
 	}
 	return i
 }
-/*
-func DecodeToPaper(s []byte) Paper {
+
+func DecodeToStruct1(s []byte, x interface{}) interface{} { //Decodes encoded struct to struct https://gist.github.com/SteveBate/042960baa7a4795c3565
+	i := x
+	dec := gob.NewDecoder(bytes.NewReader(s))
+	err := dec.Decode(&i)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return i
+}
+
+func DecodeToPaper(s []byte) *Paper {
 	p := Paper{}
 	dec := gob.NewDecoder(bytes.NewReader(s))
 	err := dec.Decode(&p)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return p
-}*/
+	return &p
+}
 
 func GetRandomInt(max *big.Int) *big.Int {
 	n, err := rand.Int(rand.Reader, max)
@@ -190,27 +207,34 @@ func GetRandomInt(max *big.Int) *big.Int {
 	return n
 }
 
-func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string {
+func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
 	bytes := EncodeToBytes(plaintext)
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
-	return fmt.Sprint(signature) + "|" + fmt.Sprint(plaintext)
+	return fmt.Sprintf("%v%s%v", signature, "|", plaintext)
+}
+
+func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
+
+	signBytes := EncodeToBytes(signature)
+
+	return ecdsa.VerifyASN1(pub, hash, signBytes)
 }
 
 func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
-	
+
 	bytes := EncodeToBytes(plaintext)
-	
+
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
 
 	encrypted := Encrypt(bytes, passphrase)
 
-	if (passphrase == "") { 
-        return fmt.Sprint(signature) + "|" + fmt.Sprint(plaintext) // Check if "|" interfere with any binary?
-    }else{
-        return fmt.Sprint(signature) + "|" + fmt.Sprint(encrypted) // Check if "|" interfere with any binary?
-    }
+	if passphrase == "" {
+		return fmt.Sprintf("%v%s%v", signature, "|", plaintext) // Check if "|" interfere with any binary?
+	} else {
+		return fmt.Sprintf("%v%s%v", signature, "|", encrypted) // Check if "|" interfere with any binary?
+	}
 	//return [213, 123, 12, 392...]|someEncryptedString
 }
 
