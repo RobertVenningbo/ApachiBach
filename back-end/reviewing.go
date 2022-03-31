@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-//TODO: Look at how we log
+//TODO: Look at how we store values in the tree, keys.
 //planned to be called for every reviewer in the controller layer or whatever calls it
 func (r *Reviewer) FinishReview() { //step 8
 	Kpcr := generateSharedSecret(&pc, nil, r)
@@ -85,7 +85,7 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) {
 		Kpcr := generateSharedSecret(pc, nil, &r)
 		someSigKp := SignzAndEncrypt(pc.keys, kp, Kpcr) //return string([]byteSignature|someEncryptedString)
 
-		str := fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", r.userID)
+		str := fmt.Sprintf("PC sign and encrypt Kp with Kpcr between PC and reviewer id %s", r.userID)
 		log.Printf("\n" + str + someSigKp)
 		tree.Put(str, someSigKp)
 
