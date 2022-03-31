@@ -3,6 +3,7 @@ module swag
 go 1.17
 
 require (
+	github.com/binance-chain/tss-lib v1.3.3
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/sessions v1.2.1
@@ -11,20 +12,17 @@ require (
 
 require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/mazen160/go-random v0.0.0-20210308102632-d2b501c85c03
 	github.com/stretchr/testify v1.7.0
 	github.com/xlab-si/emmy v0.0.0-20200107120908-eab83660737e
 )
 
 require (
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
-	github.com/binance-chain/tss-lib v1.3.3 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.0 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/ipfs/go-log v0.0.1 // indirect
-	github.com/lukas1503k/Schnorr-Zero-Knowledge-Proof v0.0.0-20190901185356-aa8a826810c9 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
