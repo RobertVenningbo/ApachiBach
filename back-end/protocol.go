@@ -208,9 +208,12 @@ func GetRandomInt(max *big.Int) *big.Int {
 }
 
 func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
-	bytes := EncodeToBytes(plaintext)
+	formatted := fmt.Sprintf("%v", plaintext)
+	bytes := []byte(formatted)
 	hash, _ := GetMessageHash(bytes)
+	fmt.Printf("%s%v\n", "Hash from Sign func:", hash)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
+	fmt.Printf("%s%v \n", "Sig from sign func:", signature)
 	return fmt.Sprintf("%v%s%v", signature, "|", plaintext)
 }
 

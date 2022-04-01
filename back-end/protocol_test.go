@@ -3,6 +3,7 @@ package backend
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
+	"fmt"
 	"swag/ec"
 	"testing"
 
@@ -176,7 +177,7 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 	a := ec.GetRandomInt(s.keys.D)
 	c, _ := s.GetCommitMessage(a)
 
-	hashedMsgSubmit1, _ := GetMessageHash(EncodeToBytes(c))
+	hashedMsgSubmit1, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
 
 	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit1) //rand.Reader idk??
 
@@ -340,11 +341,48 @@ func TestVerifyMethod(t *testing.T) {
 	c, _ := s.GetCommitMessage(a)
 
 	signatureAndPlaintext := Sign(s.keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
+	fmt.Println(signatureAndPlaintext)
 
 	signature, text := SplitSignz(signatureAndPlaintext)
+	fmt.Println(signature)
 
 	hashedText, _ := GetMessageHash(EncodeToBytes(text))
 	got := Verify(&s.keys.PublicKey, signature, hashedText)
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
+}
+
+func TestSignAndVerify(t *testing.T) {
+	keys := newKeys()
+	s := Submitter{
+		keys,
+		"1", //userID
+		&CommitStruct{},
+		&Paper{},
+		&Receiver{},
+		nil,
+		nil,
+	}
+	str := "hello"
+	//signed, _ := ecdsa.SignASN1(rand.Reader, s.keys, []byte(str))
+
+	//sig, msg := SplitSignz(signed)
+//	fmt.Println("'" + msg + "'")
+	//hash, _ := GetMessageHash([]byte(msg))
+
+	signed2 := Sign(s.keys, str)
+	sig, msg := SplitSignz(signed2)
+	fmt.Println(msg)
+	fmt.Printf("%s %v \n", "Sig from SignASN1 test: ", signed2)
+	fmt.Printf("%s %v", "Sig from Sign Test: ", sig)
+
+
+	//fmt.Printf("%s%v\n", "Hash from test1:", hash)
+
+
+	got := ecdsa.VerifyASN1(&s.keys.PublicKey, []byte(str), []byte(signed2))
+
+//	fmt.Println("Sig from test:" + sig)
+	assert.Equal(t, true, got, "TestSignAndVerify Failed")
+
 }
