@@ -113,7 +113,7 @@ func finalMatching(reviewers []Reviewer, submitters []Submitter) {
 	for _, r := range reviewers {
 		commit, _ := r.GetCommitMessageReviewPaper(GetRandomInt(r.keys.D))
 		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
-			EncodeToBytes(commit), 
+			EncodeToBytes(commit), //Why encodetobytes?
 			&r.keys.PublicKey,
 			GetRandomInt(r.keys.D),
 		}
