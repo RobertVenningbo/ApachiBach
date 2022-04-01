@@ -228,12 +228,14 @@ func TestAssignPapersGetPaperList(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 	}
 	reviewer2 := Reviewer{
 		"reviewer2",
 		newKeys(),
 		nil,
 		map[int][]byte{},
+		nil,
 		nil,
 		nil,
 		nil,
