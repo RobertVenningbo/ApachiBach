@@ -87,6 +87,29 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int) (*ecdsa.PublicKey
 	return comm, nil
 } //C(P, r)  C(S, r)
 
+func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+		return nil, err
+	}
+
+	// c = g^x * h^r
+	r := GetRandomInt(rev.keys.D)
+
+	rev.gradeCommittedValue.r = r
+	rev.gradeCommittedValue.val = val
+	
+	
+	x1 := ec.ExpBaseG(rev.keys, val)
+	x2 := ec.Exp(rev.keys, &rev.keys.PublicKey, r)
+	comm := ec.Mul(rev.keys, x1, x2)
+	rev.gradeCommittedValue.CommittedValue = comm
+	fmt.Printf("\n %s, %s, %s", "R & Val (Reviewer): ", r, val)
+	fmt.Printf("\n %s, %s", "comm (Reviewer)", comm)
+
+	return comm, nil
+} //C(P, r)  C(S, r)
+
 func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")

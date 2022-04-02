@@ -28,6 +28,7 @@ type Reviewer struct {
 	signatureMap        map[int][]byte
 	paperCommittedValue *Paper
 	gradedPaperMap      map[int]int
+	gradeCommittedValue *CommitStruct
 }
 
 type Submitter struct {
