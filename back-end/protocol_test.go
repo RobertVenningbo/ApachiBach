@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
+	"math/big"
 	"swag/ec"
 	"testing"
 
@@ -405,7 +406,7 @@ func TestLogging(t *testing.T) {
 		nil,
 	}
 
-	number := 5
+	number := GetRandomInt(s.keys.D)
 	bytes := EncodeToBytes(number)
 	Kpcs := generateSharedSecret(&pc, &s, nil)
 	encryptedNumber := Encrypt(bytes, Kpcs)
@@ -415,10 +416,11 @@ func TestLogging(t *testing.T) {
 	encryptedNumberFromTree := tree.Find("encryptedNumber")
 	KpcsFromTree := tree.Find("Kpcs")
 
-	
+
 
 	decryptedNumber := Decrypt(encryptedNumberFromTree.value.([]byte), KpcsFromTree.value.(string))
-	got := DecodeToStruct(decryptedNumber)
+	decodedNumber := DecodeToStruct1(decryptedNumber, big.Int{})
+	got := decodedNumber.(big.Int)
 
 	assert.Equal(t, number, got, "logging test failed")
 
