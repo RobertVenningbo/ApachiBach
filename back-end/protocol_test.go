@@ -353,7 +353,7 @@ func TestVerifyMethod(t *testing.T) {
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
-
+/*
 func TestSignAndVerify(t *testing.T) {
 	keys := newKeys()
 	s := Submitter{
@@ -387,4 +387,40 @@ func TestSignAndVerify(t *testing.T) {
 //	fmt.Println("Sig from test:" + sig)
 	assert.Equal(t, true, got, "TestSignAndVerify Failed")
 
+} */
+
+func TestLogging(t *testing.T) {
+	tree = NewTree(DefaultMinItems)
+	pc := PC{
+		newKeys(),
+		nil,
+	}
+	s := Submitter{
+		newKeys(),
+		"1", //userID
+		&CommitStruct{},
+		&Paper{},
+		&Receiver{},
+		nil,
+		nil,
+	}
+
+	number := 5
+	bytes := EncodeToBytes(number)
+	Kpcs := generateSharedSecret(&pc, &s, nil)
+	encryptedNumber := Encrypt(bytes, Kpcs)
+	tree.Put("encryptedNumber", encryptedNumber)
+	tree.Put("Kpcs", Kpcs)
+
+	encryptedNumberFromTree := tree.Find("encryptedNumber")
+	KpcsFromTree := tree.Find("Kpcs")
+
+	
+
+	decryptedNumber := Decrypt(encryptedNumberFromTree.value.([]byte), KpcsFromTree.value.(string))
+	got := DecodeToStruct(decryptedNumber)
+
+	assert.Equal(t, number, got, "logging test failed")
+
 }
+

@@ -162,6 +162,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(SubmitStruct{})
 	gob.Register(SubmitMessage{})
 	gob.Register(CommitMsg{})
+	
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
