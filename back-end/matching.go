@@ -79,7 +79,7 @@ func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 		kcpr := generateSharedSecret(&pc, nil, &rev) //Shared secret key between PC and R
 		for i := range rev.biddedPaperMap {
 			decrypted := Decrypt(rev.biddedPaperMap[i], kcpr)
-			paper := DecodeToStruct(decrypted)
+			paper := DecodeToStruct1(decrypted, Paper{})
 			if paper.(Paper).Selected {
 				for i, p := range pList {
 					if paper.(Paper).Id == p.Id {

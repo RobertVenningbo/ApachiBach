@@ -16,8 +16,6 @@ import (
 	_ "log"
 	"math/big"
 	"strings"
-
-	"github.com/binance-chain/tss-lib/crypto"
 )
 
 type Reviewer struct {
@@ -101,30 +99,6 @@ func newKeys() *ecdsa.PrivateKey {
 	return a
 }
 
-func putNextSignatureInMapSubmitter(s *Submitter, slice []byte) { //not sure if works, test needed.
-	for k, v := range s.signatureMap {
-		if v == nil {
-			s.signatureMap[k] = slice
-		}
-	}
-}
-
-func putNextSignatureInMapPC(p *PC, slice []byte) {
-	for k, v := range p.signatureMap {
-		if v == nil {
-			pc.signatureMap[k] = slice
-		}
-	}
-}
-
-func putNextSignatureInMapReviewer(r *Reviewer, slice []byte) {
-	for k, v := range r.signatureMap {
-		if v == nil {
-			r.signatureMap[k] = slice
-		}
-	}
-}
-
 func putNextPaperInBidMapReviewer(r *Reviewer, slice []byte) {
 	for k, v := range r.biddedPaperMap {
 		if v == nil {
@@ -136,10 +110,6 @@ func putNextPaperInBidMapReviewer(r *Reviewer, slice []byte) {
 func GetMessageHash(xd []byte) ([]byte, error) {
 	md := sha256.New()
 	return md.Sum(xd), nil
-}
-
-func EcdsaToECPoint(pk *ecdsa.PublicKey) (*crypto.ECPoint, error) {
-	return crypto.NewECPoint(pk.Curve, pk.X, pk.Y)
 }
 
 // func ECPointToEcdsa(ec *crypto.ECPoint) (*ecdsa.PublicKey){
@@ -162,6 +132,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(SubmitStruct{})
 	gob.Register(SubmitMessage{})
 	gob.Register(CommitMsg{})
+	gob.Register(big.Int{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
@@ -209,9 +180,12 @@ func GetRandomInt(max *big.Int) *big.Int {
 }
 
 func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
-	bytes := EncodeToBytes(plaintext)
+	formatted := fmt.Sprintf("%v", plaintext)
+	bytes := []byte(formatted)
 	hash, _ := GetMessageHash(bytes)
+	fmt.Printf("%s%v\n", "Hash from Sign func:", hash)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
+	fmt.Printf("%s%v \n", "Sig from sign func:", signature)
 	return fmt.Sprintf("%v%s%v", signature, "|", plaintext)
 }
 
