@@ -71,13 +71,11 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 		*PaperCommit,
 		nonce.value.(big.Int),
 	}
-
 	rCommitSignature := Sign(r.keys, reviewCommitNonce) //
 
 	str := fmt.Sprintf("\n %s signs paper review commit  %s ", r.userID, rCommitSignature)
 	log.Printf("%s=%s", str, rCommitSignature)
 	tree.Put(str+" signed commit signature of review paper", rCommitSignature)
-
 }
 
 func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) {

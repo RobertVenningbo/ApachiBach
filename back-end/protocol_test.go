@@ -390,7 +390,7 @@ func TestSignAndVerify(t *testing.T) {
 
 } */
 
-func TestLogging(t *testing.T) {
+func TestLogging(t *testing.T) { 
 	tree = NewTree(DefaultMinItems)
 	pc := PC{
 		newKeys(),
@@ -405,7 +405,7 @@ func TestLogging(t *testing.T) {
 		nil,
 		nil,
 	}
-
+	
 	number := GetRandomInt(s.keys.D)
 	bytes := EncodeToBytes(number)
 	Kpcs := generateSharedSecret(&pc, &s, nil)
@@ -416,13 +416,11 @@ func TestLogging(t *testing.T) {
 	encryptedNumberFromTree := tree.Find("encryptedNumber")
 	KpcsFromTree := tree.Find("Kpcs")
 
-
-
 	decryptedNumber := Decrypt(encryptedNumberFromTree.value.([]byte), KpcsFromTree.value.(string))
-	decodedNumber := DecodeToStruct1(decryptedNumber, big.Int{})
+	decodedNumber := DecodeToStruct(decryptedNumber)
 	got := decodedNumber.(big.Int)
 
-	assert.Equal(t, number, got, "logging test failed")
+	assert.Equal(t, number, &got, "logging test failed")
 
 }
 
