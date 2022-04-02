@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"log"
+	"math/big"
 )
 
 type SendGradeStruct struct {
@@ -14,6 +15,11 @@ type RejectMessage struct {
 	commit interface{}
 	grade  interface{}
 	rg     interface{}
+}
+
+type RevealPaper struct {
+	paper interface{}
+	rs    interface{}
 }
 
 //needs >>a little<< more love
@@ -81,17 +87,38 @@ func (pc *PC) CompileGrades() { //step 17
 	tree.Put(str, signStr)
 }
 
-func (pc *PC) RevealAcceptedPaperInfo() {
+func (pc *PC) getPaperAndRs(submitter *Submitter) (*Paper, *big.Int) {
+	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.userID)
+	EncryptedPaperAndRandomness := submitMsgInTree.value.(SubmitMessage).PaperAndRandomness
+	Kpcs := generateSharedSecret(pc, submitter, nil)
+	DecryptedPaperAndRandomness := Decrypt(EncryptedPaperAndRandomness, Kpcs)
+	DecodedPaperAndRandomness := DecodeToStruct(DecryptedPaperAndRandomness)
+
+	p := DecodedPaperAndRandomness.(SubmitStruct).paper
+	rs := DecodedPaperAndRandomness.(SubmitStruct).Rs
+
+	return p, rs
+}
+
+func (pc *PC) RevealAcceptedPaperInfo(s *Submitter) {
+
+	p, rs := pc.getPaperAndRs(s)
+	grades := "grades"
+
+	revealPaperMsg := RevealPaper{
+		p,
+		rs,
+	}
+
+	signature := Sign(pc.keys, revealPaperMsg)
+	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
+	log.Println(str)
+	tree.Put(str, signature)
+
 	/*
-		Reveal Paper p and randomness rs
-			Sign these values
 		NIZK proof which proofs that grade g is port of the set of compiled grades
 		of the accepted papers and that it's the hiding factor in the grade commit
 		C(g, rg)
 	*/
-
-	p := "paper"
-	rs := "rs"
-	grades := "grades"
-
+	fmt.Println(grades, "create nizk for this")
 }
