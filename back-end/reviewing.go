@@ -7,14 +7,20 @@ import (
 	"fmt"
 	_ "fmt"
 	"log"
+	"math/big"
 )
+
+type reviewCommitNonceStruct struct {
+	commit *ecdsa.PublicKey
+	nonce  *big.Int
+}
 
 //TODO: Look at how we store values in the tree, keys.
 //planned to be called for every reviewer in the controller layer or whatever calls it
 func (r *Reviewer) FinishReview() { //step 8
 	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	signAndEnc := SignzAndEncrypt(r.keys, r.paperCommittedValue, Kpcr)
+	signAndEnc := SignzAndEncrypt(r.keys, r.paperCommittedValue, Kpcr) //Perhaps look at this when implementing more reviewers pr. paper
 	str := fmt.Sprintf("Reviewer, %s, finish review on paper\n", r.userID)
 	log.Printf(str)
 	tree.Put(str, signAndEnc)
@@ -58,22 +64,18 @@ func (pc *PC) CollectReviews(reviewers []Reviewer) { // step 11
 
 //planned to be called for every reviewer in the controller layer or whatever calls it
 func (r *Reviewer) SignReviewPaperCommit() { //step 9
-	hashedPaperCommit, err := GetMessageHash(EncodeToBytes(r.paperCommittedValue.CommittedValue.CommittedValue)) //hashing the paper assigned to a reviewer
-	if err != nil {
-		log.Fatal(err)
+	PaperCommit := r.paperCommittedValue.CommittedValue.CommittedValue
+
+	nonce := tree.Find("nonce") //find nonce in reviewSignStruct
+	reviewCommitNonce := reviewCommitNonceStruct{
+		PaperCommit,
+		nonce.value.(*big.Int),
 	}
+	rCommitSignature := Sign(r.keys, reviewCommitNonce) //
 
-	nonce := tree.Find("nonce") //find nonce (n_r) - probably wanna decrypt also as getting from log i.e. should be encrypted value
-
-	rCommitSignature := Sign(r.keys, hashedPaperCommit)
-	rNonceSignature := Sign(r.keys, nonce)
-
-	str := fmt.Sprintf("\n %s signs paper review commit  %s ", r.userID, rCommitSignature)
+	str := fmt.Sprintf("%s signs paper review commit %s\n", r.userID, rCommitSignature)
 	log.Printf("%s=%s", str, rCommitSignature)
-	tree.Put(str+" signed commit signature of review paper", rCommitSignature)
-
-	log.Printf("\n %v signs paper review NONCE %s", r.userID, rCommitSignature)
-	tree.Put(r.userID+" signed commit signature NONCE", rNonceSignature)
+	tree.Put(str, rCommitSignature)
 }
 
 func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) {

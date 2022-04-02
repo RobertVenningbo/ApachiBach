@@ -42,7 +42,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	log.Println(logStr)
 	encryptedMsg := Encrypt([]byte(signNtext), Kp.(ecdsa.PrivateKey).D.String())
 	tree.Put(logStr, encryptedMsg)
-}	
+}
 
 /*
 /// Probably also need function for determining when a grade should be settled
