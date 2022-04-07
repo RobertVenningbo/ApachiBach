@@ -1,18 +1,16 @@
 <html>
 <head>
-<title>Submission</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Submission</title>
 </head>
 <body>
 <h1>Submit paper</h1>
-<form action="/">
-    <label>First name:</label><br>
-    <input type="text"><br><br>
-
-    <label>Last name:</label><br>
-    <input type="text"><br><br>
-
-    <label>Email:</label><br>
-    <input type="email"><br><br>
+<form enctype="multipart/form-data" action="http://localhost:80/upload" method="post">
+    <input type="file" name="myFile" />
+    <input type="submit" value="submit"/>
+</form>
 
     <label>Title:</label><br>
     <input type="text"><br><br>
@@ -20,7 +18,5 @@
     <label>Secret:</label><br>
     <input type="email"><br><br>
     
-    <button type="button">Upload</button>
-    <input type="submit" value="Submit">
   </form> </body>
 </html>

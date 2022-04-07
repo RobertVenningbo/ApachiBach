@@ -16,7 +16,7 @@ type CommitMsg struct {
 	PaperCommit		[]byte
 }
 
-func Submit(s *Submitter, p *Paper) *Submitter {
+func (s *Submitter)Submit(p *Paper) {
 	rr := GetRandomInt(s.keys.D)
 	rs := GetRandomInt(s.keys.D)
 	ri := GetRandomInt(s.keys.D) //TODO in the protocol description it says the submitter generates this
@@ -33,7 +33,6 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
 		Encrypt(EncodeToBytes(sharedKpcs), pc.keys.PublicKey.X.String()),
 	}
-
 
 	SignedSubmitMsg := Sign(s.keys, submitMsg) //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	tree.Put("SignedSubmitMsg" + s.userID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
@@ -55,13 +54,11 @@ func Submit(s *Submitter, p *Paper) *Submitter {
 	tree.Put("signedCommitMsg" + s.userID, signedCommitMsg)
 	log.Println("signedCommitMsg" + s.userID + " logged") //Both commits signed and logged 
 
-	KsString := fmt.Sprintf("%#v", s.keys.PublicKey)
-	tree.Put(KsString + s.userID, s.keys.PublicKey) //Submitters public key (Ks) is revealed to all parties (step 2 done)
+	KsString := fmt.Sprintf("%v", EncodeToBytes(s.keys.PublicKey))
+	tree.Put(KsString + s.userID, EncodeToBytes(s.keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
 	log.Println("SubmitterPublicKey from submitter with userID: " + s.userID + " logged.") 
 
 	PCsignedPaperCommit := SignzAndEncrypt(pc.keys, PaperSubmissionCommit, "")
 	tree.Put("PCsignedPaperCommit" + strconv.Itoa(p.Id), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
-
-	return s //TODO why do we return a submitter?
 }

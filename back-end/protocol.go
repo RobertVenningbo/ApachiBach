@@ -18,6 +18,11 @@ import (
 	"strings"
 )
 
+type Client struct {
+	userID string
+	keys   *ecdsa.PrivateKey
+}
+
 type Reviewer struct {
 	userID              string
 	keys                *ecdsa.PrivateKey

@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"swag/ec"
 	"testing"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -187,35 +186,35 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
 
-func TestSubmit(t *testing.T) {
-	keys := newKeys()
-	p := Paper{
-		1,
-		&CommitStruct{},
-		true,
-		nil,
-	}
-	s := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&p,
-		&Receiver{},
-		nil,
-		nil,
-	}
-	pc := PC{
-		keys,
-		nil,
-	}
+// func TestSubmit(t *testing.T) {
+// 	keys := newKeys()
+// 	p := Paper{
+// 		1,
+// 		&CommitStruct{},
+// 		true,
+// 		nil,
+// 	}
+// 	s := Submitter{
+// 		keys,
+// 		"1", //userID
+// 		&CommitStruct{},
+// 		&p,
+// 		&Receiver{},
+// 		nil,
+// 		nil,
+// 	}
+// 	pc := PC{
+// 		keys,
+// 		nil,
+// 	}
 
-	got := Submit(&s, &p)
+// 	got := Submit(&s, &p)
 
-	//fmt.Println(pc)
-	pc.signatureMap = nil //need this or it isn't used
+// 	//fmt.Println(pc)
+// 	pc.signatureMap = nil //need this or it isn't used
 
-	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
-}
+// 	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
+// }
 
 func TestAssignPapersGetPaperList(t *testing.T) {
 	pc := PC{

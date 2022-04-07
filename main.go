@@ -6,9 +6,8 @@ import (
 	"html/template"
 	"io/ioutil"
 	"log"
-	"os"
 	"net/http"
-	ab "swag/back-end"
+	"os"
 	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -40,6 +39,12 @@ type SubmissionPage struct {
 type LogPage struct {
 	Timestamp int
 	News      string
+}
+
+type Client struct {
+	UserID   string
+	Username string
+	UserType string
 }
 
 func main() {
@@ -81,7 +86,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)	
+	err := tpl.ExecuteTemplate(w, "home.gohtml", nil)
 	if err != nil {
 		log.Println("LOGGED", err)
 		http.Error(w, "failuree", http.StatusInternalServerError)
@@ -91,7 +96,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 func submissionHandler(w http.ResponseWriter, r *http.Request) {
 	err := tpl.ExecuteTemplate(w, "submission.gohtml", nil)
-
 	if err != nil {
 		log.Println("LOGGED", err)
 		http.Error(w, "failuree", http.StatusInternalServerError)
@@ -197,7 +201,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("MIME Header: %+v\n", handler.Header)
 	// Create a temporary file within our temp-files directory that follows
 	// a particular naming pattern
-	tempFile, err := ioutil.TempFile("temp-files", "upload-*.pdf")
+	tempFile, err := ioutil.TempFile("temp-files", "*.pdf")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -209,12 +213,13 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	xa := ab.Encrypt(fileBytes, "password") //HUSK
+	xa := fileBytes
 	// write this byte array to our temporary file
-	tempFile.Write(ab.Decrypt(xa, "password")) //HUSK
+	tempFile.Write(xa)
 
 	// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
+	fmt.Fprintln(w, "Successfully Uploaded File.")
+	fmt.Fprintln(w, "Redirecting in 2 seconds.")
 }
 
 //https://github.com/GrowAdept/youtube/tree/main/gowebdev/register
@@ -300,8 +305,12 @@ func registerAuthHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("hash:", hash)
 	fmt.Println("string(hash):", string(hash))
 	// func (db *DB) Prepare(query string) (*Stmt, error)
+
+	// UserType
+	usertype := r.FormValue("usertype")
+
 	var insertStmt *sql.Stmt
-	insertStmt, err = db.Prepare("INSERT INTO bcrypt (Username, Hash) VALUES (?, ?);")
+	insertStmt, err = db.Prepare("INSERT INTO bcrypt (Username, Hash, UserType) VALUES (?, ?, ?);")
 	if err != nil {
 		fmt.Println("error preparing statement:", err)
 		tpl.ExecuteTemplate(w, "register.gohtml", "there was a problem registering account")
@@ -310,7 +319,7 @@ func registerAuthHandler(w http.ResponseWriter, r *http.Request) {
 	defer insertStmt.Close()
 	var result sql.Result
 	//  func (s *Stmt) Exec(args ...interface{}) (Result, error)
-	result, err = insertStmt.Exec(username, hash)
+	result, err = insertStmt.Exec(username, hash, usertype)
 	rowsAff, _ := result.RowsAffected()
 	lastIns, _ := result.LastInsertId()
 	fmt.Println("rowsAff:", rowsAff)
@@ -334,10 +343,10 @@ func loginAuthHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	fmt.Println("username:", username, "password:", password)
 	// retrieve password from db to compare (hash) with user supplied password's hash
-	var userID, hash string
-	stmt := "SELECT UserID, Hash FROM bcrypt WHERE Username = ?"
+	var userID, hash, userType, Username string
+	stmt := "SELECT UserID, Hash, UserType, Username FROM bcrypt WHERE Username = ?"
 	row := db.QueryRow(stmt, username)
-	err := row.Scan(&userID, &hash)
+	err := row.Scan(&userID, &hash, &userType, &Username)
 	fmt.Println("hash from db:", hash)
 	if err != nil {
 		fmt.Println("error selecting Hash in db by Username")
@@ -354,11 +363,21 @@ func loginAuthHandler(w http.ResponseWriter, r *http.Request) {
 		session, _ := store.Get(r, "session")
 		// session struct has field make(map[interface{}]interface{})
 		session.Values["userID"] = userID
+		session.Values["userType"] = userType
+		session.Values["username"] = Username
 		// save before writing to response/return from handler
 		session.Save(r, w)
-		tpl.ExecuteTemplate(w, "home.gohtml", "Logged In")
+
+		c := Client{
+			userID,
+			username,
+			userType,
+		}
+
+		tpl.ExecuteTemplate(w, "home.gohtml", c)
 		return
 	}
 	fmt.Println("incorrect password")
 	tpl.ExecuteTemplate(w, "login.gohtml", "check username and password")
+
 }
