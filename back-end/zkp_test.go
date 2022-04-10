@@ -37,10 +37,10 @@ func TestNewEqProofK256(t *testing.T) {
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-	x := GetRandomInt(reviewer.keys.D)
+	//x := GetRandomInt(reviewer.keys.D)
 	
-	r1, _ := rand.Int(rand.Reader, curve.N)
-	r2, _ := rand.Int(rand.Reader, curve.N)
+	r1 := GetRandomInt(curve.N)
+	r2 := GetRandomInt(curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
 	
 	// q1x, q1y, q2x, q2y := getGenerators()
@@ -51,16 +51,16 @@ func TestNewEqProofK256(t *testing.T) {
 
 	//msg := GetRandomInt(submitter.keys.D)
 
-	//msg := MsgToBigInt(p)
+	msg := MsgToBigInt(EncodeToBytes(p))
 	
-	commit1, err := submitter.GetCommitMessagePaperTest(x, r1)
+	commit1, err := submitter.GetCommitMessagePaperTest(msg, r1)
 	fmt.Println(commit1)
 	
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := reviewer.GetCommitMessageReviewPaperTest(x, r2)
+	commit2, err := reviewer.GetCommitMessageReviewPaperTest(msg, r2)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaperReviewer: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestNewEqProofK256(t *testing.T) {
 	//r2 = reviewer.paperCommittedValue.CommittedValue.r
 
 
-	proof := NewEqProofP256(x, r1, r2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey)
+	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey)
 	if !proof.OpenP256(c1, c2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey) {
 		t.Fail()
 	}
