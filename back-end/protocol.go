@@ -225,3 +225,4 @@ func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature
 	}
 	return splitArr[0], splitArr[1]
 }
+

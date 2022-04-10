@@ -64,6 +64,28 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	return comm, nil
 } //C(P, r)  C(S, r)
 
+func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error) {
+	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+		return nil, err
+	}
+
+	// c = g^x * h^r
+	r := GetRandomInt(s.keys.D) //check up on this
+
+	s.paperCommittedValue.CommittedValue.r = r
+
+	s.paperCommittedValue.CommittedValue.val = val
+
+	x1 := ec.ExpBaseG(s.keys, val)
+	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
+	comm := ec.Mul(s.keys, x1, x2)
+	s.paperCommittedValue.CommittedValue.CommittedValue = comm
+	fmt.Printf("\n %s, %s, %s", "R & Val: (Submitter)", r, val)
+	fmt.Printf("\n %s, %s", "comm (Submitter)", comm)
+	return comm, nil
+}
+
 func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
@@ -110,27 +132,6 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
-
-	// c = g^x * h^r
-	r := GetRandomInt(s.keys.D) //check up on this
-
-	s.paperCommittedValue.CommittedValue.r = r
-
-	s.paperCommittedValue.CommittedValue.val = val
-
-	x1 := ec.ExpBaseG(s.keys, val)
-	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
-	comm := ec.Mul(s.keys, x1, x2)
-	s.paperCommittedValue.CommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val: (Submitter)", r, val)
-	fmt.Printf("\n %s, %s", "comm (Submitter)", comm)
-	return comm, nil
-}
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
