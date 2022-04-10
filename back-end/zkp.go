@@ -118,7 +118,8 @@ func getGenerators() (*big.Int, *big.Int, *big.Int, *big.Int) {
 }
 
 func MsgToBigInt(msg interface{}) *big.Int{
-	curve := elliptic.P256().Params()
+	curve1 := elliptic.P256()
+	curve := curve1.Params()
 	//tmp := []byte("hello")
 	msgToBytes, _ := msg.([]byte)
 	//tmp = msgToBytes
