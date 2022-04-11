@@ -29,8 +29,8 @@ func (s *Submitter) GetDecommitMsg() (*big.Int, *big.Int) {
 }
 
 func (s *Submitter) GetDecommitMsgPaper() (*big.Int, *big.Int) {
-	val := s.paperCommittedValue.CommittedValue.val
-	r := s.paperCommittedValue.CommittedValue.r
+	val := s.paperCommittedValue.val
+	r := s.paperCommittedValue.r
 
 	return val, r
 }
@@ -71,14 +71,14 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int, r *big.Int) (*ecdsa.Publ
 
 	// c = g^x * h^r
 
-	s.paperCommittedValue.CommittedValue.r = r
+	s.paperCommittedValue.r = r
 
-	s.paperCommittedValue.CommittedValue.val = val
+	s.paperCommittedValue.val = val
 
 	x1 := ec.ExpBaseG(s.keys, val)
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
-	s.paperCommittedValue.CommittedValue.CommittedValue = comm
+	s.paperCommittedValue.CommittedValue = comm
 	return comm, nil
 }
 
@@ -90,14 +90,14 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecd
 
 	// c = g^x * h^r
 
-	rev.paperCommittedValue.CommittedValue.r = r
+	rev.paperCommittedValue.r = r
 
-	rev.paperCommittedValue.CommittedValue.val = val
+	rev.paperCommittedValue.val = val
 
 	x1 := ec.ExpBaseG(rev.keys, val)
 	x2 := ec.Exp(rev.keys, &rev.keys.PublicKey, r)
 	comm := ec.Mul(rev.keys, x1, x2)
-	rev.paperCommittedValue.CommittedValue.CommittedValue = comm
+	rev.paperCommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)

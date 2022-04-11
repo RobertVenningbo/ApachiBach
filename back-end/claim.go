@@ -13,11 +13,11 @@ type ClaimMessage struct {
 }
 
 func (s *Submitter) ClaimPaper() { //step 19
-	paper := s.paperCommittedValue
+	paper := s.paperCommittedValue.paper
 	ri := s.submitterCommittedValue.val
 
 	msg := ClaimMessage{
-		paper,
+		&paper,
 		s,
 		ri,
 	}

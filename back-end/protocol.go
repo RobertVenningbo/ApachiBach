@@ -18,18 +18,11 @@ import (
 	"strings"
 )
 
-type Client struct {
-	userID string
-	keys   *ecdsa.PrivateKey
-}
-
 type Reviewer struct {
 	userID              string
 	keys                *ecdsa.PrivateKey
-	biddedPaperMap      map[int][]byte
 	paperMap            map[int][]byte
-	signatureMap        map[int][]byte
-	paperCommittedValue *Paper
+	paperCommittedValue *CommitStructPaper
 	gradedPaperMap      map[int]int
 	gradeCommittedValue *CommitStruct
 }
@@ -38,10 +31,8 @@ type Submitter struct {
 	keys                    *ecdsa.PrivateKey
 	userID                  string
 	submitterCommittedValue *CommitStruct //commitstruct
-	paperCommittedValue     *Paper
+	paperCommittedValue     *CommitStructPaper
 	receiver                *Receiver
-	encrypted               []byte
-	signatureMap            map[int][]byte
 }
 
 type CommitStruct struct {
@@ -50,16 +41,28 @@ type CommitStruct struct {
 	val            *big.Int
 }
 
+type CommitStructPaper struct {
+	CommittedValue *ecdsa.PublicKey
+	r              *big.Int
+	val            *big.Int
+	paper		   Paper
+}
+
 type PC struct {
 	keys         *ecdsa.PrivateKey
-	signatureMap map[int][]byte
+	allPapers	 []Paper	
 }
 
 type Paper struct {
 	Id                  int
-	CommittedValue      *CommitStruct
 	Selected            bool
 	ReviewSignatureByPC []byte
+	ReviewerList		[]Reviewer
+}
+
+type PaperBid struct {
+	paper			*Paper
+	reviewer 		*Reviewer
 }
 
 var (
@@ -68,7 +71,7 @@ var (
 		newKeys(),
 		nil,
 	}
-	paperList     []Paper
+	
 	schnorrProofs []SchnorrProof
 )
 
@@ -104,14 +107,6 @@ func newKeys() *ecdsa.PrivateKey {
 	return a
 }
 
-func putNextPaperInBidMapReviewer(r *Reviewer, slice []byte) {
-	for k, v := range r.biddedPaperMap {
-		if v == nil {
-			r.biddedPaperMap[k] = slice
-		}
-	}
-}
-
 func GetMessageHash(xd []byte) ([]byte, error) {
 	md := sha256.New()
 	return md.Sum(xd), nil
@@ -131,6 +126,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(Paper{})
 	gob.Register(ReviewSignedStruct{})
 	gob.Register(CommitStruct{})
+	gob.Register(CommitStructPaper{})
 	gob.Register(Submitter{})
 	gob.Register(ecdsa.PublicKey{})
 	gob.Register(elliptic.P256())

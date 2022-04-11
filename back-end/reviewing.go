@@ -65,7 +65,7 @@ func (pc *PC) CollectReviews(reviewers []Reviewer) { // step 11
 
 //planned to be called for every reviewer in the controller layer or whatever calls it
 func (r *Reviewer) SignReviewPaperCommit() { //step 9
-	PaperCommit := r.paperCommittedValue.CommittedValue.CommittedValue
+	PaperCommit := r.paperCommittedValue.CommittedValue
 
 	nonce := tree.Find("nonce") //find nonce in reviewSignStruct
 	reviewCommitNonce := reviewCommitNonceStruct{

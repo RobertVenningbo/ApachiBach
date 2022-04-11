@@ -17,26 +17,22 @@ func TestNewEqProofK256(t *testing.T) {
 	keys := newKeys()
 	p := Paper{
 		1,
-		&CommitStruct{},
 		true,
+		nil,
 		nil,
 	}
 	submitter := Submitter{
 		keys,
 		"1", //userID
 		&CommitStruct{},
-		&p,
+		&CommitStructPaper{},
 		&Receiver{},
-		nil,
-		nil,
 	}
 	reviewer := Reviewer{
 		"reviewer1",
 		newKeys(),
-		nil,
 		map[int][]byte{},
-		nil,
-		&p,
+		&CommitStructPaper{},
 		nil,
 		nil,
 	}

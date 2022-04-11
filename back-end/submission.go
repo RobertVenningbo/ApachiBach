@@ -64,4 +64,6 @@ func (s *Submitter) Submit(p *Paper) {
 	PCsignedPaperCommit := SignzAndEncrypt(pc.keys, PaperSubmissionCommit, "")
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
+
+	pc.allPapers = append(pc.allPapers, *p)
 }
