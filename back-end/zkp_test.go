@@ -3,8 +3,14 @@ package backend
 import (
 	"crypto/elliptic"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
+	"math/big"
+	ec "swag/ec"
 	"testing"
+
+	"github.com/0xdecaf/zkrp/bulletproofs"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewEqProofK256(t *testing.T) {
@@ -37,30 +43,24 @@ func TestNewEqProofK256(t *testing.T) {
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-	//x := GetRandomInt(reviewer.keys.D)
-	
-	r1 := GetRandomInt(curve.N)
-	r2 := GetRandomInt(curve.N)
+
+	r1 := ec.GetRandomInt(curve.N)
+	r2 := ec.GetRandomInt(curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	
-	// q1x, q1y, q2x, q2y := getGenerators()
-	// b := NewCommitment(x, r1, q1x, q1y)
-	// c := NewCommitment(x, r2, q2x, q2y)
-
-	//x, _ := rand.Int(rand.Reader, curve.N)
-
-	//msg := GetRandomInt(submitter.keys.D)
 
 	msg := MsgToBigInt(EncodeToBytes(p))
-	
-	commit1, err := submitter.GetCommitMessagePaperTest(msg, r1)
+	fmt.Printf("%s %v \n", "msg : ", msg)
+	fmt.Printf("%s %v \n", "key : ", submitter.keys.D)
+	//msg := ec.GetRandomInt(submitter.keys.D)
+
+	commit1, err := submitter.GetCommitMessagePaper(msg, r1)
 	fmt.Println(commit1)
-	
+
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := reviewer.GetCommitMessageReviewPaperTest(msg, r2)
+	commit2, err := reviewer.GetCommitMessageReviewPaper(msg, r2)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaperReviewer: %v", err)
 	}
@@ -74,13 +74,52 @@ func TestNewEqProofK256(t *testing.T) {
 		commit2.X,
 		commit2.Y,
 	}
-	
-	//r1 = submitter.paperCommittedValue.CommittedValue.r
-	//r2 = reviewer.paperCommittedValue.CommittedValue.r
-
 
 	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey)
 	if !proof.OpenP256(c1, c2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey) {
 		t.Fail()
 	}
+}
+
+func TestZKSetMembership(t *testing.T) {
+	// Set up the range, [18, 200) in this case.
+	// We want to prove that we are over 18, and less than 200 years old.
+	params, errSetup := bulletproofs.SetupGeneric(18, 200)
+	if errSetup != nil {
+		t.Errorf(errSetup.Error())
+		t.FailNow()
+	}
+
+	// Create the proof
+	bigSecret := new(big.Int).SetInt64(int64(40))
+	proof, errProve := bulletproofs.ProveGeneric(bigSecret, params)
+	if errProve != nil {
+		t.Errorf(errProve.Error())
+		t.FailNow()
+	}
+
+	// Encode the proof to JSON
+	jsonEncoded, err := json.Marshal(proof)
+	if err != nil {
+		t.Fatal("encode error:", err)
+	}
+
+	// Here the proof is passed to the verifier, possibly over a network.
+
+	// Decode the proof from JSON
+	var decodedProof bulletproofs.ProofBPRP
+	err = json.Unmarshal(jsonEncoded, &decodedProof)
+	if err != nil {
+		t.Fatal("decode error:", err)
+	}
+
+	assert.Equal(t, proof, decodedProof, "should be equal")
+
+	// Verify the proof
+	ok, errVerify := decodedProof.Verify()
+	if errVerify != nil {
+		t.Errorf(errVerify.Error())
+		t.FailNow()
+	}
+	assert.True(t, ok, "should verify")
 }

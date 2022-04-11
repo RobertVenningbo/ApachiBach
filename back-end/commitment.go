@@ -45,14 +45,13 @@ func (r *Receiver) CheckDecommitment(R, val *big.Int) bool {
 	return Equals(c, r.commitment)
 }
 
-func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
+func (s *Submitter) GetCommitMessage(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
 	}
 
 	// c = g^x * h^r
-	r := GetRandomInt(s.keys.D)
 
 	s.submitterCommittedValue.r = r     //hiding factor?
 	s.submitterCommittedValue.val = val //den value (random) vi comitter ting til
@@ -64,29 +63,7 @@ func (s *Submitter) GetCommitMessage(val *big.Int) (*ecdsa.PublicKey, error) {
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-func (s *Submitter) GetCommitMessagePaper(val *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
-
-	// c = g^x * h^r
-	r := GetRandomInt(s.keys.D) //check up on this
-
-	s.paperCommittedValue.CommittedValue.r = r
-
-	s.paperCommittedValue.CommittedValue.val = val
-
-	x1 := ec.ExpBaseG(s.keys, val)
-	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
-	comm := ec.Mul(s.keys, x1, x2)
-	s.paperCommittedValue.CommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val: (Submitter)", r, val)
-	fmt.Printf("\n %s, %s", "comm (Submitter)", comm)
-	return comm, nil
-}
-
-func (s *Submitter) GetCommitMessagePaperTest(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
+func (s *Submitter) GetCommitMessagePaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(s.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
 		return nil, err
@@ -102,16 +79,14 @@ func (s *Submitter) GetCommitMessagePaperTest(val *big.Int, r *big.Int) (*ecdsa.
 	x2 := ec.Exp(s.keys, &s.keys.PublicKey, r)
 	comm := ec.Mul(s.keys, x1, x2)
 	s.paperCommittedValue.CommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val: (Submitter)", r, val)
-	fmt.Printf("\n %s, %s", "comm (Submitter)", comm)
 	return comm, nil
 }
 
-func (rev *Reviewer) GetCommitMessageReviewPaperTest(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
+func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
+	// if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+	// 	err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+	// 	return nil, err
+	// }
 
 	// c = g^x * h^r
 
@@ -123,34 +98,10 @@ func (rev *Reviewer) GetCommitMessageReviewPaperTest(val *big.Int, r *big.Int) (
 	x2 := ec.Exp(rev.keys, &rev.keys.PublicKey, r)
 	comm := ec.Mul(rev.keys, x1, x2)
 	rev.paperCommittedValue.CommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val (Reviewer): ", r, val)
-	fmt.Printf("\n %s, %s", "comm (Reviewer)", comm)
 
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
-
-	// c = g^x * h^r
-	r := GetRandomInt(rev.keys.D)
-
-	rev.paperCommittedValue.CommittedValue.r = r
-
-	rev.paperCommittedValue.CommittedValue.val = val
-
-	x1 := ec.ExpBaseG(rev.keys, val)
-	x2 := ec.Exp(rev.keys, &rev.keys.PublicKey, r)
-	comm := ec.Mul(rev.keys, x1, x2)
-	rev.paperCommittedValue.CommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val (Reviewer): ", r, val)
-	fmt.Printf("\n %s, %s", "comm (Reviewer)", comm)
-
-	return comm, nil
-} //C(P, r)  C(S, r)
 
 func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
@@ -159,7 +110,7 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 	}
 
 	// c = g^x * h^r
-	r := GetRandomInt(rev.keys.D)
+	r := ec.GetRandomInt(rev.keys.D)
 
 	rev.gradeCommittedValue.r = r
 	rev.gradeCommittedValue.val = val
@@ -169,8 +120,6 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 	x2 := ec.Exp(rev.keys, &rev.keys.PublicKey, r)
 	comm := ec.Mul(rev.keys, x1, x2)
 	rev.gradeCommittedValue.CommittedValue = comm
-	fmt.Printf("\n %s, %s, %s", "R & Val (Reviewer): ", r, val)
-	fmt.Printf("\n %s, %s", "comm (Reviewer)", comm)
 
 	return comm, nil
 } //C(P, r)  C(S, r)
@@ -180,18 +129,4 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {
 	h := ec.ExpBaseG(s.keys, trapdoor)
 	return Equals(h, &s.keys.PublicKey)
-	//Equals(key, &s.keys.PublicKey)
 }
-
-/*
-//verify
-func (s *Submitter) VerifyTrapdoorPaper(trapdoor *big.Int) bool {
-	h:= ec.ExpBaseG(s.keys, s.keys.D)
-	return Equals(h, &s.Pa)
-
-	hx, hy := p.CommittedValue.Curve.ScalarBaseMult(trapdoor.Bytes())
-	key := &ecdsa.PublicKey{p.CommittedValue.Curve, hx, hy}
-	return key.Equal(p.CommittedValue)
-	//Equals(key, &s.keys.PublicKey)
-
-}*/

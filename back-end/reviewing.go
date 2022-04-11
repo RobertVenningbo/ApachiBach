@@ -8,6 +8,7 @@ import (
 	_ "fmt"
 	"log"
 	"math/big"
+	ec "swag/ec"
 )
 
 type reviewCommitNonceStruct struct {
@@ -81,7 +82,7 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) {
 	kp := newKeys() //generating new group key
 
-	rg := GetRandomInt(pc.keys.D) //generating new grade randomness rg for later commits.
+	rg := ec.GetRandomInt(pc.keys.D) //generating new grade randomness rg for later commits.
 
 	for _, r := range reviewers {
 		Kpcr := generateSharedSecret(pc, nil, &r)

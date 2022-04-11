@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"swag/ec"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -73,8 +74,8 @@ func TestPedersenCommitment(t *testing.T) {
 	submitter.receiver = NewReceiver(submitter.keys)
 
 	a := ec.GetRandomInt(submitter.keys.D)
-
-	c, err := submitter.GetCommitMessage(a)
+	b := ec.GetRandomInt(submitter.keys.D)
+	c, err := submitter.GetCommitMessage(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
@@ -110,8 +111,8 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 	submitter.receiver = NewReceiver(submitter.keys)
 
 	a := ec.GetRandomInt(submitter.keys.D)
-
-	c, err := submitter.GetCommitMessagePaper(a)
+	b := ec.GetRandomInt(submitter.keys.D)
+	c, err := submitter.GetCommitMessagePaper(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
@@ -145,7 +146,7 @@ func TestPedersenCommitmentPaper1(t *testing.T) {
 
 	submitter.paperCommittedValue.CommittedValue.receiver = NewReceiver(submitter.keys)
 	rec := *submitter.paperCommittedValue.CommittedValue.receiver
-	a := ec.GetRandomInt(submitter.keys.D)
+	a := ec.ec.GetRandomInt(submitter.keys.D)
 
 	c, err := submitter.GetCommitMessagePaper(a)
 
@@ -175,7 +176,8 @@ func TestCommitSignatureAndVerify(t *testing.T) {
 	}
 
 	a := ec.GetRandomInt(s.keys.D)
-	c, _ := s.GetCommitMessage(a)
+	b := ec.GetRandomInt(s.keys.D)
+	c, _ := s.GetCommitMessage(a, b)
 
 	hashedMsgSubmit1, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
 
@@ -275,10 +277,10 @@ func TestSchnorrProof(t *testing.T) {
 		nil,
 	}
 
-	a := ec.GetRandomInt(submitter.keys.D)
+	a := ec.ec.GetRandomInt(submitter.keys.D)
 	submitter.GetCommitMessagePaper(a)
 
-	b := ec.GetRandomInt(reviewer.keys.D)
+	b := ec.ec.GetRandomInt(reviewer.keys.D)
 	reviewer.GetCommitMessageReviewPaper(b)
 
 	proof := CreateProof(submitter.keys, reviewer.keys)
@@ -340,7 +342,8 @@ func TestVerifyMethod(t *testing.T) {
 	}
 
 	a := ec.GetRandomInt(s.keys.D)
-	c, _ := s.GetCommitMessage(a)
+	b := ec.GetRandomInt(s.keys.D)
+	c, _ := s.GetCommitMessage(a, b)
 
 	signatureAndPlaintext := Sign(s.keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
 	fmt.Println(signatureAndPlaintext)
@@ -353,6 +356,7 @@ func TestVerifyMethod(t *testing.T) {
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
+
 /*
 func TestSignAndVerify(t *testing.T) {
 	keys := newKeys()
@@ -389,7 +393,7 @@ func TestSignAndVerify(t *testing.T) {
 
 } */
 
-func TestLogging(t *testing.T) { 
+func TestLogging(t *testing.T) {
 	tree = NewTree(DefaultMinItems)
 	pc := PC{
 		newKeys(),
@@ -404,8 +408,8 @@ func TestLogging(t *testing.T) {
 		nil,
 		nil,
 	}
-	
-	number := GetRandomInt(s.keys.D)
+
+	number := ec.GetRandomInt(s.keys.D)
 	bytes := EncodeToBytes(number)
 	Kpcs := generateSharedSecret(&pc, &s, nil)
 	encryptedNumber := Encrypt(bytes, Kpcs)
@@ -423,3 +427,57 @@ func TestLogging(t *testing.T) {
 
 }
 
+func TestFinalMatching(t *testing.T) {
+	p := Paper{
+		1,
+		&CommitStruct{},
+		true,
+		nil,
+	}
+	reviewer := Reviewer{
+		"reviewer",
+		newKeys(),
+		nil,
+		map[int][]byte{},
+		nil,
+		&p,
+		nil,
+		nil,
+	}
+	submitter := Submitter{
+		newKeys(),
+		"submitter", //userID
+		&CommitStruct{},
+		&p,
+		&Receiver{},
+		nil,
+		nil,
+	}
+
+	rs := ec.GetRandomInt(submitter.keys.D)
+	rr := ec.GetRandomInt(reviewer.keys.D)
+
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+
+
+	_, err := submitter.GetCommitMessagePaper(PaperBigInt, rs)
+	if err != nil {
+		t.Errorf("Error in GetCommitMsgPaper: %v", err)
+	}
+
+	_, err = reviewer.GetCommitMessageReviewPaper(PaperBigInt, rr)
+	if err != nil {
+		t.Errorf("Error in GetCommitMsgPaperR: %v", err)
+	}
+
+	fmt.Printf("%s %v \n", "Rs: ", rs)
+	fmt.Printf("%s %v \n", "Rr: ", rr)
+	
+	fmt.Printf("%s %v \n", "RsInCommit: ", submitter.paperCommittedValue.CommittedValue.r)
+	fmt.Printf("%s %v \n", "RrInCommit: ", reviewer.paperCommittedValue.CommittedValue.r)
+
+	reviewers := []Reviewer{reviewer}
+	submitters := []Submitter{submitter}
+
+	finalMatching(reviewers, submitters)
+}

@@ -24,14 +24,8 @@ import (
 	"log"
 	"math/big"
 
-	"github.com/xlab-si/emmy/crypto/common"
 )
 
-// TODO Insert appropriate comment with description of this struct
-//  type PublicKey struct {
-// 	Curve *elliptic.Curve
-// 	X, Y *big.Int
-//  }
  
  func NewPublicKey(c elliptic.Curve, a, b *big.Int) *ecdsa.PublicKey {
 	 return &ecdsa.PublicKey{
@@ -44,13 +38,7 @@ import (
  func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
- 
- // PrivateKey is a wrapper around elliptic.Curve. It is a cyclic PrivateKey with generator
- // (c.Params().Gx, c.Params().Gy) and order c.Params().N (which is exposed as Q in a wrapper).
-//  type PrivateKey struct {
-// 	 PublicKey
-// 	 Q *big.Int
-//  }
+
  
  func NewPrivateKey() *ecdsa.PrivateKey {
 	 c, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
@@ -63,7 +51,7 @@ import (
  
  // GetRandomElement returns a random element from this PrivateKey.
  func GetRandomElement(g *ecdsa.PrivateKey) *ecdsa.PublicKey {
-	 r := common.GetRandomInt(g.D)
+	 r := GetRandomInt(g.D)
 	 el := ExpBaseG(g, r)
 	 return el
  }

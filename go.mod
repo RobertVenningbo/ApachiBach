@@ -11,12 +11,18 @@ require (
 )
 
 require (
+	github.com/ethereum/go-ethereum v1.9.10 // indirect
+	github.com/ing-bank/zkrp v0.0.0-20211018091920-bc4eff1b3466 // indirect
+)
+
+require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/xlab-si/emmy v0.0.0-20200107120908-eab83660737e
 )
 
 require (
+	github.com/0xdecaf/zkrp v0.0.0-20201019075642-eed3acf37c78
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/btcsuite/btcd v0.0.0-20190629003639-c26ffa870fd8 // indirect
 	github.com/clarketm/json v1.17.1 // indirect

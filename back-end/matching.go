@@ -2,9 +2,11 @@ package backend
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"log"
 	"math/big"
 	"strconv"
+	ec "swag/ec"
 )
 
 type ReviewSignedStruct struct {
@@ -14,13 +16,13 @@ type ReviewSignedStruct struct {
 }
 
 //step 4
-func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) { 
+func assignPapers(pc *PC, reviewerSlice []Reviewer, paperSlice []Paper) {
 	for r := range reviewerSlice {
-		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) - 
+		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 
-			SignedAndEncryptedPaper :=SignzAndEncrypt(pc.keys, paperSlice[p], Kpcr)
-			tree.Put("SignedAndEncryptedPaper" + strconv.Itoa(paperSlice[p].Id), SignedAndEncryptedPaper)
+			SignedAndEncryptedPaper := SignzAndEncrypt(pc.keys, paperSlice[p], Kpcr)
+			tree.Put("SignedAndEncryptedPaper"+strconv.Itoa(paperSlice[p].Id), SignedAndEncryptedPaper)
 			log.Println("SignedAndEncryptedPaper" + strconv.Itoa(paperSlice[p].Id))
 
 			encryptedPaper := Encrypt(EncodeToBytes(paperSlice[p]), Kpcr)
@@ -53,7 +55,7 @@ func makeBid(r *Reviewer, pap *Paper) {
 }
 
 //step 5
-func setEncBidList(r *Reviewer) { //set encrypted bid list 
+func setEncBidList(r *Reviewer) { //set encrypted bid list
 	//TODO: Checkup if we are actually doing what we are supposed to here
 	pList := getPaperList(&pc, r)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
@@ -66,7 +68,7 @@ func setEncBidList(r *Reviewer) { //set encrypted bid list
 	}
 
 	EncryptedSignedBids := Encrypt(EncodeToBytes(Sign(r.keys, r.biddedPaperMap)), Kpcr)
-	tree.Put("EncryptedSignedBids" + r.userID, EncryptedSignedBids)
+	tree.Put("EncryptedSignedBids"+r.userID, EncryptedSignedBids)
 	log.Println("EncryptedSignedBids" + r.userID + "logged.")
 
 	//r.biddedPaperMap = Encrypt(EncodeToBytes(tmpPaperList), Kpcr) // What is this line?? TODO
@@ -83,8 +85,8 @@ func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 			if paper.(Paper).Selected {
 				for i, p := range pList {
 					if paper.(Paper).Id == p.Id {
-						rev.paperCommittedValue = paper.(*Paper)     //assigning paper
-						pList[i] = Paper{-1, nil, false, nil} //removing paper from generic map
+						rev.paperCommittedValue = paper.(*Paper) //assigning paper
+						pList[i] = Paper{-1, nil, false, nil}    //removing paper from generic map
 						break
 					}
 				}
@@ -111,22 +113,35 @@ func matchPaper(reviewerSlice []Reviewer) { //step 6 (some of it)
 
 func finalMatching(reviewers []Reviewer, submitters []Submitter) {
 	for _, r := range reviewers {
-		commit, _ := r.GetCommitMessageReviewPaper(GetRandomInt(r.keys.D))
+		rr := ec.GetRandomInt(r.keys.D)
+
+		paper := r.paperCommittedValue
+		PaperBigInt := MsgToBigInt(EncodeToBytes(paper))
+		commit, _ := r.GetCommitMessageReviewPaper(PaperBigInt, rr) //C(P, rr)
+
+		nonce := ec.GetRandomInt(r.keys.D) //nonce_r
+
 		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
-			EncodeToBytes(commit), //Why encodetobytes?
+			EncodeToBytes(commit),
 			&r.keys.PublicKey,
-			GetRandomInt(r.keys.D),
+			nonce,
 		}
+
 		PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
-		tree.Put("PCsignedReviewCommitKeysNonce" + r.userID, PCsignedReviewCommitKeysNonce)
+
+		tree.Put("PCsignedReviewCommitKeysNonce"+r.userID, PCsignedReviewCommitKeysNonce)
 		log.Println("PCsignedReviewCommitKeysNonce" + r.userID + " logged.")
 		for _, s := range submitters {
 			paperCommitSubmitter := s.paperCommittedValue.CommittedValue.CommittedValue
 			paperCommitReviewer := r.paperCommittedValue.CommittedValue.CommittedValue
 			if paperCommitSubmitter == paperCommitReviewer {
-				schnorrProofs = append(schnorrProofs, *CreateProof(s.keys, r.keys)) //NOT CORRECT, WAIT FOR ANSWER FROM SUPERVISOR
-				//TODO El Gamal NIZK
+				fmt.Println(1)
+				//PaperSubmissionCommit := tree.Find("PCsignedPaperCommit" + fmt.Sprintf("%s",(s.paperCommittedValue.Id)))
+
+				//	commit1 := Commitment{
+
 			}
+
 		}
 	}
 }

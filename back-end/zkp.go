@@ -117,15 +117,13 @@ func getGenerators() (*big.Int, *big.Int, *big.Int, *big.Int) {
 	return q1x, q1y, q2x, q2y
 }
 
-func MsgToBigInt(msg interface{}) *big.Int{
+func MsgToBigInt(msg []byte) *big.Int{
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-	//tmp := []byte("hello")
-	msgToBytes, _ := msg.([]byte)
-	//tmp = msgToBytes
-	hashedMsg := sha512.Sum384(msgToBytes)
+	hashedMsg := sha512.Sum384(msg)
 	hashedMsgToBigInt := new(big.Int).SetBytes(hashedMsg[:])
 	qs := new(big.Int).Mod(hashedMsgToBigInt, curve.N)
+	qs1 := new(big.Int).Mod(qs, curve.B)
 
-	return qs
+	return qs1
 }

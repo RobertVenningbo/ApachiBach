@@ -176,13 +176,7 @@ func DecodeToPaper(s []byte) *Paper {
 	return &p
 }
 
-func GetRandomInt(max *big.Int) *big.Int {
-	n, err := rand.Int(rand.Reader, max)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return n
-}
+
 
 func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
 	formatted := fmt.Sprintf("%v", plaintext)
