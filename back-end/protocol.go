@@ -19,8 +19,8 @@ import (
 )
 
 type Reviewer struct {
-	userID              string
-	keys                *ecdsa.PrivateKey
+	UserID              string
+	Keys                *ecdsa.PrivateKey
 	paperMap            map[int][]byte
 	paperCommittedValue *CommitStructPaper
 	gradedPaperMap      map[int]int
@@ -49,7 +49,7 @@ type CommitStructPaper struct {
 }
 
 type PC struct {
-	keys         	*ecdsa.PrivateKey
+	Keys         	*ecdsa.PrivateKey
 	allPapers	 	[]Paper	
 	reviewCommits	[]CommitStructPaper
 }
@@ -84,19 +84,19 @@ type SubmitStruct struct {
 }
 
 type Receiver struct {
-	keys       *ecdsa.PrivateKey
-	commitment *ecdsa.PublicKey
+	Keys       *ecdsa.PrivateKey
+	Commitment *ecdsa.PublicKey
 }
 
 func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
-	publicPC := pc.keys.PublicKey
+	publicPC := pc.Keys.PublicKey
 	var sharedHash [32]byte
 	if reviewer == nil {
 		privateS := submitter.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	} else {
-		privateR := reviewer.keys
+		privateR := reviewer.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	}

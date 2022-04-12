@@ -18,6 +18,7 @@ type CommitMsg struct {
 	PaperCommit   *ecdsa.PublicKey
 }
 
+
 func (s *Submitter) Submit(p *Paper) {
 	rr := ec.GetRandomInt(s.Keys.D)
 	rs := ec.GetRandomInt(s.Keys.D)
@@ -33,11 +34,11 @@ func (s *Submitter) Submit(p *Paper) {
 
 	submitMsg := SubmitMessage{
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
-		Encrypt(EncodeToBytes(sharedKpcs), pc.keys.PublicKey.X.String()),
+		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
 	}
 
 	SignedSubmitMsg := Sign(s.Keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
-	tree.Put("SignedSubmitMsg"+s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+	tree.Put("SignedSubmitMsg" + s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + s.UserID + " - Encrypted Paper and Random Numbers logged")
 
 	//s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
@@ -56,7 +57,6 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 
 	marshalledMsg, _ := json.Marshal(commitMsg)
-
 	signedCommitMsg := SignzAndEncrypt(s.Keys, marshalledMsg, "")
 	tree.Put("signedCommitMsg"+s.UserID, signedCommitMsg)
 	log.Println("signedCommitMsg" + s.UserID + " logged") //Both commits signed and logged
@@ -66,7 +66,7 @@ func (s *Submitter) Submit(p *Paper) {
 	tree.Put(KsString+s.UserID, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
 	log.Println("SubmitterPublicKey from submitter with userID: " + s.UserID + " logged.")
 
-	PCsignedPaperCommit := SignzAndEncrypt(pc.keys, PaperSubmissionCommit, "")
+	PCsignedPaperCommit := SignzAndEncrypt(pc.Keys, PaperSubmissionCommit, "")
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
@@ -81,8 +81,14 @@ func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
 	_, commitMsg := SplitSignz1(str)
 	err := json.Unmarshal(commitMsg, &commitStruct)
 	if err != nil {
-		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
+		log.Printf("error decoding sakura response: %v", err)
+		if e, ok := err.(*json.SyntaxError); ok {
+			log.Printf("syntax error at byte offset %d", e.Offset)
+		}
+		log.Printf("sakura response: %q", commitMsg)
+		
 	}
+
 
 	commit := commitStruct.PaperCommit
 	return commit

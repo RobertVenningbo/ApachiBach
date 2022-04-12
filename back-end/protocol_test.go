@@ -3,6 +3,7 @@ package backend
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"swag/ec"
@@ -226,7 +227,7 @@ func TestLogging(t *testing.T) {
 func TestFinalMatching(t *testing.T) {
 
 	rs := ec.GetRandomInt(submitter.Keys.D)
-	rr := ec.GetRandomInt(reviewer.keys.D)
+	rr := ec.GetRandomInt(reviewer.Keys.D)
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
@@ -254,7 +255,22 @@ func TestFinalMatching(t *testing.T) {
 }
 
 func TestGetPaperSubmissionCommit(t *testing.T) {
-	submitter.Submit(&p)
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
 
-//	fmt.Printf("%v",(pc.GetPaperSubmissionCommit(&submitter)))
+	commitMsg := CommitMsg{
+		commit,
+		commit2,
+	}
+
+	marshalledMsg, _ := json.Marshal(commitMsg)
+	signedCommitMsg := SignzAndEncrypt(submitter.Keys, marshalledMsg, "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+
+	fmt.Sprintf("%v", commit)
+
+	fmt.Printf("%v",(pc.GetPaperSubmissionCommit(&submitter)))
 }

@@ -35,7 +35,7 @@ func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 
 	/*perhaps verify some of the properties of claimMsg*/
 
-	signature := Sign(pc.keys, claimMsg)
+	signature := Sign(pc.Keys, claimMsg)
 
 	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %s", claimMsg.paper.Id, s.UserID)
 	log.Println(putStr, " with signature: ", signature)

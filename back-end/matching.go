@@ -20,7 +20,7 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
 	for r := range reviewerSlice {
 		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
-			SignedAndEncryptedPaper := SignzAndEncrypt(pc.keys, paperSlice[p], Kpcr)
+			SignedAndEncryptedPaper := SignzAndEncrypt(pc.Keys, paperSlice[p], Kpcr)
 			tree.Put("SignedAndEncryptedPaper"+fmt.Sprintf("%v",(paperSlice[p].Id)), SignedAndEncryptedPaper)
 			log.Println("SignedAndEncryptedPaper" + fmt.Sprintf("%v",(paperSlice[p].Id)))
 
@@ -44,7 +44,7 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
 //TODO: TEST 
 func (r *Reviewer) getBiddedPaper() PaperBid{ //TODO test this function
 	Kpcr := generateSharedSecret(&pc, nil, r)
-	EncryptedSignedBid := tree.Find("EncryptedSignedBids" + r.userID)
+	EncryptedSignedBid := tree.Find("EncryptedSignedBids" + r.UserID)
 
 	str := EncryptedSignedBid.value.(string)
 	_, enc :=SplitSignz(str)
@@ -66,9 +66,9 @@ func (r *Reviewer) makeBid(pap *Paper) (PaperBid) {
 func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.makeBid(p)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
-	EncryptedSignedBid := SignzAndEncrypt(r.keys, bid, Kpcr)
-	tree.Put("EncryptedSignedBids"+r.userID, EncryptedSignedBid)
-	log.Println("EncryptedSignedBids" + r.userID + "logged.")
+	EncryptedSignedBid := SignzAndEncrypt(r.Keys, bid, Kpcr)
+	tree.Put("EncryptedSignedBids"+r.UserID, EncryptedSignedBid)
+	log.Println("EncryptedSignedBids" + r.UserID + "logged.")
 }
 
 
@@ -118,22 +118,22 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 	//TODO: who makes the commit?
 	papers = pc.allPapers
 	for _, p := range papers {
-		rr := ec.GetRandomInt(pc.keys.D)
+		rr := ec.GetRandomInt(pc.Keys.D)
 		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
 		reviewerList := p.ReviewerList
 		reviewerKeyList := []ecdsa.PublicKey{}
 		for _, r := range reviewerList {
-			reviewerKeyList = append(reviewerKeyList, r.keys.PublicKey)
+			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
 		commit, _ := pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr)
-		nonce := ec.GetRandomInt(pc.keys.D) //nonce_r
+		nonce := ec.GetRandomInt(pc.Keys.D) //nonce_r
 		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
 			EncodeToBytes(commit),
 			&reviewerKeyList,
 			nonce,
 		}
-		PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
+		PCsignedReviewCommitKeysNonce := Sign(pc.Keys, reviewStruct)
 		tree.Put("PCsignedReviewCommitKeysNonce" + fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
 
 
