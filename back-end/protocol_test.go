@@ -56,7 +56,7 @@ func TestGenerateSharedSecret(t *testing.T) {
 
 func TestVerifyTrapdoorSubmitter(t *testing.T) {
 
-	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.receiver))
+	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.Receiver))
 
 	want := true
 
@@ -67,20 +67,20 @@ func TestVerifyTrapdoorSubmitter(t *testing.T) {
 
 func TestPedersenCommitment(t *testing.T) {
 
-	submitter.receiver = NewReceiver(submitter.keys)
+	submitter.Receiver = NewReceiver(submitter.Keys)
 
-	a := ec.GetRandomInt(submitter.keys.D)
-	b := ec.GetRandomInt(submitter.keys.D)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
 	c, err := submitter.GetCommitMessage(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
 	}
 
-	SetCommitment(submitter.receiver, c)
+	SetCommitment(submitter.Receiver, c)
 	submittedVal, r := submitter.GetDecommitMsg()
 
-	success := submitter.receiver.CheckDecommitment(r, submittedVal)
+	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen failed")
 
@@ -88,20 +88,20 @@ func TestPedersenCommitment(t *testing.T) {
 
 func TestPedersenCommitmentPaper(t *testing.T) {
 
-	submitter.receiver = NewReceiver(submitter.keys)
+	submitter.Receiver = NewReceiver(submitter.Keys)
 
-	a := ec.GetRandomInt(submitter.keys.D)
-	b := ec.GetRandomInt(submitter.keys.D)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
 	c, err := submitter.GetCommitMessagePaper(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
 	}
 
-	SetCommitment(submitter.receiver, c)
+	SetCommitment(submitter.Receiver, c)
 	submittedVal, r := submitter.GetDecommitMsgPaper()
 
-	success := submitter.receiver.CheckDecommitment(r, submittedVal)
+	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen paper commitment failed")
 
@@ -110,15 +110,15 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 func TestCommitSignatureAndVerify(t *testing.T) {
 
 
-	a := ec.GetRandomInt(submitter.keys.D)
-	b := ec.GetRandomInt(submitter.keys.D)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
 	c, _ := submitter.GetCommitMessage(a, b)
 
 	hashedMsgSubmit1, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
 
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, submitter.keys, hashedMsgSubmit1) //rand.Reader idk??
+	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, submitter.Keys, hashedMsgSubmit1) //rand.Reader idk??
 
-	got := ecdsa.VerifyASN1(&submitter.keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
+	got := ecdsa.VerifyASN1(&submitter.Keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
@@ -151,18 +151,18 @@ func TestDecodeToStruct(t *testing.T) {
 func TestVerifyMethod(t *testing.T) {
 	
 
-	a := ec.GetRandomInt(submitter.keys.D)
-	b := ec.GetRandomInt(submitter.keys.D)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
 	c, _ := submitter.GetCommitMessage(a, b)
 
-	signatureAndPlaintext := Sign(submitter.keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
+	signatureAndPlaintext := Sign(submitter.Keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
 	fmt.Println(signatureAndPlaintext)
 
 	signature, text := SplitSignz(signatureAndPlaintext)
 	fmt.Println(signature)
 
 	hashedText, _ := GetMessageHash(EncodeToBytes(text))
-	got := Verify(&submitter.keys.PublicKey, signature, hashedText)
+	got := Verify(&submitter.Keys.PublicKey, signature, hashedText)
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
@@ -205,7 +205,7 @@ func TestSignAndVerify(t *testing.T) {
 
 func TestLogging(t *testing.T) {
 	
-	number := ec.GetRandomInt(submitter.keys.D)
+	number := ec.GetRandomInt(submitter.Keys.D)
 	bytes := EncodeToBytes(number)
 	Kpcs := generateSharedSecret(&pc, &submitter, nil)
 	encryptedNumber := Encrypt(bytes, Kpcs)
@@ -225,7 +225,7 @@ func TestLogging(t *testing.T) {
 
 func TestFinalMatching(t *testing.T) {
 
-	rs := ec.GetRandomInt(submitter.keys.D)
+	rs := ec.GetRandomInt(submitter.Keys.D)
 	rr := ec.GetRandomInt(reviewer.keys.D)
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
@@ -244,11 +244,17 @@ func TestFinalMatching(t *testing.T) {
 	fmt.Printf("%s %v \n", "Rs: ", rs)
 	fmt.Printf("%s %v \n", "Rr: ", rr)
 	
-	fmt.Printf("%s %v \n", "RsInCommit: ", submitter.paperCommittedValue.r)
+	fmt.Printf("%s %v \n", "RsInCommit: ", submitter.PaperCommittedValue.r)
 	fmt.Printf("%s %v \n", "RrInCommit: ", reviewer.paperCommittedValue.r)
 
-	reviewers := []Reviewer{reviewer}
-	submitters := []Submitter{submitter}
+//	reviewers := []Reviewer{reviewer}
+//	submitters := []Submitter{submitter}
 
-	finalMatching(reviewers, submitters)
+//	finalMatching(reviewers, submitters)
+}
+
+func TestGetPaperSubmissionCommit(t *testing.T) {
+	submitter.Submit(&p)
+
+//	fmt.Printf("%v",(pc.GetPaperSubmissionCommit(&submitter)))
 }

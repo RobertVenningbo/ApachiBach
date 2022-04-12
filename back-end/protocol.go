@@ -28,11 +28,11 @@ type Reviewer struct {
 }
 
 type Submitter struct {
-	keys                    *ecdsa.PrivateKey
-	userID                  string
-	submitterCommittedValue *CommitStruct //commitstruct
-	paperCommittedValue     *CommitStructPaper
-	receiver                *Receiver
+	Keys                    *ecdsa.PrivateKey
+	UserID                  string
+	SubmitterCommittedValue *CommitStruct //commitstruct
+	PaperCommittedValue     *CommitStructPaper
+	Receiver                *Receiver
 }
 
 type CommitStruct struct {
@@ -49,8 +49,9 @@ type CommitStructPaper struct {
 }
 
 type PC struct {
-	keys         *ecdsa.PrivateKey
-	allPapers	 []Paper	
+	keys         	*ecdsa.PrivateKey
+	allPapers	 	[]Paper	
+	reviewCommits	[]CommitStructPaper
 }
 
 type Paper struct {
@@ -69,6 +70,7 @@ var (
 	tree = NewTree(DefaultMinItems)
 	pc   = PC{
 		newKeys(),
+		nil,
 		nil,
 	}
 	
@@ -90,7 +92,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 	publicPC := pc.keys.PublicKey
 	var sharedHash [32]byte
 	if reviewer == nil {
-		privateS := submitter.keys
+		privateS := submitter.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	} else {
@@ -214,5 +216,13 @@ func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature
 		log.Panic("panic len > 2")
 	}
 	return splitArr[0], splitArr[1]
+}
+
+func SplitSignz1(str string) (string, []byte) { //returns splitArr[0] = signature, splitArr[1] = encrypted
+	splitArr := strings.Split(str, "|")
+	if len(splitArr) > 2 {
+		log.Panic("panic len > 2")
+	}
+	return splitArr[0], EncodeToBytes(splitArr[1])
 }
 

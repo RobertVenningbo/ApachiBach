@@ -10,7 +10,7 @@ import (
 
 type ReviewSignedStruct struct {
 	commit []byte
-	keys   *ecdsa.PublicKey //This needs to be an array of keys once we can take more than 1 reviewer pr paper
+	keys   *[]ecdsa.PublicKey //This needs to be an array of keys once we can take more than 1 reviewer pr paper
 	nonce  *big.Int
 }
 
@@ -45,11 +45,12 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
 func (r *Reviewer) getBiddedPaper() PaperBid{ //TODO test this function
 	Kpcr := generateSharedSecret(&pc, nil, r)
 	EncryptedSignedBid := tree.Find("EncryptedSignedBids" + r.userID)
+
 	str := EncryptedSignedBid.value.(string)
 	_, enc :=SplitSignz(str)
 	decrypted := Decrypt([]byte(enc), Kpcr)
 	decoded := DecodeToStruct(decrypted)
-	bid := decoded.(PaperBid)
+	bid := decoded.(PaperBid) //No way this will work, need to figure out how to retrieve struct from tree correctly
 
 	return bid
 }
@@ -112,40 +113,62 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) {
 	}
 }
 
-func (pc *PC) matchPaper(reviewers []Reviewer, submitters []Submitter, p Paper) {
-	rr := ec.GetRandomInt(pc.keys.D)
-
+func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []Paper) {
 	//TODO: Loop through a Papers ReviewerList and find reviewer keys
 	//TODO: who makes the commit?
+	papers = pc.allPapers
+	for _, p := range papers {
+		rr := ec.GetRandomInt(pc.keys.D)
+		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
-	paper := r.paperCommittedValue.paper
-	PaperBigInt := MsgToBigInt(EncodeToBytes(paper))
-	commit, _ := r.GetCommitMessageReviewPaper(PaperBigInt, rr) //C(P, rr)
-
-	nonce := ec.GetRandomInt(r.keys.D) //nonce_r
-
-	reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
-		EncodeToBytes(commit),
-		&r.keys.PublicKey,
-		nonce,
-	}
-	for _, r := range reviewers {
-
-		PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
-
-		tree.Put("PCsignedReviewCommitKeysNonce"+r.userID, PCsignedReviewCommitKeysNonce)
-		log.Println("PCsignedReviewCommitKeysNonce" + r.userID + " logged.")
-		for _, s := range submitters {
-			paperCommitSubmitter := s.paperCommittedValue.CommittedValue
-			paperCommitReviewer := r.paperCommittedValue.CommittedValue
-			if paperCommitSubmitter == paperCommitReviewer {
-				fmt.Println(1)
-				//PaperSubmissionCommit := tree.Find("PCsignedPaperCommit" + fmt.Sprintf("%s",(s.paperCommittedValue.Id)))
-
-				//	commit1 := Commitment{
-
-			}
-
+		reviewerList := p.ReviewerList
+		reviewerKeyList := []ecdsa.PublicKey{}
+		for _, r := range reviewerList {
+			reviewerKeyList = append(reviewerKeyList, r.keys.PublicKey)
 		}
-	}
+		commit, _ := pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr)
+		nonce := ec.GetRandomInt(pc.keys.D) //nonce_r
+		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
+			EncodeToBytes(commit),
+			&reviewerKeyList,
+			nonce,
+		}
+		PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
+		tree.Put("PCsignedReviewCommitKeysNonce" + fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
+
+
+		//proof := NewEqProofP256(p, rr)
+
+	} 
+
+	// paper := r.paperCommittedValue.paper
+	// PaperBigInt := MsgToBigInt(EncodeToBytes(paper))
+	// commit, _ := r.GetCommitMessageReviewPaper(PaperBigInt, rr) //C(P, rr)
+
+	// nonce := ec.GetRandomInt(r.keys.D) //nonce_r
+
+	// reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
+	// 	EncodeToBytes(commit),
+	// 	&r.keys.PublicKey,
+	// 	nonce,
+	// }
+	// for _, r := range reviewers {
+
+	// 	PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
+
+	// 	tree.Put("PCsignedReviewCommitKeysNonce"+r.userID, PCsignedReviewCommitKeysNonce)
+	// 	log.Println("PCsignedReviewCommitKeysNonce" + r.userID + " logged.")
+	// 	for _, s := range submitters {
+	// 		paperCommitSubmitter := s.paperCommittedValue.CommittedValue
+	// 		paperCommitReviewer := r.paperCommittedValue.CommittedValue
+	// 		if paperCommitSubmitter == paperCommitReviewer {
+	// 			fmt.Println(1)
+	// 			//PaperSubmissionCommit := tree.Find("PCsignedPaperCommit" + fmt.Sprintf("%s",(s.paperCommittedValue.Id)))
+
+	// 			//	commit1 := Commitment{
+
+	// 		}
+
+	// 	}
+	// }
 }

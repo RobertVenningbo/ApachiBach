@@ -46,7 +46,7 @@ func TestNewEqProofK256(t *testing.T) {
 
 	msg := MsgToBigInt(EncodeToBytes(p))
 	fmt.Printf("%s %v \n", "msg : ", msg)
-	fmt.Printf("%s %v \n", "key : ", submitter.keys.D)
+	fmt.Printf("%s %v \n", "key : ", submitter.Keys.D)
 	//msg := ec.GetRandomInt(submitter.keys.D)
 
 	commit1, err := submitter.GetCommitMessagePaper(msg, r1)
@@ -71,8 +71,8 @@ func TestNewEqProofK256(t *testing.T) {
 		commit2.Y,
 	}
 
-	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey)
-	if !proof.OpenP256(c1, c2, nonce, &submitter.keys.PublicKey, &reviewer.keys.PublicKey) {
+	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.Keys.PublicKey, &reviewer.keys.PublicKey)
+	if !proof.OpenP256(c1, c2, nonce, &submitter.Keys.PublicKey, &reviewer.keys.PublicKey) {
 		t.Fail()
 	}
 }

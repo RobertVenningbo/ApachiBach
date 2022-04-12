@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"crypto/ecdsa"
+	"encoding/json"
 	"fmt"
 	"log"
 	ec "swag/ec"
@@ -12,14 +14,14 @@ type SubmitMessage struct {
 }
 
 type CommitMsg struct {
-	IdenityCommit []byte
-	PaperCommit   []byte
+	IdenityCommit *ecdsa.PublicKey
+	PaperCommit   *ecdsa.PublicKey
 }
 
 func (s *Submitter) Submit(p *Paper) {
-	rr := ec.GetRandomInt(s.keys.D)
-	rs := ec.GetRandomInt(s.keys.D)
-	ri := ec.GetRandomInt(s.keys.D) //TODO in the protocol description it says the submitter generates this
+	rr := ec.GetRandomInt(s.Keys.D)
+	rs := ec.GetRandomInt(s.Keys.D)
+	ri := ec.GetRandomInt(s.Keys.D) //TODO in the protocol description it says the submitter generates this
 
 	sharedKpcs := generateSharedSecret(&pc, s, nil) //Shared secret key between Submitter and PC (Kpcs)
 
@@ -34,9 +36,9 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := Sign(s.keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
-	tree.Put("SignedSubmitMsg"+s.userID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
-	log.Println("SignedSubmitMsg from" + s.userID + " - Encrypted Paper and Random Numbers logged")
+	SignedSubmitMsg := Sign(s.Keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	tree.Put("SignedSubmitMsg"+s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+	log.Println("SignedSubmitMsg from" + s.UserID + " - Encrypted Paper and Random Numbers logged")
 
 	//s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
 
@@ -49,21 +51,39 @@ func (s *Submitter) Submit(p *Paper) {
 	PaperSubmissionCommit, _ := s.GetCommitMessagePaper(PaperBigInt, rs)
 
 	commitMsg := CommitMsg{
-		EncodeToBytes(SubmitterIdenityCommit),
-		EncodeToBytes(PaperSubmissionCommit),
+		SubmitterIdenityCommit,
+		PaperSubmissionCommit,
 	}
 
-	signedCommitMsg := SignzAndEncrypt(s.keys, commitMsg, "")
-	tree.Put("signedCommitMsg"+s.userID, signedCommitMsg)
-	log.Println("signedCommitMsg" + s.userID + " logged") //Both commits signed and logged
+	marshalledMsg, _ := json.Marshal(commitMsg)
 
-	KsString := fmt.Sprintf("%v", EncodeToBytes(s.keys.PublicKey))
-	tree.Put(KsString+s.userID, EncodeToBytes(s.keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
-	log.Println("SubmitterPublicKey from submitter with userID: " + s.userID + " logged.")
+	signedCommitMsg := SignzAndEncrypt(s.Keys, marshalledMsg, "")
+	tree.Put("signedCommitMsg"+s.UserID, signedCommitMsg)
+	log.Println("signedCommitMsg" + s.UserID + " logged") //Both commits signed and logged
+
+
+	KsString := fmt.Sprintf("%v", EncodeToBytes(s.Keys.PublicKey))
+	tree.Put(KsString+s.UserID, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
+	log.Println("SubmitterPublicKey from submitter with userID: " + s.UserID + " logged.")
 
 	PCsignedPaperCommit := SignzAndEncrypt(pc.keys, PaperSubmissionCommit, "")
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	pc.allPapers = append(pc.allPapers, *p)
+}
+
+func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
+
+	var commitStruct CommitMsg
+	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
+	str := signedCommitMsg.value.(string)
+	_, commitMsg := SplitSignz1(str)
+	err := json.Unmarshal(commitMsg, &commitStruct)
+	if err != nil {
+		log.Fatalf("Error occured during unmarshaling. Error: %s", err.Error())
+	}
+
+	commit := commitStruct.PaperCommit
+	return commit
 }

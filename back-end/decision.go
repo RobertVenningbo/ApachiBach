@@ -41,7 +41,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //maybe dont use *Submitter as param
 		signatureAndTextOfStruct,
 		grade,
 	}
-	str := fmt.Sprintf("PC sends grades to submitter, %s", subm.userID)
+	str := fmt.Sprintf("PC sends grades to submitter, %s", subm.UserID)
 	log.Println(str)
 	tree.Put(str, msgStruct)
 }
@@ -88,7 +88,7 @@ func (pc *PC) CompileGrades() { //step 17
 }
 
 func (pc *PC) getPaperAndRs(submitter *Submitter) (*Paper, *big.Int) {
-	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.userID)
+	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.UserID)
 	EncryptedPaperAndRandomness := submitMsgInTree.value.(SubmitMessage).PaperAndRandomness
 	Kpcs := generateSharedSecret(pc, submitter, nil)
 	DecryptedPaperAndRandomness := Decrypt(EncryptedPaperAndRandomness, Kpcs)
