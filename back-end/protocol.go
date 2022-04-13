@@ -44,25 +44,25 @@ type CommitStructPaper struct {
 	CommittedValue *ecdsa.PublicKey
 	r              *big.Int
 	val            *big.Int
-	paper		   Paper
+	paper          Paper
 }
 
 type PC struct {
-	Keys         	*ecdsa.PrivateKey
-	allPapers	 	[]Paper	
-	reviewCommits	[]ecdsa.PublicKey
+	Keys          *ecdsa.PrivateKey
+	allPapers     []Paper
+	reviewCommits []ecdsa.PublicKey
 }
 
 type Paper struct {
 	Id                  int
 	Selected            bool
 	ReviewSignatureByPC []byte
-	ReviewerList		[]Reviewer
+	ReviewerList        []Reviewer
 }
 
 type PaperBid struct {
-	Paper			*Paper
-	Reviewer 		*Reviewer
+	Paper    *Paper
+	Reviewer *Reviewer
 }
 
 var (
@@ -72,7 +72,7 @@ var (
 		nil,
 		nil,
 	}
-	
+
 	schnorrProofs []SchnorrProof
 )
 
@@ -174,8 +174,6 @@ func DecodeToPaper(s []byte) *Paper {
 	return &p
 }
 
-
-
 func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
 	formatted := fmt.Sprintf("%v", plaintext)
 	bytes := []byte(formatted)
@@ -188,11 +186,12 @@ func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; curren
 
 func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
 
-	signBytes := EncodeToBytes(signature)
+	//signBytes := EncodeToBytes(signature)
 
-	return ecdsa.VerifyASN1(pub, hash, signBytes)
+	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
 }
 
+// CURRENTLY DEPRECATED, USE /SignsPossiblyEncrypts & SplitSignatureAndMsg/
 func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
 
 	bytes := EncodeToBytes(plaintext)
@@ -203,45 +202,42 @@ func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase s
 	encrypted := Encrypt(bytes, passphrase)
 
 	if passphrase == "" {
-		return fmt.Sprintf("%v%s%v", signature, "|", plaintext) // Check if "|" interfere with any binary?
+		return fmt.Sprintf("%v%s%v", signature, "|", bytes) // Check if "|" interfere with any binary?
 	} else {
 		return fmt.Sprintf("%v%s%v", signature, "|", encrypted) // Check if "|" interfere with any binary?
 	}
 	//return [213, 123, 12, 392...]|someEncryptedString
 }
 
-
+// CURRENTLY DEPRECATED, USE /SignsPossiblyEncrypts & SplitSignatureAndMsg/
 func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature, splitArr[1] = encrypted
 	splitArr := strings.Split(str, "|")
 	if len(splitArr) > 2 {
 		log.Panic("panic len > 2")
-	}	
+	}
 	return splitArr[0], splitArr[1]
-}	
+}
 
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) [][]byte { //signs and possibly encrypts a message
 	bytes := EncodeToBytes(plaintext)
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
-	encrypted := Encrypt(bytes, passphrase)
 
 	x := [][]byte{}
 
 	if passphrase == "" { //if passphrase is empty dont encrypt
 		x = append(x, signature)
-		x = append(x, EncodeToBytes(plaintext))
+		x = append(x, bytes)
 		return x
-	
 	} else {
+		encrypted := Encrypt(bytes, passphrase)
 		x = append(x, signature)
 		x = append(x, encrypted)
-		return x 
-	}	
+		return x
+	}
+}
 
-	}	
-	
 func SplitSignatureAndMsg(bytes [][]byte) ([]byte, []byte) { // returns signature and msg or encrypted msg
-		sig, msg :=  bytes[0], bytes[1]
-		return sig, msg
-
-	}		
+	sig, msg := bytes[0], bytes[1]
+	return sig, msg
+}

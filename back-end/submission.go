@@ -79,3 +79,10 @@ func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
 	commit := decodedCommitMsg.(CommitMsg).PaperCommit
 	return commit
 }
+
+func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
+	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
+	bytes := signedCommitMsg.value.([][]byte)
+	sig, _ := SplitSignatureAndMsg(bytes)
+	return sig
+}

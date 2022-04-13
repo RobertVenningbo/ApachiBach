@@ -153,13 +153,11 @@ func TestVerifyMethod(t *testing.T) {
 	b := ec.GetRandomInt(submitter.Keys.D)
 	c, _ := submitter.GetCommitMessage(a, b)
 
-	signatureAndPlaintext := Sign(submitter.Keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
-	fmt.Println(signatureAndPlaintext)
+	signatureAndPlaintext := SignsPossiblyEncrypts(submitter.Keys, c, "") 
 
-	signature, text := SplitSignz(signatureAndPlaintext)
-	fmt.Println(signature)
+	signature, txt := SplitSignatureAndMsg(signatureAndPlaintext)
 
-	hashedText, _ := GetMessageHash(EncodeToBytes(text))
+	hashedText, _ := GetMessageHash(txt)
 	got := Verify(&submitter.Keys.PublicKey, signature, hashedText)
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
@@ -240,7 +238,7 @@ func TestMatchPapers(t *testing.T) {
 	}
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
-	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	tree.Put("signedCommitMsg" + submitter.UserID, signedCommitMsg)
 
 	reviewer.SignBidAndEncrypt(&p)
 	// got :=pc.assignPaper(reviewers)
@@ -265,4 +263,25 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
 	assert.Equal(t, commit, foundCommit, "TestGetPaperSubmissionCommit failed")
 
+}
+
+func TestGetPaperSubmissionSignature(t *testing.T) {
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+
+	commitMsg := CommitMsg{
+		commit,
+		commit2,
+	}
+
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+
+	sig := pc.GetPaperSubmissionSignature(&submitter)
+
+	hash, _ := GetMessageHash(sig)
+	got := Verify(&submitter.Keys.PublicKey, sig, hash)
+	assert.Equal(t, true, got, "TestGetPaperSubmissionSignature failed")
 }
