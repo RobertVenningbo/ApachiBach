@@ -45,12 +45,11 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
 func (r *Reviewer) getBiddedPaper() PaperBid{ //TODO test this function
 	Kpcr := generateSharedSecret(&pc, nil, r)
 	EncryptedSignedBid := tree.Find("EncryptedSignedBids" + r.UserID)
-
-	str := EncryptedSignedBid.value.(string)
-	_, enc :=SplitSignz(str)
+	bytes := EncryptedSignedBid.value.([][]byte)
+	_, enc :=SplitSignatureAndMsg(bytes)
 	decrypted := Decrypt([]byte(enc), Kpcr)
 	decoded := DecodeToStruct(decrypted)
-	bid := decoded.(PaperBid) //No way this will work, need to figure out how to retrieve struct from tree correctly
+	bid := decoded.(PaperBid)
 
 	return bid
 }
@@ -66,58 +65,65 @@ func (r *Reviewer) makeBid(pap *Paper) (PaperBid) {
 func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.makeBid(p)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
-	EncryptedSignedBid := SignzAndEncrypt(r.Keys, bid, Kpcr)
+	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, bid, Kpcr)
 	tree.Put("EncryptedSignedBids"+r.UserID, EncryptedSignedBid)
 	log.Println("EncryptedSignedBids" + r.UserID + "logged.")
 }
 
 
 //TODO: TEST 
-func (pc *PC) assignPaper(reviewerSlice []Reviewer) {
+func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
+	assignedPaper := false
 	tmpList := []PaperBid{}
 	for i := range reviewerSlice{	//loop to get list of all bidded papers
 		p := reviewerSlice[i].getBiddedPaper()
 		tmpList = append(tmpList, p)
+		fmt.Println(reviewerSlice[i].UserID)
 	}
 	for _, bid := range tmpList { //loop through all bidded papers
-		reviewerList := bid.reviewer.paperCommittedValue.paper.ReviewerList
-		if(bid.paper.Selected) { //if a paper is already selected
+		reviewerList := bid.Paper.ReviewerList
+		if(bid.Paper.Selected) { //if a paper is already selected
 			for _, p := range pc.allPapers { //find a paper that isn't selected
-				if p.Id == bid.paper.Id { 
+				if p.Id == bid.Paper.Id { 
 					if !p.Selected {
-						reviewerList = append(reviewerList, *bid.reviewer) //Add reviewer to papers list of reviewers
+						reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
 						p.Selected = true 
-						bid.reviewer.paperCommittedValue.paper = *bid.paper //Maybe pointer issue
+						bid.Reviewer.paperCommittedValue.paper = *bid.Paper //Maybe pointer issue
+						fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
+						assignedPaper = true
 					}
 				}
 			}
 		} else { //if a bidded paper is NOT selected, assign it to first reviewer
-			reviewerList = append(reviewerList, *bid.reviewer) //Add reviewer to papers list of reviewers
-			bid.reviewer.paperCommittedValue.paper = *bid.paper
-			bid.reviewer.paperCommittedValue.paper.Selected = true
+			reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
+			bid.Reviewer.paperCommittedValue.paper = *bid.Paper
+			bid.Reviewer.paperCommittedValue.paper.Selected = true
 			for _, p := range pc.allPapers {
-				if p.Id == bid.paper.Id { //find bidded paper in all papers and set it to selected
+				if p.Id == bid.Paper.Id { //find bidded paper in all papers and set it to selected
 					p.Selected = true
+					fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
+					assignedPaper = true
 				}
 			}
 		}
 	} 
 	for _, p := range pc.allPapers { //Loop through all papers
 		for _, r := range reviewerSlice { //loop through reviewers and find a reviewer without assigned paper
-			reviewerList := r.paperCommittedValue.paper.ReviewerList
+			reviewerList := p.ReviewerList
 			if &r.paperCommittedValue.paper == &(Paper{}) {  //assign paper to reviewer
 				r.paperCommittedValue.paper = p
+				fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
 				reviewerList = append(reviewerList, r) //Add reviewer to papers list of reviewers
+				assignedPaper = true
 			}
 		}
 	}
+	return assignedPaper
 }
 
 func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []Paper) {
-	//TODO: Loop through a Papers ReviewerList and find reviewer keys
-	//TODO: who makes the commit?
-	papers = pc.allPapers
 	for _, p := range papers {
+		fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " looping")
 		rr := ec.GetRandomInt(pc.Keys.D)
 		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
@@ -126,19 +132,40 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 		for _, r := range reviewerList {
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
-		commit, _ := pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr)
+		pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr) //C(P, rr)
+		//fmt.Printf("%s %v \n", "ReviewCommit: ", ReviewCommit)
 		nonce := ec.GetRandomInt(pc.Keys.D) //nonce_r
 		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
-			EncodeToBytes(commit),
+			EncodeToBytes(pc.reviewCommits[0]),
 			&reviewerKeyList,
 			nonce,
 		}
 		PCsignedReviewCommitKeysNonce := Sign(pc.Keys, reviewStruct)
 		tree.Put("PCsignedReviewCommitKeysNonce" + fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
 
-
-		//proof := NewEqProofP256(p, rr)
-
+		for _, s := range submitters {
+			fmt.Printf("\n %v \n ",s.PaperCommittedValue.paper.Id) //for testing delete later
+			if s.PaperCommittedValue.paper.Id == p.Id {
+				rs := s.PaperCommittedValue.r
+				PaperSubmissionCommit := *pc.GetPaperSubmissionCommit(&s) //C(P, rs)
+				fmt.Printf("\n %s %v", "PaperSubmissionCommit: ", PaperSubmissionCommit) //for testing delete later
+				proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey)
+				C1 := Commitment{ //this is wrong, but trying for testing reasons, might need a for loop looping through reviewcommits
+					pc.reviewCommits[0].X,
+					pc.reviewCommits[0].Y,
+				}
+				fmt.Printf("\n %s %v ", "ReviewCommit: ", pc.reviewCommits[0])
+				C2  := Commitment{
+					PaperSubmissionCommit.X,
+					PaperSubmissionCommit.Y,
+				}
+				if !proof.OpenP256(&C1, &C2, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey) {
+					fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
+				} else {
+					fmt.Println("The review commit and paper submission commit hides the same paper")
+				}
+			}
+		}
 	} 
 
 	// paper := r.paperCommittedValue.paper

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"log"
 	ec "swag/ec"
@@ -31,7 +30,6 @@ func (s *Submitter) Submit(p *Paper) {
 		rr,
 		rs,
 	}
-
 	submitMsg := SubmitMessage{
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
 		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
@@ -40,8 +38,6 @@ func (s *Submitter) Submit(p *Paper) {
 	SignedSubmitMsg := Sign(s.Keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	tree.Put("SignedSubmitMsg" + s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + s.UserID + " - Encrypted Paper and Random Numbers logged")
-
-	//s.encrypted = Encrypt(EncodeToBytes(EncryptedPaperAndRandomness), s.keys.D.String()) //TODO: Do we need  this if we log it above??
 
 	//submitter identity commit
 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s))
@@ -56,8 +52,7 @@ func (s *Submitter) Submit(p *Paper) {
 		PaperSubmissionCommit,
 	}
 
-	marshalledMsg, _ := json.Marshal(commitMsg)
-	signedCommitMsg := SignzAndEncrypt(s.Keys, marshalledMsg, "")
+	signedCommitMsg := SignzAndEncrypt(s.Keys, commitMsg, "")
 	tree.Put("signedCommitMsg"+s.UserID, signedCommitMsg)
 	log.Println("signedCommitMsg" + s.UserID + " logged") //Both commits signed and logged
 
@@ -75,21 +70,12 @@ func (s *Submitter) Submit(p *Paper) {
 
 func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
 
-	var commitStruct CommitMsg
 	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
-	str := signedCommitMsg.value.(string)
-	_, commitMsg := SplitSignz1(str)
-	err := json.Unmarshal(commitMsg, &commitStruct)
-	if err != nil {
-		log.Printf("error decoding sakura response: %v", err)
-		if e, ok := err.(*json.SyntaxError); ok {
-			log.Printf("syntax error at byte offset %d", e.Offset)
-		}
-		log.Printf("sakura response: %q", commitMsg)
-		
-	}
+	bytes := signedCommitMsg.value.([][]byte)
+	_, commitMsg := SplitSignatureAndMsg(bytes)
+	
+	decodedCommitMsg := DecodeToStruct(commitMsg)
 
-
-	commit := commitStruct.PaperCommit
+	commit := decodedCommitMsg.(CommitMsg).PaperCommit
 	return commit
 }

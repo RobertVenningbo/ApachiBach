@@ -21,7 +21,6 @@ import (
 type Reviewer struct {
 	UserID              string
 	Keys                *ecdsa.PrivateKey
-	paperMap            map[int][]byte
 	paperCommittedValue *CommitStructPaper
 	gradedPaperMap      map[int]int
 	gradeCommittedValue *CommitStruct
@@ -51,7 +50,7 @@ type CommitStructPaper struct {
 type PC struct {
 	Keys         	*ecdsa.PrivateKey
 	allPapers	 	[]Paper	
-	reviewCommits	[]CommitStructPaper
+	reviewCommits	[]ecdsa.PublicKey
 }
 
 type Paper struct {
@@ -62,8 +61,8 @@ type Paper struct {
 }
 
 type PaperBid struct {
-	paper			*Paper
-	reviewer 		*Reviewer
+	Paper			*Paper
+	Reviewer 		*Reviewer
 }
 
 var (
@@ -136,6 +135,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(SubmitMessage{})
 	gob.Register(CommitMsg{})
 	gob.Register(big.Int{})
+	gob.Register(PaperBid{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
@@ -180,9 +180,9 @@ func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; curren
 	formatted := fmt.Sprintf("%v", plaintext)
 	bytes := []byte(formatted)
 	hash, _ := GetMessageHash(bytes)
-	fmt.Printf("%s%v\n", "Hash from Sign func:", hash)
+	//fmt.Printf("%s%v\n", "Hash from Sign func:", hash)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
-	fmt.Printf("%s%v \n", "Sig from sign func:", signature)
+	//fmt.Printf("%s%v \n", "Sig from sign func:", signature)
 	return fmt.Sprintf("%v%s%v", signature, "|", plaintext)
 }
 
@@ -210,19 +210,38 @@ func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase s
 	//return [213, 123, 12, 392...]|someEncryptedString
 }
 
+
 func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature, splitArr[1] = encrypted
 	splitArr := strings.Split(str, "|")
 	if len(splitArr) > 2 {
 		log.Panic("panic len > 2")
-	}
+	}	
 	return splitArr[0], splitArr[1]
-}
+}	
 
-func SplitSignz1(str string) (string, []byte) { //returns splitArr[0] = signature, splitArr[1] = encrypted
-	splitArr := strings.Split(str, "|")
-	if len(splitArr) > 2 {
-		log.Panic("panic len > 2")
-	}
-	return splitArr[0], EncodeToBytes(splitArr[1])
-}
+func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) [][]byte { //signs and possibly encrypts a message
+	bytes := EncodeToBytes(plaintext)
+	hash, _ := GetMessageHash(bytes)
+	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
+	encrypted := Encrypt(bytes, passphrase)
 
+	x := [][]byte{}
+
+	if passphrase == "" { //if passphrase is empty dont encrypt
+		x = append(x, signature)
+		x = append(x, EncodeToBytes(plaintext))
+		return x
+	
+	} else {
+		x = append(x, signature)
+		x = append(x, encrypted)
+		return x 
+	}	
+
+	}	
+	
+func SplitSignatureAndMsg(bytes [][]byte) ([]byte, []byte) { // returns signature and msg or encrypted msg
+		sig, msg :=  bytes[0], bytes[1]
+		return sig, msg
+
+	}		

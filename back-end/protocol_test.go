@@ -3,7 +3,6 @@ package backend
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"swag/ec"
@@ -26,7 +25,6 @@ var (
 	reviewer = Reviewer{
 		"reviewer",
 		newKeys(),
-		map[int][]byte{},
 		&CommitStructPaper{},
 		nil,
 		nil,
@@ -34,7 +32,6 @@ var (
 	reviewer2 = Reviewer{
 		"reviewer2",
 		newKeys(),
-		map[int][]byte{},
 		nil,
 		nil,
 		nil,
@@ -224,34 +221,31 @@ func TestLogging(t *testing.T) {
 
 }
 
-func TestFinalMatching(t *testing.T) {
+func TestMatchPapers(t *testing.T) {
+	submitter.PaperCommittedValue.paper = p
+	allPapers := append(pc.allPapers, p)
+	fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " in allPapers")
+	submitters := []Submitter{submitter}
+	reviewers := []Reviewer{reviewer}
 
-	rs := ec.GetRandomInt(submitter.Keys.D)
-	rr := ec.GetRandomInt(reviewer.Keys.D)
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p)) 
+	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
+	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _  := submitter.GetCommitMessage(SubmitterBigInt, r)
 
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-
-
-	_, err := submitter.GetCommitMessagePaper(PaperBigInt, rs)
-	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaper: %v", err)
+	commitMsg := CommitMsg{
+		commit2,
+		commit,
 	}
 
-	_, err = reviewer.GetCommitMessageReviewPaper(PaperBigInt, rr)
-	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaperR: %v", err)
-	}
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
-	fmt.Printf("%s %v \n", "Rs: ", rs)
-	fmt.Printf("%s %v \n", "Rr: ", rr)
-	
-	fmt.Printf("%s %v \n", "RsInCommit: ", submitter.PaperCommittedValue.r)
-	fmt.Printf("%s %v \n", "RrInCommit: ", reviewer.paperCommittedValue.r)
-
-//	reviewers := []Reviewer{reviewer}
-//	submitters := []Submitter{submitter}
-
-//	finalMatching(reviewers, submitters)
+	reviewer.SignBidAndEncrypt(&p)
+	// got :=pc.assignPaper(reviewers)
+	// fmt.Printf("%v  \n", got)
+	pc.matchPapers(reviewers, submitters, allPapers)
 }
 
 func TestGetPaperSubmissionCommit(t *testing.T) {
@@ -265,12 +259,10 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 		commit2,
 	}
 
-	marshalledMsg, _ := json.Marshal(commitMsg)
-	signedCommitMsg := SignzAndEncrypt(submitter.Keys, marshalledMsg, "")
-	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
-	fmt.Sprintf("%v", commit)
+	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
+	assert.Equal(t, commit, foundCommit, "TestGetPaperSubmissionCommit failed")
 
-	fmt.Printf("%v",(pc.GetPaperSubmissionCommit(&submitter)))
 }

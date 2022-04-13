@@ -31,7 +31,6 @@ func TestNewEqProofK256(t *testing.T) {
 	reviewer := Reviewer{
 		"reviewer1",
 		newKeys(),
-		map[int][]byte{},
 		&CommitStructPaper{},
 		nil,
 		nil,
