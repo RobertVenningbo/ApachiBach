@@ -15,47 +15,59 @@ type ReviewSignedStruct struct {
 }
 
 //step 4
-//TODO: TEST 
 func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
+	//Find a way to retrieve a list of all Reviewers
 	for r := range reviewerSlice {
 		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
-			SignedAndEncryptedPaper := SignzAndEncrypt(pc.Keys, paperSlice[p], Kpcr)
-			tree.Put("SignedAndEncryptedPaper"+fmt.Sprintf("%v",(paperSlice[p].Id)), SignedAndEncryptedPaper)
-			log.Println("SignedAndEncryptedPaper" + fmt.Sprintf("%v",(paperSlice[p].Id)))
-
+			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
+			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
+			tree.Put(msg, SignedAndEncryptedPaper)
+			log.Println(msg)
 		}
 	}
 }
 
-// func getPaperList(pc *PC, reviewer *Reviewer) []Paper { -- måske kan vi bruge det her til at hente fra log 
-
-// 	pMap := reviewer.paperMap
-// 	Kpcr := generateSharedSecret(pc, nil, reviewer)
-// 	pList := []Paper{}
-// 	for _, v := range pMap {
-// 		decrypted := Decrypt(v, Kpcr)
-// 		p := DecodeToStruct(decrypted)
-// 		pList = append(pList, p.(Paper))
-// 	}
-// 	return pList
-// }
-
-//TODO: TEST 
-func (r *Reviewer) getBiddedPaper() PaperBid{ //TODO test this function
+func (r *Reviewer) GetPapersReviewer(paperSlice []Paper) []Paper {
 	Kpcr := generateSharedSecret(&pc, nil, r)
-	EncryptedSignedBid := tree.Find("EncryptedSignedBids" + r.UserID)
+
+	pList := []Paper{}
+	for i := 0; i < len(paperSlice); i++ {
+		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[i].Id, r.UserID)
+		EncryptedSignedBid := tree.Find(GetMsg)
+		bytes := EncryptedSignedBid.value.([][]byte)
+		sig, enc := SplitSignatureAndMsg(bytes)
+		decrypted := Decrypt(enc, Kpcr)
+		hash, err := GetMessageHash(decrypted)
+		if err != nil {
+			log.Fatal(err)
+		}
+		isVerified := Verify(&pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
+		if !isVerified {
+			log.Fatalf("Couldn't verify signature of paper: %v", (paperSlice[i].Id))
+		}
+		decoded := DecodeToStruct(decrypted)
+		paper := decoded.(Paper)
+		pList = append(pList, paper)
+	}
+	return pList
+}
+
+//TODO: TEST
+func (r *Reviewer) getBiddedPaper() *PaperBid { //TODO test this function
+	Kpcr := generateSharedSecret(&pc, nil, r)
+	EncryptedSignedBid := tree.Find("EncryptedSignedBids " + r.UserID)
 	bytes := EncryptedSignedBid.value.([][]byte)
-	_, enc :=SplitSignatureAndMsg(bytes)
+	_, enc := SplitSignatureAndMsg(bytes)
 	decrypted := Decrypt([]byte(enc), Kpcr)
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
 
-	return bid
+	return &bid
 }
 
-func (r *Reviewer) makeBid(pap *Paper) (PaperBid) {
-	return PaperBid{
+func (r *Reviewer) makeBid(pap *Paper) *PaperBid {
+	return &PaperBid{
 		pap,
 		r,
 	}
@@ -65,30 +77,29 @@ func (r *Reviewer) makeBid(pap *Paper) (PaperBid) {
 func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.makeBid(p)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
-	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, bid, Kpcr)
-	tree.Put("EncryptedSignedBids"+r.UserID, EncryptedSignedBid)
+	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
+	tree.Put("EncryptedSignedBids "+r.UserID, EncryptedSignedBid)
 	log.Println("EncryptedSignedBids" + r.UserID + "logged.")
 }
 
-
-//TODO: TEST 
+//TODO: TEST
 func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 	assignedPaper := false
 	tmpList := []PaperBid{}
-	for i := range reviewerSlice{	//loop to get list of all bidded papers
+	for i := range reviewerSlice { //loop to get list of all bidded papers
 		p := reviewerSlice[i].getBiddedPaper()
-		tmpList = append(tmpList, p)
+		tmpList = append(tmpList, *p)
 		fmt.Println(reviewerSlice[i].UserID)
 	}
 	for _, bid := range tmpList { //loop through all bidded papers
 		reviewerList := bid.Paper.ReviewerList
-		if(bid.Paper.Selected) { //if a paper is already selected
+		if bid.Paper.Selected { //if a paper is already selected
 			for _, p := range pc.allPapers { //find a paper that isn't selected
-				if p.Id == bid.Paper.Id { 
+				if p.Id == bid.Paper.Id {
 					if !p.Selected {
 						reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
-						p.Selected = true 
-						bid.Reviewer.paperCommittedValue.paper = *bid.Paper //Maybe pointer issue
+						p.Selected = true
+						bid.Reviewer.paperCommittedValue.Paper = *bid.Paper //Maybe pointer issue
 						fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
 						assignedPaper = true
 					}
@@ -96,8 +107,8 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 			}
 		} else { //if a bidded paper is NOT selected, assign it to first reviewer
 			reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
-			bid.Reviewer.paperCommittedValue.paper = *bid.Paper
-			bid.Reviewer.paperCommittedValue.paper.Selected = true
+			bid.Reviewer.paperCommittedValue.Paper = *bid.Paper
+			bid.Reviewer.paperCommittedValue.Paper.Selected = true
 			for _, p := range pc.allPapers {
 				if p.Id == bid.Paper.Id { //find bidded paper in all papers and set it to selected
 					p.Selected = true
@@ -106,12 +117,12 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 				}
 			}
 		}
-	} 
+	}
 	for _, p := range pc.allPapers { //Loop through all papers
 		for _, r := range reviewerSlice { //loop through reviewers and find a reviewer without assigned paper
 			reviewerList := p.ReviewerList
-			if &r.paperCommittedValue.paper == &(Paper{}) {  //assign paper to reviewer
-				r.paperCommittedValue.paper = p
+			if &r.paperCommittedValue.Paper == &(Paper{}) { //assign paper to reviewer
+				r.paperCommittedValue.Paper = p
 				fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
 				reviewerList = append(reviewerList, r) //Add reviewer to papers list of reviewers
 				assignedPaper = true
@@ -141,13 +152,13 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 			nonce,
 		}
 		PCsignedReviewCommitKeysNonce := Sign(pc.Keys, reviewStruct)
-		tree.Put("PCsignedReviewCommitKeysNonce" + fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
+		tree.Put("PCsignedReviewCommitKeysNonce"+fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
 
 		for _, s := range submitters {
-			fmt.Printf("\n %v \n ",s.PaperCommittedValue.paper.Id) //for testing delete later
-			if s.PaperCommittedValue.paper.Id == p.Id {
-				rs := s.PaperCommittedValue.r
-				PaperSubmissionCommit := *pc.GetPaperSubmissionCommit(&s) //C(P, rs)
+			fmt.Printf("\n %v \n ", s.PaperCommittedValue.Paper.Id) //for testing delete later
+			if s.PaperCommittedValue.Paper.Id == p.Id {
+				rs := s.PaperCommittedValue.R
+				PaperSubmissionCommit := *pc.GetPaperSubmissionCommit(&s)                //C(P, rs)
 				fmt.Printf("\n %s %v", "PaperSubmissionCommit: ", PaperSubmissionCommit) //for testing delete later
 				proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey)
 				C1 := Commitment{ //this is wrong, but trying for testing reasons, might need a for loop looping through reviewcommits
@@ -155,7 +166,7 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 					pc.reviewCommits[0].Y,
 				}
 				fmt.Printf("\n %s %v ", "ReviewCommit: ", pc.reviewCommits[0])
-				C2  := Commitment{
+				C2 := Commitment{
 					PaperSubmissionCommit.X,
 					PaperSubmissionCommit.Y,
 				}
@@ -166,7 +177,7 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 				}
 			}
 		}
-	} 
+	}
 
 	// paper := r.paperCommittedValue.paper
 	// PaperBigInt := MsgToBigInt(EncodeToBytes(paper))

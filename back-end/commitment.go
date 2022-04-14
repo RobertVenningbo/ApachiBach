@@ -22,15 +22,15 @@ func GetTrapdoor(r *Receiver) *big.Int {
 
 // It returns values x and r (commitment was c = g^x * g^r).
 func (s *Submitter) GetDecommitMsg() (*big.Int, *big.Int) {
-	val := s.SubmitterCommittedValue.val
-	r := s.SubmitterCommittedValue.r
+	val := s.SubmitterCommittedValue.Val
+	r := s.SubmitterCommittedValue.R
 
 	return val, r
 }
 
 func (s *Submitter) GetDecommitMsgPaper() (*big.Int, *big.Int) {
-	val := s.PaperCommittedValue.val
-	r := s.PaperCommittedValue.r
+	val := s.PaperCommittedValue.Val
+	r := s.PaperCommittedValue.R
 
 	return val, r
 }
@@ -53,8 +53,8 @@ func (s *Submitter) GetCommitMessage(val *big.Int, r *big.Int) (*ecdsa.PublicKey
 
 	// c = g^x * h^r
 
-	s.SubmitterCommittedValue.r = r     //hiding factor?
-	s.SubmitterCommittedValue.val = val //den value (random) vi comitter ting til
+	s.SubmitterCommittedValue.R = r     //hiding factor?
+	s.SubmitterCommittedValue.Val = val //den value (random) vi comitter ting til
 	x1 := ec.ExpBaseG(s.Keys, val)
 	x2 := ec.Exp(s.Keys, &s.Keys.PublicKey, r)
 	comm := ec.Mul(s.Keys, x1, x2)
@@ -71,9 +71,9 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int, r *big.Int) (*ecdsa.Publ
 
 	// c = g^x * h^r
 
-	s.PaperCommittedValue.r = r
+	s.PaperCommittedValue.R = r
 
-	s.PaperCommittedValue.val = val
+	s.PaperCommittedValue.Val = val
 
 	x1 := ec.ExpBaseG(s.Keys, val)
 	x2 := ec.Exp(s.Keys, &s.Keys.PublicKey, r)
@@ -110,9 +110,9 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecd
 
 	// c = g^x * h^r
 
-	rev.paperCommittedValue.r = r
+	rev.paperCommittedValue.R = r
 
-	rev.paperCommittedValue.val = val
+	rev.paperCommittedValue.Val = val
 
 	x1 := ec.ExpBaseG(rev.Keys, val)
 	x2 := ec.Exp(rev.Keys, &rev.Keys.PublicKey, r)
@@ -132,8 +132,8 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 	// c = g^x * h^r
 	r := ec.GetRandomInt(rev.Keys.D)
 
-	rev.gradeCommittedValue.r = r
-	rev.gradeCommittedValue.val = val
+	rev.gradeCommittedValue.R = r
+	rev.gradeCommittedValue.Val = val
 	
 	
 	x1 := ec.ExpBaseG(rev.Keys, val)

@@ -36,20 +36,20 @@ type Submitter struct {
 
 type CommitStruct struct {
 	CommittedValue *ecdsa.PublicKey
-	r              *big.Int
-	val            *big.Int
+	R              *big.Int
+	Val            *big.Int
 }
 
 type CommitStructPaper struct {
 	CommittedValue *ecdsa.PublicKey
-	r              *big.Int
-	val            *big.Int
-	paper          Paper
+	R              *big.Int
+	Val            *big.Int
+	Paper          Paper
 }
 
 type PC struct {
 	Keys          *ecdsa.PrivateKey
-	allPapers     []Paper
+	allPapers     []Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
 	reviewCommits []ecdsa.PublicKey
 }
 
@@ -136,6 +136,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(CommitMsg{})
 	gob.Register(big.Int{})
 	gob.Register(PaperBid{})
+	gob.Register(Reviewer{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
@@ -218,8 +219,8 @@ func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature
 	return splitArr[0], splitArr[1]
 }
 
-func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) [][]byte { //signs and possibly encrypts a message
-	bytes := EncodeToBytes(plaintext)
+//Maybe should take []byte instead of interface.
+func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
 

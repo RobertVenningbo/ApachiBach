@@ -13,8 +13,8 @@ type ClaimMessage struct {
 }
 
 func (s *Submitter) ClaimPaper() { //step 19
-	paper := s.PaperCommittedValue.paper
-	ri := s.SubmitterCommittedValue.val
+	paper := s.PaperCommittedValue.Paper
+	ri := s.SubmitterCommittedValue.Val
 
 	msg := ClaimMessage{
 		&paper,

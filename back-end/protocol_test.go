@@ -107,7 +107,6 @@ func TestPedersenCommitmentPaper(t *testing.T) {
 
 func TestCommitSignatureAndVerify(t *testing.T) {
 
-
 	a := ec.GetRandomInt(submitter.Keys.D)
 	b := ec.GetRandomInt(submitter.Keys.D)
 	c, _ := submitter.GetCommitMessage(a, b)
@@ -147,13 +146,12 @@ func TestDecodeToStruct(t *testing.T) {
 }
 
 func TestVerifyMethod(t *testing.T) {
-	
 
 	a := ec.GetRandomInt(submitter.Keys.D)
 	b := ec.GetRandomInt(submitter.Keys.D)
 	c, _ := submitter.GetCommitMessage(a, b)
 
-	signatureAndPlaintext := SignsPossiblyEncrypts(submitter.Keys, c, "") 
+	signatureAndPlaintext := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(c), "")
 
 	signature, txt := SplitSignatureAndMsg(signatureAndPlaintext)
 
@@ -200,7 +198,7 @@ func TestSignAndVerify(t *testing.T) {
 } */
 
 func TestLogging(t *testing.T) {
-	
+
 	number := ec.GetRandomInt(submitter.Keys.D)
 	bytes := EncodeToBytes(number)
 	Kpcs := generateSharedSecret(&pc, &submitter, nil)
@@ -219,45 +217,18 @@ func TestLogging(t *testing.T) {
 
 }
 
-func TestMatchPapers(t *testing.T) {
-	submitter.PaperCommittedValue.paper = p
-	allPapers := append(pc.allPapers, p)
-	fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " in allPapers")
-	submitters := []Submitter{submitter}
-	reviewers := []Reviewer{reviewer}
-
-	r := ec.GetRandomInt(submitter.Keys.D)
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p)) 
-	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	commit2, _  := submitter.GetCommitMessage(SubmitterBigInt, r)
-
-	commitMsg := CommitMsg{
-		commit2,
-		commit,
-	}
-
-	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
-	tree.Put("signedCommitMsg" + submitter.UserID, signedCommitMsg)
-
-	reviewer.SignBidAndEncrypt(&p)
-	// got :=pc.assignPaper(reviewers)
-	// fmt.Printf("%v  \n", got)
-	pc.matchPapers(reviewers, submitters, allPapers)
-}
-
 func TestGetPaperSubmissionCommit(t *testing.T) {
 	r := ec.GetRandomInt(submitter.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	commit2, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
 
 	commitMsg := CommitMsg{
 		commit,
 		commit2,
 	}
 
-	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
 	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
@@ -268,20 +239,21 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 func TestGetPaperSubmissionSignature(t *testing.T) {
 	r := ec.GetRandomInt(submitter.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-	commit, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	commit2, _  := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
 
 	commitMsg := CommitMsg{
 		commit,
 		commit2,
 	}
 
-	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, commitMsg, "")
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
 	sig := pc.GetPaperSubmissionSignature(&submitter)
 
-	hash, _ := GetMessageHash(sig)
+	_, txt := SplitSignatureAndMsg(signedCommitMsg)
+	hash, _ := GetMessageHash(txt)
 	got := Verify(&submitter.Keys.PublicKey, sig, hash)
 	assert.Equal(t, true, got, "TestGetPaperSubmissionSignature failed")
 }
