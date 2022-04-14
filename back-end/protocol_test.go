@@ -224,15 +224,15 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
 
 	commitMsg := CommitMsg{
-		commit,
-		commit2,
+		EncodeToBytes(commit),
+		EncodeToBytes(commit2),
 	}
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
 	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
-	assert.Equal(t, commit, foundCommit, "TestGetPaperSubmissionCommit failed")
+	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
 
 }
 
@@ -243,9 +243,10 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
 
 	commitMsg := CommitMsg{
-		commit,
-		commit2,
+		EncodeToBytes(commit),
+		EncodeToBytes(commit2),
 	}
+
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)

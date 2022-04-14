@@ -94,7 +94,7 @@ func (pc *PC) getPaperAndRs(submitter *Submitter) (*Paper, *big.Int) {
 	DecryptedPaperAndRandomness := Decrypt(EncryptedPaperAndRandomness, Kpcs)
 	DecodedPaperAndRandomness := DecodeToStruct(DecryptedPaperAndRandomness)
 
-	p := DecodedPaperAndRandomness.(SubmitStruct).paper
+	p := DecodedPaperAndRandomness.(SubmitStruct).Paper
 	rs := DecodedPaperAndRandomness.(SubmitStruct).Rs
 
 	return p, rs

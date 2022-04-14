@@ -13,8 +13,8 @@ type SubmitMessage struct {
 }
 
 type CommitMsg struct {
-	IdenityCommit *ecdsa.PublicKey
-	PaperCommit   *ecdsa.PublicKey
+	IdenityCommit []byte
+	PaperCommit   []byte
 }
 
 
@@ -48,8 +48,8 @@ func (s *Submitter) Submit(p *Paper) {
 	PaperSubmissionCommit, _ := s.GetCommitMessagePaper(PaperBigInt, rs)
 
 	commitMsg := CommitMsg{
-		SubmitterIdenityCommit,
-		PaperSubmissionCommit,
+		EncodeToBytes(SubmitterIdenityCommit),
+		EncodeToBytes(PaperSubmissionCommit),
 	}
 
 	signedCommitMsg := SignzAndEncrypt(s.Keys, commitMsg, "")
@@ -68,7 +68,7 @@ func (s *Submitter) Submit(p *Paper) {
 	pc.allPapers = append(pc.allPapers, *p)
 }
 
-func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
+func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) ecdsa.PublicKey {
 
 	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
 	bytes := signedCommitMsg.value.([][]byte)
@@ -76,8 +76,9 @@ func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) *ecdsa.PublicKey {
 	
 	decodedCommitMsg := DecodeToStruct(commitMsg)
 
-	commit := decodedCommitMsg.(CommitMsg).PaperCommit
-	return commit
+	encodedPaperCommit := decodedCommitMsg.(CommitMsg).PaperCommit
+	decodedpaperCommit := DecodeToStruct(encodedPaperCommit)
+	return decodedpaperCommit.(ecdsa.PublicKey)
 }
 
 func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {

@@ -21,9 +21,9 @@ import (
 type Reviewer struct {
 	UserID              string
 	Keys                *ecdsa.PrivateKey
-	paperCommittedValue *CommitStructPaper
-	gradedPaperMap      map[int]int
-	gradeCommittedValue *CommitStruct
+	PaperCommittedValue *CommitStructPaper
+	GradedPaperMap      map[int]int
+	GradeCommittedValue *CommitStruct
 }
 
 type Submitter struct {
@@ -77,7 +77,7 @@ var (
 )
 
 type SubmitStruct struct {
-	paper *Paper
+	Paper *Paper
 	Rr    *big.Int
 	Rs    *big.Int
 }

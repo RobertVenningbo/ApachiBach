@@ -96,7 +96,7 @@ func (pc *PC) GetCommitMessageReviewPaperTest(val *big.Int, r *big.Int) error { 
 		
 		pc.reviewCommits = append(pc.reviewCommits, *comm)
 	
-		fmt.Printf("\n %s %v", "comm1: ", comm)
+		fmt.Printf("\n %s %v", "comm1: ", *comm)
 	return nil
 
 } //C(P, r)  C(S, r)
@@ -110,14 +110,14 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecd
 
 	// c = g^x * h^r
 
-	rev.paperCommittedValue.R = r
+	rev.PaperCommittedValue.R = r
 
-	rev.paperCommittedValue.Val = val
+	rev.PaperCommittedValue.Val = val
 
 	x1 := ec.ExpBaseG(rev.Keys, val)
 	x2 := ec.Exp(rev.Keys, &rev.Keys.PublicKey, r)
 	comm := ec.Mul(rev.Keys, x1, x2)
-	rev.paperCommittedValue.CommittedValue = comm
+	rev.PaperCommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)
@@ -132,14 +132,14 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 	// c = g^x * h^r
 	r := ec.GetRandomInt(rev.Keys.D)
 
-	rev.gradeCommittedValue.R = r
-	rev.gradeCommittedValue.Val = val
+	rev.GradeCommittedValue.R = r
+	rev.GradeCommittedValue.Val = val
 	
 	
 	x1 := ec.ExpBaseG(rev.Keys, val)
 	x2 := ec.Exp(rev.Keys, &rev.Keys.PublicKey, r)
 	comm := ec.Mul(rev.Keys, x1, x2)
-	rev.gradeCommittedValue.CommittedValue = comm
+	rev.GradeCommittedValue.CommittedValue = comm
 
 	return comm, nil
 } //C(P, r)  C(S, r)

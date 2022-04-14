@@ -21,7 +21,7 @@ type reviewCommitNonceStruct struct {
 func (r *Reviewer) FinishReview() { //step 8
 	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	signAndEnc := SignzAndEncrypt(r.Keys, r.paperCommittedValue, Kpcr) //Perhaps look at this when implementing more reviewers pr. paper
+	signAndEnc := SignzAndEncrypt(r.Keys, r.PaperCommittedValue, Kpcr) //Perhaps look at this when implementing more reviewers pr. paper
 	str := fmt.Sprintf("Reviewer, %s, finish review on paper\n", r.UserID)
 	log.Printf(str)
 	tree.Put(str, signAndEnc)
@@ -65,7 +65,7 @@ func (pc *PC) CollectReviews(reviewers []Reviewer) { // step 11
 
 //planned to be called for every reviewer in the controller layer or whatever calls it
 func (r *Reviewer) SignReviewPaperCommit() { //step 9
-	PaperCommit := r.paperCommittedValue.CommittedValue
+	PaperCommit := r.PaperCommittedValue.CommittedValue
 
 	nonce := tree.Find("nonce") //find nonce in reviewSignStruct
 	reviewCommitNonce := reviewCommitNonceStruct{

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"crypto/ecdsa"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"math/big"
@@ -54,7 +55,8 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []Paper) []Paper {
 }
 
 //TODO: TEST
-func (r *Reviewer) getBiddedPaper() *PaperBid { //TODO test this function
+func (r *Reviewer) getBiddedPaper() PaperBid { //TODO test this function
+
 	Kpcr := generateSharedSecret(&pc, nil, r)
 	EncryptedSignedBid := tree.Find("EncryptedSignedBids " + r.UserID)
 	bytes := EncryptedSignedBid.value.([][]byte)
@@ -62,8 +64,8 @@ func (r *Reviewer) getBiddedPaper() *PaperBid { //TODO test this function
 	decrypted := Decrypt([]byte(enc), Kpcr)
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
-
-	return &bid
+	fmt.Printf("%s %v \n", "reviewer: ", bid.Reviewer)
+	return bid
 }
 
 func (r *Reviewer) makeBid(pap *Paper) *PaperBid {
@@ -88,7 +90,7 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 	tmpList := []PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
 		p := reviewerSlice[i].getBiddedPaper()
-		tmpList = append(tmpList, *p)
+		tmpList = append(tmpList, p)
 		fmt.Println(reviewerSlice[i].UserID)
 	}
 	for _, bid := range tmpList { //loop through all bidded papers
@@ -99,7 +101,7 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 					if !p.Selected {
 						reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
 						p.Selected = true
-						bid.Reviewer.paperCommittedValue.Paper = *bid.Paper //Maybe pointer issue
+						bid.Reviewer.PaperCommittedValue.Paper = *bid.Paper //Maybe pointer issue
 						fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
 						assignedPaper = true
 					}
@@ -107,8 +109,8 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 			}
 		} else { //if a bidded paper is NOT selected, assign it to first reviewer
 			reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
-			bid.Reviewer.paperCommittedValue.Paper = *bid.Paper
-			bid.Reviewer.paperCommittedValue.Paper.Selected = true
+			bid.Reviewer.PaperCommittedValue.Paper = *bid.Paper
+			bid.Reviewer.PaperCommittedValue.Paper.Selected = true
 			for _, p := range pc.allPapers {
 				if p.Id == bid.Paper.Id { //find bidded paper in all papers and set it to selected
 					p.Selected = true
@@ -121,8 +123,8 @@ func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
 	for _, p := range pc.allPapers { //Loop through all papers
 		for _, r := range reviewerSlice { //loop through reviewers and find a reviewer without assigned paper
 			reviewerList := p.ReviewerList
-			if &r.paperCommittedValue.Paper == &(Paper{}) { //assign paper to reviewer
-				r.paperCommittedValue.Paper = p
+			if &r.PaperCommittedValue.Paper == &(Paper{}) { //assign paper to reviewer
+				r.PaperCommittedValue.Paper = p
 				fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
 				reviewerList = append(reviewerList, r) //Add reviewer to papers list of reviewers
 				assignedPaper = true
@@ -145,7 +147,7 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 		}
 		pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr) //C(P, rr)
 		//fmt.Printf("%s %v \n", "ReviewCommit: ", ReviewCommit)
-		nonce := ec.GetRandomInt(pc.Keys.D) //nonce_r
+		nonce, _ := rand.Int(rand.Reader, curve.Params().N) //nonce_r
 		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
 			EncodeToBytes(pc.reviewCommits[0]),
 			&reviewerKeyList,
@@ -155,10 +157,10 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 		tree.Put("PCsignedReviewCommitKeysNonce"+fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
 
 		for _, s := range submitters {
-			fmt.Printf("\n %v \n ", s.PaperCommittedValue.Paper.Id) //for testing delete later
+			fmt.Printf("\n %s %v \n ", "paperid: ", s.PaperCommittedValue.Paper.Id) //for testing delete later
 			if s.PaperCommittedValue.Paper.Id == p.Id {
 				rs := s.PaperCommittedValue.R
-				PaperSubmissionCommit := *pc.GetPaperSubmissionCommit(&s)                //C(P, rs)
+				PaperSubmissionCommit := pc.GetPaperSubmissionCommit(&s)                //C(P, rs)
 				fmt.Printf("\n %s %v", "PaperSubmissionCommit: ", PaperSubmissionCommit) //for testing delete later
 				proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey)
 				C1 := Commitment{ //this is wrong, but trying for testing reasons, might need a for loop looping through reviewcommits

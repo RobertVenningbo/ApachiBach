@@ -9,6 +9,12 @@ import (
 )
 
 func TestMatchPapers(t *testing.T) {
+	p := Paper{
+		1,
+		true,
+		nil,
+		nil,
+	}
 	submitter.PaperCommittedValue.Paper = p
 	allPapers := append(pc.allPapers, p)
 	fmt.Printf("Paper: %v in allPapers", p.Id)
@@ -18,12 +24,13 @@ func TestMatchPapers(t *testing.T) {
 	r := ec.GetRandomInt(submitter.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	commit2, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
+	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
+	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
 
 	commitMsg := CommitMsg{
-		commit2,
-		commit,
+		EncodeToBytes(IdentityCommit),
+		EncodeToBytes(PaperSubmissionCommit),
 	}
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
@@ -50,10 +57,16 @@ func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 }
 
 func TestGetBiddedPaper(t *testing.T) {
-	reviewerScope := Reviewer{
+	commitStructPaper := &CommitStructPaper {
+		nil,
+		nil,
+		nil,
+		Paper{},
+	}
+	reviewerScope := &Reviewer{
 		"reviewer123123",
 		newKeys(),
-		&CommitStructPaper{},
+		commitStructPaper,
 		nil,
 		nil,
 	}
@@ -61,7 +74,11 @@ func TestGetBiddedPaper(t *testing.T) {
 	reviewerScope.SignBidAndEncrypt(&p)
 
 	paperBid := reviewerScope.getBiddedPaper()
+	
+	fmt.Printf("%s %v \n", "reviewer1: ", reviewerScope)
+	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
 
-	assert.Equal(t, p, paperBid.Paper, "TestGetBiddedPaper failed")
-	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed") //TODO: CURRENTLY THERE'S A BUG WHICH DOESN'T ALLOW NESTED STRUCTS
+
+	assert.Equal(t, p, *paperBid.Paper, "TestGetBiddedPaper failed")
+ 	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed") //TODO: CURRENTLY THERE'S A BUG WHICH DOESN'T ALLOW NESTED STRUCTS
 }
