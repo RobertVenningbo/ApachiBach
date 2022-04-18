@@ -34,8 +34,9 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := Sign(s.Keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
-	tree.Put("SignedSubmitMsg"+s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
+	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + s.UserID + " - Encrypted Paper and Random Numbers logged")
 
 	//submitter identity commit
@@ -84,4 +85,9 @@ func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
 	bytes := signedCommitMsg.value.([][]byte)
 	sig, _ := SplitSignatureAndMsg(bytes)
 	return sig
+}
+
+func (pc *PC) GetPaperAndRandomness(pId int) {
+	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
+	
 }
