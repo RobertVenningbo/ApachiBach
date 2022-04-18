@@ -258,3 +258,28 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 	got := Verify(&submitter.Keys.PublicKey, sig, hash)
 	assert.Equal(t, true, got, "TestGetPaperSubmissionSignature failed")
 }
+
+func TestGetPaperAndRandomness(t *testing.T) {
+	
+	rr := ec.GetRandomInt(pc.Keys.D) 
+    rs := ec.GetRandomInt(pc.Keys.D) 
+
+	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
+	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
+		&p,
+		rr,
+		rs,
+	}
+	submitMsg := SubmitMessage{
+		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
+		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
+	}
+
+	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
+	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+
+	want := pc.GetPaperAndRandomness(p.Id)
+
+	assert.Equal(t, PaperAndRandomness, want, "TestGetPaperAndRandomness failed")
+}

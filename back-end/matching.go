@@ -223,15 +223,15 @@ func (pc *PC) GetReviewSignedStruct(id int) ReviewSignedStruct {
 }
 
 func (pc *PC) supplyNIZK(p *Paper) {
-	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id)
-	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
-	nonce := reviewSignedStruct.Nonce
-	reviewCommit := *reviewSignedStruct.Commit
+	// paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id)
+	// reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
+	// nonce := reviewSignedStruct.Nonce
+	// reviewCommit := *reviewSignedStruct.Commit
 
-	//TODO: rr should be retrieved from log (DELETE WHEN DONE)
-	//TODO: rs should be retrieved from log (DELETE WHEN DONE)
+	// //TODO: rr should be retrieved from log (DELETE WHEN DONE)
+	// //TODO: rs should be retrieved from log (DELETE WHEN DONE)
 
-	proof := *NewEqualityProof(PaperBigInt, rr, rs, nonce)
+	// proof := *NewEqualityProof(PaperBigInt, rr, rs, nonce)
 
 }
 
