@@ -9,8 +9,8 @@ import (
 )
 
 type EqProof struct {
-	C *big.Int
-	D *big.Int
+	C  *big.Int
+	D  *big.Int
 	D1 *big.Int
 	D2 *big.Int
 }
@@ -23,10 +23,9 @@ type Commitment struct {
 var (
 	nothingUpMySleeveQ1 = []byte("Cowards die many times before their deaths; The valiant never taste of death but once")
 	nothingUpMySleeveQ2 = []byte("Men at some time are masters of their fates")
-	dstG1 = []byte("BLS12381G1_XMD:SHA-256_SSWU_RO_")
-	dstG2 = []byte("BLS12381G2_XMD:SHA-256_SSWU_RO_")
+	dstG1               = []byte("BLS12381G1_XMD:SHA-256_SSWU_RO_")
+	dstG2               = []byte("BLS12381G2_XMD:SHA-256_SSWU_RO_")
 )
-
 
 func NewEqProofP256(x, r1, r2, nonce *big.Int, pk1 *ecdsa.PublicKey, pk2 *ecdsa.PublicKey) *EqProof {
 	curve1 := elliptic.P256()
@@ -117,7 +116,7 @@ func getGenerators() (*big.Int, *big.Int, *big.Int, *big.Int) {
 	return q1x, q1y, q2x, q2y
 }
 
-func MsgToBigInt(msg []byte) *big.Int{
+func MsgToBigInt(msg []byte) *big.Int {
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
 	hashedMsg := sha512.Sum384(msg)

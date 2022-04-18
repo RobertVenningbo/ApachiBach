@@ -7,7 +7,6 @@ import (
 	ec "swag/ec"
 )
 
-
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
 	signNtext := Sign(r.Keys, input)
 

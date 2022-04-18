@@ -247,7 +247,6 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 		EncodeToBytes(commit2),
 	}
 
-
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 

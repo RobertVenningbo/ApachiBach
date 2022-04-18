@@ -25,7 +25,7 @@ func TestMatchPapers(t *testing.T) {
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
 	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
+	fmt.Printf("%s %v \n", "PaperSubmissionCommitT:", *PaperSubmissionCommit)
 	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
 
 	commitMsg := CommitMsg{
@@ -57,7 +57,7 @@ func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 }
 
 func TestGetBiddedPaper(t *testing.T) {
-	commitStructPaper := &CommitStructPaper {
+	commitStructPaper := &CommitStructPaper{
 		nil,
 		nil,
 		nil,
@@ -74,11 +74,10 @@ func TestGetBiddedPaper(t *testing.T) {
 	reviewerScope.SignBidAndEncrypt(&p)
 
 	paperBid := reviewerScope.getBiddedPaper()
-	
+
 	fmt.Printf("%s %v \n", "reviewer1: ", reviewerScope)
 	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
 
-
 	assert.Equal(t, p, *paperBid.Paper, "TestGetBiddedPaper failed")
- 	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed") //TODO: CURRENTLY THERE'S A BUG WHICH DOESN'T ALLOW NESTED STRUCTS
+	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed") //TODO: CURRENTLY THERE'S A BUG WHICH DOESN'T ALLOW NESTED STRUCTS
 }
