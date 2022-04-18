@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	ec "swag/ec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func TestMatchPapers(t *testing.T) {
 		nil,
 		nil,
 	}
-	submitter.PaperCommittedValue.Paper = p
+	submitter.PaperCommittedValue.Paper = &p
 	allPapers := append(pc.allPapers, &p)
 	fmt.Printf("Paper: %v in allPapers", p.Id)
 	submitters := []Submitter{submitter}

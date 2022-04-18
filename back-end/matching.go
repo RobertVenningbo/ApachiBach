@@ -173,7 +173,7 @@ func (pc *PC)SetReviewersPaper(reviewerList []*Reviewer) {
 	}
 }
 
-func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []Paper) {
+func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []*Paper) {
 	for _, p := range papers {
 		fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " looping")
 		rr := ec.GetRandomInt(pc.Keys.D)
