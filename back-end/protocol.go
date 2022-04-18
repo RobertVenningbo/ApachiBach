@@ -219,7 +219,6 @@ func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature
 	return splitArr[0], splitArr[1]
 }
 
-//Maybe should take []byte instead of interface.
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)

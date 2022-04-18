@@ -118,3 +118,9 @@ func TestZKSetMembership(t *testing.T) {
 	}
 	assert.True(t, ok, "should verify")
 }
+
+func TestMsgToBigInt(t *testing.T){
+	msg := MsgToBigInt(EncodeToBytes(p))
+	msg1 := MsgToBigInt(EncodeToBytes(p))
+	assert.Equal(t, msg, msg1, "failzzMsgToBigInt") 
+}
