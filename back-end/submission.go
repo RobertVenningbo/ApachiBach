@@ -34,7 +34,7 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := Sign(s.Keys, submitMsg)            //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	SignedSubmitMsg := Sign(s.Keys, submitMsg)            
 	tree.Put("SignedSubmitMsg"+s.UserID, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + s.UserID + " - Encrypted Paper and Random Numbers logged")
 
@@ -52,8 +52,9 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 
 	signedCommitMsg := SignzAndEncrypt(s.Keys, commitMsg, "")
-	tree.Put("signedCommitMsg"+s.UserID, signedCommitMsg)
-	log.Println("signedCommitMsg" + s.UserID + " logged") //Both commits signed and logged
+	msg := fmt.Sprintf("signedCommitMsg%v", p.Id)
+	tree.Put(msg, signedCommitMsg)
+	log.Println(msg + " logged") //Both commits signed and logged
 
 	KsString := fmt.Sprintf("%v", EncodeToBytes(s.Keys.PublicKey))
 	tree.Put(KsString+s.UserID, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
@@ -66,9 +67,9 @@ func (s *Submitter) Submit(p *Paper) {
 	pc.allPapers = append(pc.allPapers, p)
 }
 
-func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) ecdsa.PublicKey {
-
-	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
+func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
+	msg := fmt.Sprintf("signedCommitMsg%v", id)
+	signedCommitMsg := tree.Find(msg)
 	bytes := signedCommitMsg.value.([][]byte)
 	_, commitMsg := SplitSignatureAndMsg(bytes)
 

@@ -227,11 +227,12 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 		EncodeToBytes(commit),
 		EncodeToBytes(commit2),
 	}
-
+	msg := fmt.Sprintf("signedCommitMsg%v", p.Id)
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	
+	tree.Put(msg, signedCommitMsg)
 
-	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
+	foundCommit := pc.GetPaperSubmissionCommit(p.Id)
 	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
 
 }
