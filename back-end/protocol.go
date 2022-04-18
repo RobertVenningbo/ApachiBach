@@ -44,12 +44,12 @@ type CommitStructPaper struct {
 	CommittedValue *ecdsa.PublicKey
 	R              *big.Int
 	Val            *big.Int
-	Paper          Paper
+	Paper          *Paper
 }
 
 type PC struct {
 	Keys          *ecdsa.PrivateKey
-	allPapers     []Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
+	allPapers     []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
 	reviewCommits []ecdsa.PublicKey
 }
 
@@ -242,3 +242,13 @@ func SplitSignatureAndMsg(bytes [][]byte) ([]byte, []byte) { // returns signatur
 	sig, msg := bytes[0], bytes[1]
 	return sig, msg
 }
+
+func RemoveIndex(s []Reviewer, index int) []Reviewer {
+	return append(s[:index], s[index+1:]...)
+}
+
+func removeIndexOne(s []Reviewer, i int) []Reviewer {
+    s[len(s)-1], s[i] = s[i], s[len(s)-1]
+    return s[:len(s)-1]
+}
+

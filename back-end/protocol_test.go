@@ -18,7 +18,7 @@ var (
 	}
 	p = Paper{
 		1,
-		true,
+		false,
 		nil,
 		nil,
 	}
@@ -32,7 +32,7 @@ var (
 	reviewer2 = Reviewer{
 		"reviewer2",
 		newKeys(),
-		nil,
+		&CommitStructPaper{},
 		nil,
 		nil,
 	}
@@ -246,7 +246,6 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 		EncodeToBytes(commit),
 		EncodeToBytes(commit2),
 	}
-
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)

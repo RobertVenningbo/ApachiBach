@@ -65,7 +65,7 @@ func (s *Submitter) Submit(p *Paper) {
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
-	pc.allPapers = append(pc.allPapers, *p)
+	pc.allPapers = append(pc.allPapers, p)
 }
 
 func (pc *PC) GetPaperSubmissionCommit(submitter *Submitter) ecdsa.PublicKey {

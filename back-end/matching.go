@@ -54,8 +54,7 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []Paper) []Paper {
 	return pList
 }
 
-//TODO: TEST
-func (r *Reviewer) getBiddedPaper() PaperBid { //TODO test this function
+func (r *Reviewer) getBiddedPaper() *PaperBid { 
 
 	Kpcr := generateSharedSecret(&pc, nil, r)
 	EncryptedSignedBid := tree.Find("EncryptedSignedBids " + r.UserID)
@@ -65,7 +64,7 @@ func (r *Reviewer) getBiddedPaper() PaperBid { //TODO test this function
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
 	fmt.Printf("%s %v \n", "reviewer: ", bid.Reviewer)
-	return bid
+	return &bid
 }
 
 func (r *Reviewer) makeBid(pap *Paper) *PaperBid {
@@ -84,54 +83,94 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	log.Println("EncryptedSignedBids" + r.UserID + "logged.")
 }
 
-//TODO: TEST
-func (pc *PC) assignPaper(reviewerSlice []Reviewer) bool {
-	assignedPaper := false
-	tmpList := []PaperBid{}
+func (pc *PC) replaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) {
+	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
 		p := reviewerSlice[i].getBiddedPaper()
-		tmpList = append(tmpList, p)
-		fmt.Println(reviewerSlice[i].UserID)
+		bidList = append(bidList, p)
 	}
-	for _, bid := range tmpList { //loop through all bidded papers
-		reviewerList := bid.Paper.ReviewerList
-		if bid.Paper.Selected { //if a paper is already selected
-			for _, p := range pc.allPapers { //find a paper that isn't selected
-				if p.Id == bid.Paper.Id {
-					if !p.Selected {
-						reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
-						p.Selected = true
-						bid.Reviewer.PaperCommittedValue.Paper = *bid.Paper //Maybe pointer issue
-						fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
-						assignedPaper = true
+	
+	for _, p := range pc.allPapers {
+		for _, b := range bidList {
+			if p.Id == b.Paper.Id {
+				p = b.Paper
+				
+			}
+		}
+	}
+	return pc.allPapers, bidList
+}
+
+
+func (pc *PC) assignPaper2(reviewerSlice []*Reviewer) {
+	reviewersBidsTaken := []Reviewer{}
+	bidList := []*PaperBid{}
+	for i := range reviewerSlice { //loop to get list of all bidded papers
+		p := reviewerSlice[i].getBiddedPaper()
+		bidList = append(bidList, p)
+	}
+	for _, bid := range bidList {
+		for _, p := range pc.allPapers {
+			if p.Id == bid.Paper.Id {
+				if !p.Selected {
+					if bid.Reviewer.PaperCommittedValue == nil {
+						bid.Reviewer.PaperCommittedValue = &CommitStructPaper{}
 					}
-				}
-			}
-		} else { //if a bidded paper is NOT selected, assign it to first reviewer
-			reviewerList = append(reviewerList, *bid.Reviewer) //Add reviewer to papers list of reviewers
-			bid.Reviewer.PaperCommittedValue.Paper = *bid.Paper
-			bid.Reviewer.PaperCommittedValue.Paper.Selected = true
-			for _, p := range pc.allPapers {
-				if p.Id == bid.Paper.Id { //find bidded paper in all papers and set it to selected
 					p.Selected = true
-					fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
-					assignedPaper = true
+					p.ReviewerList = append(p.ReviewerList, *bid.Reviewer)
+					break
+				} else {
+					reviewersBidsTaken = append(reviewersBidsTaken, *bid.Reviewer)
+					break
 				}
 			}
 		}
 	}
-	for _, p := range pc.allPapers { //Loop through all papers
-		for _, r := range reviewerSlice { //loop through reviewers and find a reviewer without assigned paper
-			reviewerList := p.ReviewerList
-			if &r.PaperCommittedValue.Paper == &(Paper{}) { //assign paper to reviewer
-				r.PaperCommittedValue.Paper = p
-				fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " assigned")
-				reviewerList = append(reviewerList, r) //Add reviewer to papers list of reviewers
-				assignedPaper = true
+	for i, r := range reviewersBidsTaken {
+		x := false
+		if (r.PaperCommittedValue == nil) {
+			r.PaperCommittedValue = &CommitStructPaper{}
+		}
+		for _, p := range pc.allPapers {
+			if !p.Selected {
+				x = true
+				p.Selected = true
+				reviewer := &r
+				p.ReviewerList = append(p.ReviewerList, *reviewer)	
+				break
+			}
+		}
+		if x {
+			reviewersBidsTaken[i].UserID = "deleted"
+			x = false
+		}
+	}
+	for _, r := range reviewersBidsTaken {
+		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != "deleted") {
+			r.PaperCommittedValue = &CommitStructPaper{}
+			for _, p := range pc.allPapers {
+				p.Selected = true
+				p.ReviewerList = append(p.ReviewerList, r)
+				break	
 			}
 		}
 	}
-	return assignedPaper
+	pc.SetReviewersPaper(reviewerSlice)
+}
+
+func (pc *PC)SetReviewersPaper(reviewerList []*Reviewer) {
+	for _, p := range pc.allPapers {
+		for _, r := range p.ReviewerList {
+			for _, r1 := range reviewerList {
+				if r.UserID == r1.UserID {
+					if (r1.PaperCommittedValue == nil) {
+						r1.PaperCommittedValue = &CommitStructPaper{}
+					}
+					r1.PaperCommittedValue.Paper = p
+				}
+			}
+		}
+	}
 }
 
 func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []Paper) {
@@ -139,7 +178,6 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 		fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " looping")
 		rr := ec.GetRandomInt(pc.Keys.D)
 		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-
 		reviewerList := p.ReviewerList
 		reviewerKeyList := []ecdsa.PublicKey{}
 		for _, r := range reviewerList {
@@ -212,3 +250,4 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 	// 	}
 	// }
 }
+

@@ -17,7 +17,7 @@ func (s *Submitter) ClaimPaper() { //step 19
 	ri := s.SubmitterCommittedValue.Val
 
 	msg := ClaimMessage{
-		&paper,
+		paper,
 		s,
 		ri,
 	}
