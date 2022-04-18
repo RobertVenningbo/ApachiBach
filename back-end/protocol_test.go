@@ -7,31 +7,45 @@ import (
 	"math/big"
 	"swag/ec"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
 var (
 	paperListTest = []Paper{
-		Paper{1, nil, false, nil},
-		Paper{2, nil, false, nil},
+		Paper{1, false, nil, nil},
+		Paper{2, false, nil, nil},
+	}
+	p = Paper{
+		1,
+		false,
+		nil,
+		nil,
+	}
+	reviewer = Reviewer{
+		"reviewer",
+		newKeys(),
+		&CommitStructPaper{},
+		nil,
+		nil,
+	}
+	reviewer2 = Reviewer{
+		"reviewer2",
+		newKeys(),
+		&CommitStructPaper{},
+		nil,
+		nil,
+	}
+	submitter = Submitter{
+		newKeys(),
+		"submitter", //userID
+		&CommitStruct{},
+		&CommitStructPaper{},
+		&Receiver{},
 	}
 )
 
 func TestGenerateSharedSecret(t *testing.T) {
-	pc := PC{
-		newKeys(),
-		nil,
-	}
-	submitter := Submitter{
-		newKeys(),
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{nil, nil},
-		nil,
-		nil,
-	}
-
 	got := generateSharedSecret(&pc, &submitter, nil)
 	want := generateSharedSecret(&pc, &submitter, nil)
 	assert.Equal(t, got, want, "Test failed")
@@ -39,17 +53,8 @@ func TestGenerateSharedSecret(t *testing.T) {
 }
 
 func TestVerifyTrapdoorSubmitter(t *testing.T) {
-	keys := newKeys()
-	submitter := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{keys, nil},
-		nil,
-		nil,
-	}
-	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.receiver))
+
+	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.Receiver))
 
 	want := true
 
@@ -59,237 +64,61 @@ func TestVerifyTrapdoorSubmitter(t *testing.T) {
 }
 
 func TestPedersenCommitment(t *testing.T) {
-	keys := newKeys()
-	submitter := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{},
-		nil,
-		nil,
-	}
 
-	submitter.receiver = NewReceiver(submitter.keys)
+	submitter.Receiver = NewReceiver(submitter.Keys)
 
-	a := ec.GetRandomInt(submitter.keys.D)
-
-	c, err := submitter.GetCommitMessage(a)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
+	c, err := submitter.GetCommitMessage(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
 	}
 
-	SetCommitment(submitter.receiver, c)
+	SetCommitment(submitter.Receiver, c)
 	submittedVal, r := submitter.GetDecommitMsg()
 
-	success := submitter.receiver.CheckDecommitment(r, submittedVal)
+	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen failed")
 
 }
 
 func TestPedersenCommitmentPaper(t *testing.T) {
-	keys := newKeys()
-	p := Paper{
-		1,
-		&CommitStruct{},
-		true,
-		nil,
-	}
-	submitter := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&p,
-		&Receiver{},
-		nil,
-		nil,
-	}
 
-	submitter.receiver = NewReceiver(submitter.keys)
+	submitter.Receiver = NewReceiver(submitter.Keys)
 
-	a := ec.GetRandomInt(submitter.keys.D)
-
-	c, err := submitter.GetCommitMessagePaper(a)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
+	c, err := submitter.GetCommitMessagePaper(a, b)
 
 	if err != nil {
 		t.Errorf("Error in GetCommitMsg: %v", err)
 	}
 
-	SetCommitment(submitter.receiver, c)
+	SetCommitment(submitter.Receiver, c)
 	submittedVal, r := submitter.GetDecommitMsgPaper()
 
-	success := submitter.receiver.CheckDecommitment(r, submittedVal)
+	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
 
 	assert.Equal(t, true, success, "pedersen paper commitment failed")
 
 }
 
-/*
-// ALSO ADD RECEIVER TO COMMITSTRUCT, THEN MAYBE REMOVE FROM SUBMISSIVE SUBMITTER
-func TestPedersenCommitmentPaper1(t *testing.T) {
-	keys := newKeys()
-	submitter := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{
-			1,
-			&CommitStruct{},
-			true},
-		&Receiver{},
-		nil,
-		nil,
-	}
-
-	submitter.paperCommittedValue.CommittedValue.receiver = NewReceiver(submitter.keys)
-	rec := *submitter.paperCommittedValue.CommittedValue.receiver
-	a := ec.GetRandomInt(submitter.keys.D)
-
-	c, err := submitter.GetCommitMessagePaper(a)
-
-	if err != nil {
-		t.Errorf("Error in GetCommitMsg: %v", err)
-	}
-
-	SetCommitment(&rec, c)
-	submittedVal, r := submitter.GetDecommitMsgPaper()
-
-	success := rec.CheckDecommitment(r, submittedVal)
-
-	assert.Equal(t, true, success, "pedersen failed")
-
-}
-*/
 func TestCommitSignatureAndVerify(t *testing.T) {
-	keys := newKeys()
-	s := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{},
-		nil,
-		nil,
-	}
 
-	a := ec.GetRandomInt(s.keys.D)
-	c, _ := s.GetCommitMessage(a)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
+	c, _ := submitter.GetCommitMessage(a, b)
 
 	hashedMsgSubmit1, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
 
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, s.keys, hashedMsgSubmit1) //rand.Reader idk??
+	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, submitter.Keys, hashedMsgSubmit1) //rand.Reader idk??
 
-	got := ecdsa.VerifyASN1(&s.keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
+	got := ecdsa.VerifyASN1(&submitter.Keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
-
-// func TestSubmit(t *testing.T) {
-// 	keys := newKeys()
-// 	p := Paper{
-// 		1,
-// 		&CommitStruct{},
-// 		true,
-// 		nil,
-// 	}
-// 	s := Submitter{
-// 		keys,
-// 		"1", //userID
-// 		&CommitStruct{},
-// 		&p,
-// 		&Receiver{},
-// 		nil,
-// 		nil,
-// 	}
-// 	pc := PC{
-// 		keys,
-// 		nil,
-// 	}
-
-// 	got := Submit(&s, &p)
-
-// 	//fmt.Println(pc)
-// 	pc.signatureMap = nil //need this or it isn't used
-
-// 	assert.Equal(t, got, got, "Submit failed") //Can't compare got to got, this test is useless
-// }
-
-func TestAssignPapersGetPaperList(t *testing.T) {
-	pc := PC{
-		newKeys(),
-		nil,
-	}
-	reviewer1 := Reviewer{
-		"reviewer1",
-		newKeys(),
-		nil,
-		map[int][]byte{},
-		nil,
-		nil,
-		nil,
-		nil,
-	}
-	reviewer2 := Reviewer{
-		"reviewer2",
-		newKeys(),
-		nil,
-		map[int][]byte{},
-		nil,
-		nil,
-		nil,
-		nil,
-	}
-	assignPapers(&pc, []Reviewer{reviewer1, reviewer2}, paperListTest)
-	got := getPaperList(&pc, &reviewer1)
-	want := paperListTest
-	assert.Equal(t, got, want, "TestAssignPapersGetPaperList failed")
-
-}
-
-/*
-func TestSchnorrProof(t *testing.T) {
-	p := Paper{
-		1,
-		&CommitStruct{},
-		true,
-		nil,
-	}
-	reviewer := Reviewer{
-		"reviewer",
-		newKeys(),
-		nil,
-		map[int][]byte{},
-		nil,
-		&p,
-		nil,
-	}
-	submitter := Submitter{
-		newKeys(),
-		"1", //userID
-		&CommitStruct{},
-		&p,
-		&Receiver{},
-		nil,
-		nil,
-	}
-
-	a := ec.GetRandomInt(submitter.keys.D)
-	submitter.GetCommitMessagePaper(a)
-
-	b := ec.GetRandomInt(reviewer.keys.D)
-	reviewer.GetCommitMessageReviewPaper(b)
-
-	proof := CreateProof(submitter.keys, reviewer.keys)
-
-	got := VerifyProof(proof)
-
-	want := true
-
-	assert.Equal(t, want, got, "Proof failed")
-}
-*/
 
 func TestEncryptAndDecrypt(t *testing.T) {
 	passphrase := "password"
@@ -310,17 +139,6 @@ func TestEncryptAndDecrypt(t *testing.T) {
 }
 
 func TestDecodeToStruct(t *testing.T) {
-	keys := newKeys()
-	c := CommitStruct{
-		&keys.PublicKey,
-		nil,
-		nil}
-	p := Paper{
-		1,
-		&c,
-		true,
-		nil,
-	}
 	EncodedStruct := EncodeToBytes(p)
 	DecodedStruct := DecodeToStruct1(EncodedStruct, Paper{})
 	assert.Equal(t, DecodedStruct, p, "Test failed")
@@ -328,31 +146,21 @@ func TestDecodeToStruct(t *testing.T) {
 }
 
 func TestVerifyMethod(t *testing.T) {
-	keys := newKeys()
-	s := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{},
-		nil,
-		nil,
-	}
 
-	a := ec.GetRandomInt(s.keys.D)
-	c, _ := s.GetCommitMessage(a)
+	a := ec.GetRandomInt(submitter.Keys.D)
+	b := ec.GetRandomInt(submitter.Keys.D)
+	c, _ := submitter.GetCommitMessage(a, b)
 
-	signatureAndPlaintext := Sign(s.keys, c) //TODO; current bug is that this hash within this function is not the same hash as when taking the hash of the returned plaintext
-	fmt.Println(signatureAndPlaintext)
+	signatureAndPlaintext := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(c), "")
 
-	signature, text := SplitSignz(signatureAndPlaintext)
-	fmt.Println(signature)
+	signature, txt := SplitSignatureAndMsg(signatureAndPlaintext)
 
-	hashedText, _ := GetMessageHash(EncodeToBytes(text))
-	got := Verify(&s.keys.PublicKey, signature, hashedText)
+	hashedText, _ := GetMessageHash(txt)
+	got := Verify(&submitter.Keys.PublicKey, signature, hashedText)
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
+
 /*
 func TestSignAndVerify(t *testing.T) {
 	keys := newKeys()
@@ -389,25 +197,11 @@ func TestSignAndVerify(t *testing.T) {
 
 } */
 
-func TestLogging(t *testing.T) { 
-	tree = NewTree(DefaultMinItems)
-	pc := PC{
-		newKeys(),
-		nil,
-	}
-	s := Submitter{
-		newKeys(),
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{},
-		nil,
-		nil,
-	}
-	
-	number := GetRandomInt(s.keys.D)
+func TestLogging(t *testing.T) {
+
+	number := ec.GetRandomInt(submitter.Keys.D)
 	bytes := EncodeToBytes(number)
-	Kpcs := generateSharedSecret(&pc, &s, nil)
+	Kpcs := generateSharedSecret(&pc, &submitter, nil)
 	encryptedNumber := Encrypt(bytes, Kpcs)
 	tree.Put("encryptedNumber", encryptedNumber)
 	tree.Put("Kpcs", Kpcs)
@@ -423,3 +217,43 @@ func TestLogging(t *testing.T) {
 
 }
 
+func TestGetPaperSubmissionCommit(t *testing.T) {
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+
+	commitMsg := CommitMsg{
+		EncodeToBytes(commit),
+		EncodeToBytes(commit2),
+	}
+
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+
+	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
+	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
+
+}
+
+func TestGetPaperSubmissionSignature(t *testing.T) {
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+
+	commitMsg := CommitMsg{
+		EncodeToBytes(commit),
+		EncodeToBytes(commit2),
+	}
+
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+
+	sig := pc.GetPaperSubmissionSignature(&submitter)
+
+	_, txt := SplitSignatureAndMsg(signedCommitMsg)
+	hash, _ := GetMessageHash(txt)
+	got := Verify(&submitter.Keys.PublicKey, sig, hash)
+	assert.Equal(t, true, got, "TestGetPaperSubmissionSignature failed")
+}

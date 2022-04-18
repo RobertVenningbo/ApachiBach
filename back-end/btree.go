@@ -1,4 +1,5 @@
 package backend
+
 //https://raw.githubusercontent.com/amit-davidson/btree/main/btree.go
 var DefaultMinItems = 128
 
@@ -14,7 +15,7 @@ type Node struct {
 }
 
 type Tree struct {
-	root *Node
+	root     *Node
 	minItems int
 	maxItems int
 }
@@ -28,7 +29,7 @@ func newItem(key string, value interface{}) *Item {
 
 func newTreeWithRoot(root *Node, minItems int) *Tree {
 	bucket := &Tree{
-		root:    root,
+		root: root,
 	}
 	bucket.root.bucket = bucket
 	bucket.minItems = minItems

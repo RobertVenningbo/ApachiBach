@@ -48,7 +48,7 @@ import (
 
  func GenerateParams(curveType ec.Curve) *Params {
 	 group := ec.NewGroup(curveType)
-	 a := common.GetRandomInt(group.Q)
+	 a := common.ec.GetRandomInt(group.Q)
 	 return NewParams(group, group.ExpBaseG(a), a)
  }
 
@@ -77,7 +77,7 @@ import (
 	 }
 
 	 // c = g^x * h^r
-	 r := common.GetRandomInt(c.Params.Group.Q)
+	 r := common.ec.GetRandomInt(c.Params.Group.Q)
 
 	 c.r = r
 	 c.committedValue = val

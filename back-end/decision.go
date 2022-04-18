@@ -35,13 +35,13 @@ func (pc *PC) SendGrades(subm *Submitter) { //maybe dont use *Submitter as param
 		_, txt := SplitSignz(v)
 		list = append(list, txt)
 	}
-	signatureAndTextOfStruct := SignzAndEncrypt(pc.keys, list, Kpcr)
+	signatureAndTextOfStruct := SignzAndEncrypt(pc.Keys, list, Kpcr)
 
 	msgStruct := SendGradeStruct{
 		signatureAndTextOfStruct,
 		grade,
 	}
-	str := fmt.Sprintf("PC sends grades to submitter, %s", subm.userID)
+	str := fmt.Sprintf("PC sends grades to submitter, %s", subm.UserID)
 	log.Println(str)
 	tree.Put(str, msgStruct)
 }
@@ -67,7 +67,7 @@ func (pc *PC) RejectPaper(rUserID string, grade string) { //step 16
 		rg,
 	}
 
-	signature := Sign(pc.keys, rejectMsg)
+	signature := Sign(pc.Keys, rejectMsg)
 
 	logMsg := fmt.Sprintf("Following paper was rejected: %s", signature)
 	log.Println(logMsg)
@@ -80,7 +80,7 @@ func (pc *PC) RejectPaper(rUserID string, grade string) { //step 16
 func (pc *PC) CompileGrades() { //step 17
 	grades := "get the grades somehow, right now it's assumed that it's given from somewhere else"
 
-	signStr := Sign(pc.keys, grades)
+	signStr := Sign(pc.Keys, grades)
 
 	str := fmt.Sprint("PC compiles grades")
 	log.Println(str)
@@ -88,13 +88,13 @@ func (pc *PC) CompileGrades() { //step 17
 }
 
 func (pc *PC) getPaperAndRs(submitter *Submitter) (*Paper, *big.Int) {
-	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.userID)
+	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.UserID)
 	EncryptedPaperAndRandomness := submitMsgInTree.value.(SubmitMessage).PaperAndRandomness
 	Kpcs := generateSharedSecret(pc, submitter, nil)
 	DecryptedPaperAndRandomness := Decrypt(EncryptedPaperAndRandomness, Kpcs)
 	DecodedPaperAndRandomness := DecodeToStruct(DecryptedPaperAndRandomness)
 
-	p := DecodedPaperAndRandomness.(SubmitStruct).paper
+	p := DecodedPaperAndRandomness.(SubmitStruct).Paper
 	rs := DecodedPaperAndRandomness.(SubmitStruct).Rs
 
 	return p, rs
@@ -110,7 +110,7 @@ func (pc *PC) RevealAcceptedPaperInfo(s *Submitter) {
 		rs,
 	}
 
-	signature := Sign(pc.keys, revealPaperMsg)
+	signature := Sign(pc.Keys, revealPaperMsg)
 	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
 	log.Println(str)
 	tree.Put(str, signature)
