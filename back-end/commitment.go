@@ -6,6 +6,7 @@ import (
 	"math/big"
 	ec "swag/ec"
 )
+
 func NewReceiver(key *ecdsa.PrivateKey) *Receiver {
 	return &Receiver{
 		Keys: key,
@@ -89,18 +90,17 @@ func (pc *PC) GetCommitMessageReviewPaperTest(val *big.Int, r *big.Int) error { 
 	}
 	//c = g^x * h^r
 	//comm := &ecdsa.PublicKey{}
-	
-		x1 := ec.ExpBaseG(pc.Keys, val)
-		x2 := ec.Exp(pc.Keys, &pc.Keys.PublicKey, r)
-		comm := ec.Mul(pc.Keys, x1, x2)
-		
-		pc.reviewCommits = append(pc.reviewCommits, *comm)
-	
-		fmt.Printf("\n %s %v", "comm1: ", *comm)
+
+	x1 := ec.ExpBaseG(pc.Keys, val)
+	x2 := ec.Exp(pc.Keys, &pc.Keys.PublicKey, r)
+	comm := ec.Mul(pc.Keys, x1, x2)
+
+	pc.reviewCommits = append(pc.reviewCommits, *comm)
+
+	fmt.Printf("\n %s %v", "comm1: ", *comm)
 	return nil
 
 } //C(P, r)  C(S, r)
-
 
 func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
@@ -122,7 +122,6 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecd
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-
 func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
@@ -134,8 +133,7 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 
 	rev.GradeCommittedValue.R = r
 	rev.GradeCommittedValue.Val = val
-	
-	
+
 	x1 := ec.ExpBaseG(rev.Keys, val)
 	x2 := ec.Exp(rev.Keys, &rev.Keys.PublicKey, r)
 	comm := ec.Mul(rev.Keys, x1, x2)
@@ -143,7 +141,6 @@ func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int) (*ecdsa.PublicKey
 
 	return comm, nil
 } //C(P, r)  C(S, r)
-
 
 //verify
 func (s *Submitter) VerifyTrapdoorSubmitter(trapdoor *big.Int) bool {

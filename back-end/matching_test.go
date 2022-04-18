@@ -7,39 +7,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// func TestMatchPapers(t *testing.T) {
-// 	p := Paper{
-// 		1,
-// 		true,
-// 		nil,
-// 		nil,
-// 	}
-// 	submitter.PaperCommittedValue.Paper = p
-// 	allPapers := append(pc.allPapers, &p)
-// 	fmt.Printf("Paper: %v in allPapers", p.Id)
-// 	submitters := []Submitter{submitter}
-// 	reviewers := []Reviewer{reviewer}
+func TestMatchPapers(t *testing.T) {
+	p := Paper{
+		1,
+		true,
+		nil,
+		nil,
+	}
+	submitter.PaperCommittedValue.Paper = p
+	allPapers := append(pc.allPapers, &p)
+	fmt.Printf("Paper: %v in allPapers", p.Id)
+	submitters := []Submitter{submitter}
+	reviewers := []Reviewer{reviewer}
 
-// 	r := ec.GetRandomInt(submitter.Keys.D)
-// 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-// 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-// 	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-// 	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
-// 	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
+	r := ec.GetRandomInt(submitter.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
+	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
+	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
 
-// 	commitMsg := CommitMsg{
-// 		EncodeToBytes(IdentityCommit),
-// 		EncodeToBytes(PaperSubmissionCommit),
-// 	}
+	commitMsg := CommitMsg{
+		EncodeToBytes(IdentityCommit),
+		EncodeToBytes(PaperSubmissionCommit),
+	}
 
-// 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-// 	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
+	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
 
-// 	reviewer.SignBidAndEncrypt(&p)
-// 	// got :=pc.assignPaper(reviewers)
-// 	// fmt.Printf("%v  \n", got)
-// 	pc.matchPapers(reviewers, submitters, allPapers)
-// }
+	reviewer.SignBidAndEncrypt(&p)
+	// got :=pc.assignPaper(reviewers)
+	// fmt.Printf("%v  \n", got)
+	pc.matchPapers(reviewers, submitters, allPapers)
+}
 
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 
@@ -56,7 +56,7 @@ func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 }
 
 func TestGetBiddedPaper(t *testing.T) {
-	commitStructPaper := &CommitStructPaper {
+	commitStructPaper := &CommitStructPaper{
 		nil,
 		nil,
 		nil,
@@ -73,10 +73,9 @@ func TestGetBiddedPaper(t *testing.T) {
 	reviewerScope.SignBidAndEncrypt(&p)
 
 	paperBid := reviewerScope.getBiddedPaper()
-	
+
 	fmt.Printf("%s %v \n", "reviewer1: ", reviewerScope)
 	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
-
 
 	assert.Equal(t, p, *paperBid.Paper, "TestGetBiddedPaper failed")
  	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed")
@@ -117,7 +116,6 @@ func TestAssignPapers(t *testing.T) {
 		nil,
 	}
 
-
 	pc.allPapers = append(pc.allPapers, &p1, &p2, &p3)
 	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
 
@@ -126,16 +124,7 @@ func TestAssignPapers(t *testing.T) {
 	reviewer3.SignBidAndEncrypt(&p1)
 	reviewer4.SignBidAndEncrypt(&p1)
 
-	pc.assignPaper2(reviewerSlice)
-	fmt.Printf("%v \n", reviewer.getBiddedPaper().Paper.Selected)
-	fmt.Printf("%v \n", reviewer2.getBiddedPaper().Paper.Selected)
-	fmt.Printf("%v \n", reviewer3.getBiddedPaper().Paper.Selected)
+	pc.assignPaper(reviewerSlice)
 
-	for _, x := range pc.allPapers {
-		if x.Selected == false {
-			fmt.Println(x.Id)
-			fmt.Println("not selected")
-		}
-	}
-	fmt.Printf("%s %v \n", "Paper reviewerList len: ", len(p1.ReviewerList))
+	//TODO insert assert
 }

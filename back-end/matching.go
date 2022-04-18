@@ -102,7 +102,7 @@ func (pc *PC) replaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid)
 }
 
 
-func (pc *PC) assignPaper2(reviewerSlice []*Reviewer) {
+func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
 	reviewersBidsTaken := []Reviewer{}
 	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
@@ -184,9 +184,8 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
 		pc.GetCommitMessageReviewPaperTest(PaperBigInt, rr) //C(P, rr)
-		//fmt.Printf("%s %v \n", "ReviewCommit: ", ReviewCommit)
 		nonce, _ := rand.Int(rand.Reader, curve.Params().N) //nonce_r
-		reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
+		reviewStruct := ReviewSignedStruct{                 //Struct for signing commit, reviewer keys and nonce
 			EncodeToBytes(pc.reviewCommits[0]),
 			&reviewerKeyList,
 			nonce,
@@ -198,7 +197,7 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 			fmt.Printf("\n %s %v \n ", "paperid: ", s.PaperCommittedValue.Paper.Id) //for testing delete later
 			if s.PaperCommittedValue.Paper.Id == p.Id {
 				rs := s.PaperCommittedValue.R
-				PaperSubmissionCommit := pc.GetPaperSubmissionCommit(&s)                //C(P, rs)
+				PaperSubmissionCommit := pc.GetPaperSubmissionCommit(&s)                 //C(P, rs)
 				fmt.Printf("\n %s %v", "PaperSubmissionCommit: ", PaperSubmissionCommit) //for testing delete later
 				proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey)
 				C1 := Commitment{ //this is wrong, but trying for testing reasons, might need a for loop looping through reviewcommits
@@ -218,36 +217,5 @@ func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers [
 			}
 		}
 	}
-
-	// paper := r.paperCommittedValue.paper
-	// PaperBigInt := MsgToBigInt(EncodeToBytes(paper))
-	// commit, _ := r.GetCommitMessageReviewPaper(PaperBigInt, rr) //C(P, rr)
-
-	// nonce := ec.GetRandomInt(r.keys.D) //nonce_r
-
-	// reviewStruct := ReviewSignedStruct{ //Struct for signing commit, reviewer keys and nonce
-	// 	EncodeToBytes(commit),
-	// 	&r.keys.PublicKey,
-	// 	nonce,
-	// }
-	// for _, r := range reviewers {
-
-	// 	PCsignedReviewCommitKeysNonce := Sign(pc.keys, reviewStruct)
-
-	// 	tree.Put("PCsignedReviewCommitKeysNonce"+r.userID, PCsignedReviewCommitKeysNonce)
-	// 	log.Println("PCsignedReviewCommitKeysNonce" + r.userID + " logged.")
-	// 	for _, s := range submitters {
-	// 		paperCommitSubmitter := s.paperCommittedValue.CommittedValue
-	// 		paperCommitReviewer := r.paperCommittedValue.CommittedValue
-	// 		if paperCommitSubmitter == paperCommitReviewer {
-	// 			fmt.Println(1)
-	// 			//PaperSubmissionCommit := tree.Find("PCsignedPaperCommit" + fmt.Sprintf("%s",(s.paperCommittedValue.Id)))
-
-	// 			//	commit1 := Commitment{
-
-	// 		}
-
-	// 	}
-	// }
 }
 
