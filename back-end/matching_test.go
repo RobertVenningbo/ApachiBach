@@ -1,6 +1,9 @@
 package backend
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	_ "swag/ec"
 	ec "swag/ec"
@@ -127,55 +130,30 @@ func TestAssignPapers(t *testing.T) {
 }
 
 func TestSupplyNizk(t *testing.T) {
-	pc.allPapers = append(pc.allPapers, &p)
-	rr := ec.GetRandomInt(submitter.Keys.D)
-	rs := ec.GetRandomInt(submitter.Keys.D)
-	ri := ec.GetRandomInt(submitter.Keys.D)
-	
-	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
-	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
-		&p,
-		rr,
-		rs,
-	}
-	submitMsg := SubmitMessage{
-		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
-		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
-	}
-	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
-	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
-	tree.Put(msg, SignedSubmitMsg)
+	curve1 := elliptic.P256()
+	curve := curve1.Params()
+
+	submitter.Submit(&p)
+
+	submitStruct := pc.GetPaperAndRandomness(1)
+	rr := submitStruct.Rr
 	
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-	
-	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-	SubmitterIdenityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, ri)
-	
-	//paper submission commit
-	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, rs)
-	
-	commitMsg := CommitMsg{
-		EncodeToBytes(SubmitterIdenityCommit),
-		EncodeToBytes(PaperSubmissionCommit),
-	}
-	
-	nonce := ec.GetRandomInt(pc.Keys.D)
+
+	nonce, _ := rand.Int(rand.Reader, curve.N)
 	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
 		ReviewCommit,
-		nil,
+		&[]ecdsa.PublicKey{reviewer.Keys.PublicKey},
 		nonce,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
-	msg = fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
+	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
 	
-	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
-	tree.Put(msg, signedCommitMsg)
 
 	got := pc.supplyNIZK(&p)
 	want := true

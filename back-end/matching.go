@@ -237,7 +237,9 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
-	proof := *NewEqualityProof(PaperBigInt, rr, rs, nonce)
+	submitterPK := pc.GetPaperSubmitterPK(p.Id)
+
+	proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &submitterPK, &pc.Keys.PublicKey)
 
 	C1 := Commitment{
 		paperSubmissionCommit.X,
@@ -248,7 +250,7 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 		reviewCommit.Y,
 	}
 
-	if !proof.OpenEqualityProof(&C1, &C2, nonce) {
+	if !proof.OpenP256(&C1, &C2, nonce, &submitterPK, &pc.Keys.PublicKey) {
 		works = false //for testing
 		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
 	} else {

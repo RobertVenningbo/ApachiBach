@@ -2,9 +2,10 @@ package backend
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"log"
-	ec "swag/ec"
 )
 
 type SubmitMessage struct {
@@ -18,9 +19,13 @@ type CommitMsg struct {
 }
 
 func (s *Submitter) Submit(p *Paper) {
-	rr := ec.GetRandomInt(s.Keys.D)
-	rs := ec.GetRandomInt(s.Keys.D)
-	ri := ec.GetRandomInt(s.Keys.D) //TODO in the protocol description it says the submitter generates this
+
+	curve1 := elliptic.P256()
+	curve := curve1.Params()
+	
+	rr, _ := rand.Int(rand.Reader, curve.N)
+	rs, _ := rand.Int(rand.Reader, curve.N)
+	ri, _ := rand.Int(rand.Reader, curve.N)
 
 	sharedKpcs := generateSharedSecret(&pc, s, nil) //Shared secret key between Submitter and PC (Kpcs)
 
