@@ -9,8 +9,6 @@ import (
 	ec "swag/ec"
 )
 
-var rr = ec.GetRandomInt(pc.Keys.D) //HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
-var rs = ec.GetRandomInt(pc.Keys.D) //HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 
 type ReviewSignedStruct struct {
 	Commit *ecdsa.PublicKey
@@ -192,6 +190,8 @@ func (pc *PC) matchPaperz() {
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
 
+		rr := pc.GetPaperAndRandomness(p.Id).Rr
+
 		commit, err := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 		if err != nil {
 			log.Panic("matchPaperz error")
@@ -216,23 +216,46 @@ func (pc *PC) GetReviewSignedStruct(id int) ReviewSignedStruct {
 		if p.Id == id {
 			msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 			item := tree.Find(msg)
-			ret = item.value.(ReviewSignedStruct)
-		}
+			_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
+			decodedStruct := DecodeToStruct(encodedStruct)
+			ret = decodedStruct.(ReviewSignedStruct)
+			fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
+		} 
 	}
 	return ret
 }
 
-func (pc *PC) supplyNIZK(p *Paper) {
-	// paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id)
-	// reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
-	// nonce := reviewSignedStruct.Nonce
-	// reviewCommit := *reviewSignedStruct.Commit
+func (pc *PC) supplyNIZK(p *Paper) bool {
+	works := false //for testing
+	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
+	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id) 
+	reviewCommit := reviewSignedStruct.Commit	//ReviewCommit generated in matchPapers
+	
+	nonce := reviewSignedStruct.Nonce
+	rs := pc.GetPaperAndRandomness(p.Id).Rs //Rs generated in submit
+	rr := pc.GetPaperAndRandomness(p.Id).Rr //Rr generated in submit
 
-	// //TODO: rr should be retrieved from log (DELETE WHEN DONE)
-	// //TODO: rs should be retrieved from log (DELETE WHEN DONE)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
-	// proof := *NewEqualityProof(PaperBigInt, rr, rs, nonce)
+	proof := *NewEqualityProof(PaperBigInt, rr, rs, nonce)
 
+	C1 := Commitment{
+		paperSubmissionCommit.X,
+		paperSubmissionCommit.Y,
+	}
+	C2 := Commitment{
+		reviewCommit.X,
+		reviewCommit.Y,
+	}
+
+	if !proof.OpenEqualityProof(&C1, &C2, nonce) {
+		works = false //for testing
+		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
+	} else {
+		works = true //for testing
+		fmt.Println("The review commit and paper submission commit hides the same paper")		
+	}
+	return works
 }
 
 func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []*Paper) {

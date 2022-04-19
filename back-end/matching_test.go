@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	_ "swag/ec"
+	ec "swag/ec"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -123,4 +124,88 @@ func TestAssignPapers(t *testing.T) {
 	pc.assignPaper(reviewerSlice)
 
 	//TODO insert assert
+}
+
+func TestSupplyNizk(t *testing.T) {
+	pc.allPapers = append(pc.allPapers, &p)
+	rr := ec.GetRandomInt(submitter.Keys.D)
+	rs := ec.GetRandomInt(submitter.Keys.D)
+	ri := ec.GetRandomInt(submitter.Keys.D)
+	
+	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
+	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
+		&p,
+		rr,
+		rs,
+	}
+	submitMsg := SubmitMessage{
+		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
+		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
+	}
+	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
+	tree.Put(msg, SignedSubmitMsg)
+	
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	
+	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
+	SubmitterIdenityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, ri)
+	
+	//paper submission commit
+	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, rs)
+	
+	commitMsg := CommitMsg{
+		EncodeToBytes(SubmitterIdenityCommit),
+		EncodeToBytes(PaperSubmissionCommit),
+	}
+	
+	nonce := ec.GetRandomInt(pc.Keys.D)
+	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+
+	reviewStruct := ReviewSignedStruct{
+		ReviewCommit,
+		nil,
+		nonce,
+	}
+
+	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+
+	msg = fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
+	tree.Put(msg, signature)
+	
+	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
+	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
+	tree.Put(msg, signedCommitMsg)
+
+	got := pc.supplyNIZK(&p)
+	want := true
+
+	assert.Equal(t, want, got, "Nizk failed")
+}
+
+func TestGetReviewSignedStruct(t *testing.T) {
+	pc.allPapers = append(pc.allPapers, &p)
+	rr := ec.GetRandomInt(pc.Keys.D)
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+
+	commit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	nonce_r := ec.GetRandomInt(pc.Keys.D)
+
+	//reviewerKeyList := []ecdsa.PublicKey{}
+
+	reviewStruct := ReviewSignedStruct{
+		commit,
+		nil,
+		nonce_r,
+	}
+
+	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+
+	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
+	tree.Put(msg, signature)
+
+	r_struct := pc.GetReviewSignedStruct(p.Id)
+
+	assert.Equal(t, reviewStruct, r_struct, "TestGetReviewStruct Failed")
+
 }

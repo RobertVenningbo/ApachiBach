@@ -283,3 +283,8 @@ func TestGetPaperAndRandomness(t *testing.T) {
 
 	assert.Equal(t, PaperAndRandomness, want, "TestGetPaperAndRandomness failed")
 }
+
+func TestSubmit(t *testing.T) {
+	submitter.Submit(&p)
+	
+}
