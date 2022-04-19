@@ -57,15 +57,24 @@ func (s *Submitter) Submit(p *Paper) {
 	tree.Put(msg, signedCommitMsg)
 	log.Println(msg + " logged") //Both commits signed and logged
 
-	KsString := fmt.Sprintf("%v", EncodeToBytes(s.Keys.PublicKey))
-	tree.Put(KsString+s.UserID, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
-	log.Println("SubmitterPublicKey from submitter with userID: " + s.UserID + " logged.")
+	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
+	tree.Put(KsString, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
+	log.Println(KsString + " logged.")
 
 	PCsignedPaperCommit := SignzAndEncrypt(pc.Keys, PaperSubmissionCommit, "")
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	pc.allPapers = append(pc.allPapers, p)
+}
+
+func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
+	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", pId)
+	item := tree.Find(KsString)
+	decodedPK := DecodeToStruct(item.value.([]byte))
+	PK := decodedPK.(ecdsa.PublicKey)
+	
+	return PK
 }
 
 func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
