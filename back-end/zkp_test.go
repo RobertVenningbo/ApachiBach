@@ -124,3 +124,35 @@ func TestMsgToBigInt(t *testing.T){
 	msg1 := MsgToBigInt(EncodeToBytes(p))
 	assert.Equal(t, msg, msg1, "failzzMsgToBigInt") 
 }
+
+func TestNewEqualityProof(t *testing.T) {
+	x := MsgToBigInt(EncodeToBytes(p))
+	rr := ec.GetRandomInt(pc.Keys.D)
+	rs := ec.GetRandomInt(submitter.Keys.D)
+	nonce := ec.GetRandomInt(pc.Keys.D)
+
+	ReviewCommit, _ := pc.GetCommitMessagePaperPC(x, rr)
+	fmt.Printf("%s %v \n", "PCReviewCommit :", ReviewCommit)
+	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(x, rs)
+	fmt.Printf("\n %s %v \n", "PSCommitX: ", PaperSubmissionCommit.X)
+	fmt.Printf("\n %s %v \n", "PSCommitY: ", PaperSubmissionCommit.Y)
+	fmt.Printf("\n %s %v \n","RCommitX: ", ReviewCommit.X)
+	fmt.Printf("\n %s %v \n","RCommitY: ", ReviewCommit.Y)
+
+	C1 := Commitment{
+		PaperSubmissionCommit.X,
+		PaperSubmissionCommit.Y,
+	}
+	C2 := Commitment{
+		ReviewCommit.X,
+		ReviewCommit.Y,
+	}
+
+	proof := NewEqualityProof(x, rr, rs, nonce)
+
+	got := proof.OpenEqualityProof(&C1, &C2, nonce)
+	want := true
+
+	assert.Equal(t, want, got, "TestNewEqualityProof Failed")
+
+}
