@@ -130,12 +130,20 @@ func TestAssignPapers(t *testing.T) {
 }
 
 func TestSupplyNizk(t *testing.T) {
+	
+	submitter1 := Submitter{
+		newKeys(),
+		"submitter", //userID
+		&CommitStruct{},
+		&CommitStructPaper{},
+		&Receiver{},
+	}
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
 
-	submitter.Submit(&p)
+	submitter1.Submit(&p)
 
-	submitStruct := pc.GetPaperAndRandomness(1)
+	submitStruct := pc.GetPaperAndRandomness(p.Id)
 	rr := submitStruct.Rr
 	
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))

@@ -30,8 +30,8 @@ func TestNewEqProofK256(t *testing.T) {
 		&Receiver{},
 	}
 
-	// submitter.Submit(&p)
-	// submitterKey := pc.GetPaperSubmitterPK(1)
+	submitter.Submit(&p)
+	submitterKey := pc.GetPaperSubmitterPK(p.Id)
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
@@ -65,9 +65,9 @@ func TestNewEqProofK256(t *testing.T) {
 		commit2.Y,
 	}
 
-	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.Keys.PublicKey, &pc.Keys.PublicKey)
+	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &pc.Keys.PublicKey)
 
-	got := proof.OpenP256(c1, c2, nonce, &submitter.Keys.PublicKey, &pc.Keys.PublicKey)
+	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &pc.Keys.PublicKey)
 	want := true
 	assert.Equal(t, want, got, "TestEqProof Failed")
 }

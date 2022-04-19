@@ -22,7 +22,7 @@ func (s *Submitter) Submit(p *Paper) {
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-	
+
 	rr, _ := rand.Int(rand.Reader, curve.N)
 	rs, _ := rand.Int(rand.Reader, curve.N)
 	ri, _ := rand.Int(rand.Reader, curve.N)
@@ -39,7 +39,7 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
 	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + fmt.Sprintf("%v", p.Id) + " - Encrypted Paper and Random Numbers logged")
@@ -63,10 +63,10 @@ func (s *Submitter) Submit(p *Paper) {
 	log.Println(msg + " logged") //Both commits signed and logged
 
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
-	tree.Put(KsString, EncodeToBytes(s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
+	tree.Put(KsString, EncodeToBytes(&s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
 	log.Println(KsString + " logged.")
 
-	PCsignedPaperCommit := SignzAndEncrypt(pc.Keys, PaperSubmissionCommit, "")
+	PCsignedPaperCommit := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(PaperSubmissionCommit), "")
 	tree.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
@@ -78,7 +78,7 @@ func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 	item := tree.Find(KsString)
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	PK := decodedPK.(ecdsa.PublicKey)
-	
+
 	return PK
 }
 
@@ -110,9 +110,9 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	encodedKpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
 	kpcs := DecodeToStruct(encodedKpcs).(string)
-	
+
 	decryptedPaperAndRandomness := Decrypt(submitMessage.PaperAndRandomness, kpcs)
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 	return PaperAndRandomness
-	
+
 }

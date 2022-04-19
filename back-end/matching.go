@@ -9,7 +9,6 @@ import (
 	ec "swag/ec"
 )
 
-
 type ReviewSignedStruct struct {
 	Commit *ecdsa.PublicKey
 	Keys   *[]ecdsa.PublicKey
@@ -220,17 +219,17 @@ func (pc *PC) GetReviewSignedStruct(id int) ReviewSignedStruct {
 			decodedStruct := DecodeToStruct(encodedStruct)
 			ret = decodedStruct.(ReviewSignedStruct)
 			fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
-		} 
+		}
 	}
 	return ret
 }
 
 func (pc *PC) supplyNIZK(p *Paper) bool {
-	works := false //for testing
+	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
-	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id) 
-	reviewCommit := reviewSignedStruct.Commit	//ReviewCommit generated in matchPapers
-	
+	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
+	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers
+
 	nonce := reviewSignedStruct.Nonce
 	rs := pc.GetPaperAndRandomness(p.Id).Rs //Rs generated in submit
 	rr := pc.GetPaperAndRandomness(p.Id).Rr //Rr generated in submit
@@ -239,7 +238,7 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 
 	submitterPK := pc.GetPaperSubmitterPK(p.Id)
 
-	proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &submitterPK, &pc.Keys.PublicKey)
+	proof := NewEqProofP256(PaperBigInt, rr, rs, nonce, &submitterPK, &pc.Keys.PublicKey)
 
 	C1 := Commitment{
 		paperSubmissionCommit.X,
@@ -250,12 +249,12 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 		reviewCommit.Y,
 	}
 
-	if !proof.OpenP256(&C1, &C2, nonce, &submitterPK, &pc.Keys.PublicKey) {
+	if (!proof.OpenP256(&C1, &C2, nonce, &submitterPK, &pc.Keys.PublicKey)) {
 		works = false //for testing
 		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
 	} else {
 		works = true //for testing
-		fmt.Println("The review commit and paper submission commit hides the same paper")		
+		fmt.Println("The review commit and paper submission commit hides the same paper")
 	}
 	return works
 }

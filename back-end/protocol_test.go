@@ -234,7 +234,6 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 
 	foundCommit := pc.GetPaperSubmissionCommit(p.Id)
 	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
-
 }
 
 func TestGetPaperSubmissionSignature(t *testing.T) {
