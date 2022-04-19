@@ -97,24 +97,7 @@ func (pc *PC) GetCommitMessagePaperPC(val *big.Int, r *big.Int) (*ecdsa.PublicKe
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-func (pc *PC) GetCommitMessageReviewPaperTest(val *big.Int, r *big.Int) error { //TODO test
-	if val.Cmp(pc.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return err
-	}
-	//c = g^x * h^r
-	//comm := &ecdsa.PublicKey{}
 
-	x1 := ec.ExpBaseG(pc.Keys, val)
-	x2 := ec.Exp(pc.Keys, &pc.Keys.PublicKey, r)
-	comm := ec.Mul(pc.Keys, x1, x2)
-
-	pc.reviewCommits = append(pc.reviewCommits, *comm)
-
-	fmt.Printf("\n %s %v", "comm1: ", *comm)
-	return nil
-
-} //C(P, r)  C(S, r)
 
 func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {

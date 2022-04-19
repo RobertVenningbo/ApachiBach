@@ -78,9 +78,8 @@ func TestGetBiddedPaper(t *testing.T) {
 	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
 
 	assert.Equal(t, p, *paperBid.Paper, "TestGetBiddedPaper failed")
- 	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed")
+	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed")
 }
-
 
 func TestAssignPapers(t *testing.T) {
 	reviewer3 := Reviewer{
@@ -130,10 +129,15 @@ func TestAssignPapers(t *testing.T) {
 }
 
 func TestSupplyNizk(t *testing.T) {
-	
+	pc = PC{
+		newKeys(),
+		nil,
+		nil,
+	}
+
 	submitter1 := Submitter{
 		newKeys(),
-		"submitter", //userID
+		"2", //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
 		&Receiver{},
@@ -145,23 +149,21 @@ func TestSupplyNizk(t *testing.T) {
 
 	submitStruct := pc.GetPaperAndRandomness(p.Id)
 	rr := submitStruct.Rr
-	
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
 	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
-		ReviewCommit,
-		&[]ecdsa.PublicKey{reviewer.Keys.PublicKey},
-		nonce,
+		*ReviewCommit,
+		[]ecdsa.PublicKey{reviewer.Keys.PublicKey}, //reviewer doesnt have a key, might propegate this error: "gob: cannot encode nil pointer of type *ecdsa.PublicKey inside interface"
+		*nonce,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
-	
 
 	got := pc.supplyNIZK(&p)
 	want := true
@@ -180,9 +182,9 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	//reviewerKeyList := []ecdsa.PublicKey{}
 
 	reviewStruct := ReviewSignedStruct{
-		commit,
+		*commit,
 		nil,
-		nonce_r,
+		*nonce_r,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
