@@ -10,9 +10,9 @@ import (
 )
 
 type ReviewSignedStruct struct {
-	Commit *ecdsa.PublicKey
+	Commit ecdsa.PublicKey
 	Keys   []ecdsa.PublicKey
-	Nonce  *big.Int
+	Nonce  big.Int
 }
 
 //step 4
@@ -197,9 +197,9 @@ func (pc *PC) matchPaperz() {
 		}
 
 		reviewStruct := ReviewSignedStruct{
-			commit,
+			*commit,
 			reviewerKeyList,
-			nonce_r,
+			*nonce_r,
 		}
 
 		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
@@ -237,7 +237,7 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 
 	submitterPK := pc.GetPaperSubmitterPK(p.Id)
 
-	proof := NewEqProofP256(PaperBigInt, rr, rs, nonce, &submitterPK, &pc.Keys.PublicKey)
+	proof := NewEqProofP256(PaperBigInt, rr, rs, &nonce, &submitterPK, &pc.Keys.PublicKey)
 
 	C1 := Commitment{
 		paperSubmissionCommit.X,
@@ -248,7 +248,7 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 		reviewCommit.Y,
 	}
 
-	if !proof.OpenP256(&C1, &C2, nonce, &submitterPK, &pc.Keys.PublicKey) {
+	if !proof.OpenP256(&C1, &C2, &nonce, &submitterPK, &pc.Keys.PublicKey) {
 		works = false //for testing
 		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
 	} else {

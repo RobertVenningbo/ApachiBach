@@ -46,11 +46,17 @@ func (s *Submitter) Submit(p *Paper) {
 
 	//submitter identity commit
 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s))
-	SubmitterIdenityCommit, _ := s.GetCommitMessage(SubmitterBigInt, ri)
+	SubmitterIdenityCommit, err := s.GetCommitMessage(SubmitterBigInt, ri)
+	if err != nil {
+		fmt.Printf("Error in submission.go GetCommitMsg: %v\n", err)
+	}
 
 	//paper submission commit
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-	PaperSubmissionCommit, _ := s.GetCommitMessagePaper(PaperBigInt, rs)
+	PaperSubmissionCommit, err := s.GetCommitMessagePaper(PaperBigInt, rs)
+	if err != nil {
+		fmt.Printf("Error in submission.go GetCommitMsgPaper: %v\n", err)
+	}
 
 	commitMsg := CommitMsg{
 		EncodeToBytes(SubmitterIdenityCommit),

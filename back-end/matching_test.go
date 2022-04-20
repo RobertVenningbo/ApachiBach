@@ -155,9 +155,9 @@ func TestSupplyNizk(t *testing.T) {
 	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
-		ReviewCommit,
+		*ReviewCommit,
 		[]ecdsa.PublicKey{reviewer.Keys.PublicKey}, //reviewer doesnt have a key, might propegate this error: "gob: cannot encode nil pointer of type *ecdsa.PublicKey inside interface"
-		nonce,
+		*nonce,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
@@ -182,9 +182,9 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	//reviewerKeyList := []ecdsa.PublicKey{}
 
 	reviewStruct := ReviewSignedStruct{
-		commit,
+		*commit,
 		nil,
-		nonce_r,
+		*nonce_r,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
@@ -205,7 +205,4 @@ func TestMatchPapers2(t *testing.T) {
 	reviewer.SignBidAndEncrypt(&p)
 	pc.assignPaper(reviewerSlice)
 	pc.matchPaperz()
-
-
-	
 }
