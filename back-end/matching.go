@@ -206,8 +206,6 @@ func (pc *PC) matchPaperz() {
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 		tree.Put(msg, signature)
-
-		pc.supplyNIZK(p)
 	}
 }
 
