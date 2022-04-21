@@ -44,17 +44,14 @@ func TestNewEqProofK256(t *testing.T) {
 	msg := MsgToBigInt(EncodeToBytes(p))
 
 	commit1, err := submitter.GetCommitMessagePaper(msg, r1)
-	fmt.Println(commit1)
-
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
 	commit2, err := pc.GetCommitMessagePaperPC(msg, r2)
 	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaperReviewer: %v", err)
+		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
 	}
-	fmt.Printf("%#v", commit2)
 
 	c1 := &Commitment{
 		commit1.X,
@@ -68,6 +65,7 @@ func TestNewEqProofK256(t *testing.T) {
 	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &pc.Keys.PublicKey)
 
 	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &pc.Keys.PublicKey)
+	fmt.Printf("\n%s %v", "Commits hold same paper: ", got)
 	want := true
 	assert.Equal(t, want, got, "TestEqProof Failed")
 }

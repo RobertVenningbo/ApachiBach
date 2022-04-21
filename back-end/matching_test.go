@@ -41,18 +41,19 @@ import (
 //  	// fmt.Printf("%v  \n", got)
 //  	pc.matchPapers(nil,nil,nil)
 //  }
-func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 
+func TestDistributeAndGetPapersForReviewers(t *testing.T) {
+	pc.allPapers = append(pc.allPapers, &p)
 	reviewers := []Reviewer{reviewer, reviewer2}
 
 	//Papers have been put into the log encrypted with a shared secret key between the given reviewer and the pc.
-	pc.distributePapers(reviewers, paperListTest)
+	pc.distributePapers(reviewers, pc.allPapers)
 
 	//reviewer2 now wants to retrieve his papers.
 	//intended to be called with pc.allPapers which is a general lookup table for paper.Ids etc.
-	retrievedPapers := reviewer2.GetPapersReviewer(paperListTest)
+	retrievedPapers := reviewer2.GetPapersReviewer(pc.allPapers)
 
-	assert.Equal(t, paperListTest, retrievedPapers, "TestGetPaperSubmissionSignature failed")
+	assert.Equal(t, pc.allPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
 }
 
 func TestGetBiddedPaper(t *testing.T) {
@@ -129,14 +130,9 @@ func TestAssignPapers(t *testing.T) {
 }
 
 func TestSupplyNizk(t *testing.T) {
-	pc = PC{
-		newKeys(),
-		nil,
-		nil,
-	}
-
+	keys := newKeys()
 	submitter1 := Submitter{
-		newKeys(),
+		keys,
 		"2", //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
@@ -146,18 +142,17 @@ func TestSupplyNizk(t *testing.T) {
 	curve := curve1.Params()
 
 	submitter1.Submit(&p)
-
 	submitStruct := pc.GetPaperAndRandomness(p.Id)
 	rr := submitStruct.Rr
 
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
 	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
-		*ReviewCommit,
+		ReviewCommit,
 		[]ecdsa.PublicKey{reviewer.Keys.PublicKey}, //reviewer doesnt have a key, might propegate this error: "gob: cannot encode nil pointer of type *ecdsa.PublicKey inside interface"
-		*nonce,
+		nonce,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
@@ -165,6 +160,7 @@ func TestSupplyNizk(t *testing.T) {
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
 
+	
 	got := pc.supplyNIZK(&p)
 	want := true
 
@@ -174,7 +170,7 @@ func TestSupplyNizk(t *testing.T) {
 func TestGetReviewSignedStruct(t *testing.T) {
 	pc.allPapers = append(pc.allPapers, &p)
 	rr := ec.GetRandomInt(pc.Keys.D)
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
 	commit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 	nonce_r := ec.GetRandomInt(pc.Keys.D)
@@ -182,9 +178,9 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	//reviewerKeyList := []ecdsa.PublicKey{}
 
 	reviewStruct := ReviewSignedStruct{
-		*commit,
+		commit,
 		nil,
-		*nonce_r,
+		nonce_r,
 	}
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
@@ -197,3 +193,12 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	assert.Equal(t, reviewStruct, r_struct, "TestGetReviewStruct Failed")
 
 }
+
+func TestMatchPapers(t *testing.T) {
+	submitter.Submit(&p)
+	reviewerSlice := []*Reviewer{&reviewer}
+	reviewer.SignBidAndEncrypt(&p)
+	pc.assignPaper(reviewerSlice)
+	pc.MatchPapers()
+}
+

@@ -47,10 +47,10 @@ func (r *Receiver) CheckDecommitment(R, val *big.Int) bool {
 }
 
 func (s *Submitter) GetCommitMessage(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(s.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
+	// if val.Cmp(s.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+	// 	err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+	// 	return nil, err
+	// }
 
 	// c = g^x * h^r
 
@@ -65,10 +65,10 @@ func (s *Submitter) GetCommitMessage(val *big.Int, r *big.Int) (*ecdsa.PublicKey
 } //C(P, r)  C(S, r)
 
 func (s *Submitter) GetCommitMessagePaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(s.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
+	// if val.Cmp(s.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+	// 	err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+	// 	return nil, err
+	// }
 
 	// c = g^x * h^r
 
@@ -84,10 +84,10 @@ func (s *Submitter) GetCommitMessagePaper(val *big.Int, r *big.Int) (*ecdsa.Publ
 }
 
 func (pc *PC) GetCommitMessagePaperPC(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
-	if val.Cmp(pc.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
-		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
-		return nil, err
-	}
+	// if val.Cmp(pc.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
+	// 	err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
+	// 	return nil, err
+	// }
 
 	// c = g^x * h^r
 

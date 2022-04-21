@@ -10,13 +10,13 @@ import (
 )
 
 type ReviewSignedStruct struct {
-	Commit ecdsa.PublicKey
+	Commit *ecdsa.PublicKey
 	Keys   []ecdsa.PublicKey
-	Nonce  big.Int
+	Nonce  *big.Int
 }
 
 //step 4
-func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
+func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 	//Find a way to retrieve a list of all Reviewers
 	for r := range reviewerSlice {
 		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
@@ -32,10 +32,10 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []Paper) {
 //paperSlice is only there for getting len(paperSlice) for forloop.
 //Gets all papers for each reviewer from log.
 //Expected to be called for every reviewer when reviewers want to see list of all papers on frontend.
-func (r *Reviewer) GetPapersReviewer(paperSlice []Paper) []Paper {
+func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	pList := []Paper{}
+	pList := []*Paper{}
 	for i := 0; i < len(paperSlice); i++ {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[i].Id, r.UserID)
 		EncryptedSignedBid := tree.Find(GetMsg)
@@ -52,7 +52,7 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []Paper) []Paper {
 		}
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
-		pList = append(pList, paper)
+		pList = append(pList, &paper)
 	}
 	return pList
 }
@@ -177,9 +177,9 @@ func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
 		}
 	}
 }
-func (pc *PC) matchPaperz() {
+func (pc *PC) MatchPapers() {
 	for _, p := range pc.allPapers {
-		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+		PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
 
 		//TODO: rr should be retrieved from log (DELETE WHEN DONE)
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
@@ -197,15 +197,20 @@ func (pc *PC) matchPaperz() {
 		}
 
 		reviewStruct := ReviewSignedStruct{
-			*commit,
+			commit,
 			reviewerKeyList,
-			*nonce_r,
+			nonce_r,
 		}
 
 		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 		tree.Put(msg, signature)
+
+		nizkBool := pc.supplyNIZK(p)
+		if !nizkBool {
+			fmt.Println("NIZK Failed in MatchPapers")
+		}
 	}
 }
 
@@ -222,7 +227,7 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 }
 
 func (pc *PC) supplyNIZK(p *Paper) bool {
-	works := false                                             //for testing
+	works := false                                         //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
 	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers
@@ -231,22 +236,22 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 	rs := pc.GetPaperAndRandomness(p.Id).Rs //Rs generated in submit
 	rr := pc.GetPaperAndRandomness(p.Id).Rr //Rr generated in submit
 
-	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
+	PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
 
 	submitterPK := pc.GetPaperSubmitterPK(p.Id)
 
-	proof := NewEqProofP256(PaperBigInt, rr, rs, &nonce, &submitterPK, &pc.Keys.PublicKey)
+	proof := NewEqProofP256(PaperBigInt, rs, rr, nonce, &submitterPK, &pc.Keys.PublicKey)
 
-	C1 := Commitment{
+	C1 := &Commitment{
 		paperSubmissionCommit.X,
 		paperSubmissionCommit.Y,
 	}
-	C2 := Commitment{
+	C2 := &Commitment{
 		reviewCommit.X,
 		reviewCommit.Y,
 	}
 
-	if !proof.OpenP256(&C1, &C2, &nonce, &submitterPK, &pc.Keys.PublicKey) {
+	if !proof.OpenP256(C1, C2, nonce, &submitterPK, &pc.Keys.PublicKey) {
 		works = false //for testing
 		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
 	} else {
