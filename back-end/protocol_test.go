@@ -13,24 +13,25 @@ import (
 
 var (
 	paperListTest = []Paper{
-		Paper{1, false, nil, nil},
-		Paper{2, false, nil, nil},
+		Paper{1, false, nil, nil, nil},
+		Paper{2, false, nil, nil, nil},
 	}
 	p = Paper{
 		1,
 		false,
 		nil,
 		nil,
+		nil,
 	}
 	reviewer = Reviewer{
-		"reviewer",
+		1,
 		newKeys(),
 		&CommitStructPaper{},
 		nil,
 		nil,
 	}
 	reviewer2 = Reviewer{
-		"reviewer2",
+		2,
 		newKeys(),
 		&CommitStructPaper{},
 		nil,

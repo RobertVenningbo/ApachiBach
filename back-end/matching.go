@@ -60,7 +60,8 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 func (r *Reviewer) getBiddedPaper() *PaperBid {
 
 	Kpcr := generateSharedSecret(&pc, nil, r)
-	EncryptedSignedBid := tree.Find("EncryptedSignedBids " + r.UserID)
+	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+	EncryptedSignedBid := tree.Find(msg)
 	bytes := EncryptedSignedBid.value.([][]byte)
 	_, enc := SplitSignatureAndMsg(bytes)
 	decrypted := Decrypt([]byte(enc), Kpcr)
@@ -82,8 +83,9 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.makeBid(p)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
-	tree.Put("EncryptedSignedBids "+r.UserID, EncryptedSignedBid)
-	log.Println("EncryptedSignedBids" + r.UserID + "logged.")
+	msg := fmt.Sprintf("EncryptedSignedBids %v",r.UserID)
+	tree.Put(msg, EncryptedSignedBid)
+	log.Println(msg + "logged.")
 }
 
 func (pc *PC) replaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) {
@@ -143,12 +145,12 @@ func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
 			}
 		}
 		if x {
-			reviewersBidsTaken[i].UserID = "deleted"
+			reviewersBidsTaken[i].UserID = -1
 			x = false
 		}
 	}
 	for _, r := range reviewersBidsTaken {
-		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != "deleted") {
+		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != -1) {
 			r.PaperCommittedValue = &CommitStructPaper{}
 			for _, p := range pc.allPapers {
 				p.Selected = true
@@ -226,6 +228,18 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	return ret
 }
 
+func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
+	ret := ReviewSignedStruct{}
+	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
+	item := tree.Find(msg)
+	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
+	decodedStruct := DecodeToStruct(encodedStruct)
+	ret = decodedStruct.(ReviewSignedStruct)
+	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
+
+	return ret
+}
+
 func (pc *PC) supplyNIZK(p *Paper) bool {
 	works := false                                         //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
@@ -260,48 +274,3 @@ func (pc *PC) supplyNIZK(p *Paper) bool {
 	}
 	return works
 }
-
-// func (pc *PC) matchPapers(reviewers []Reviewer, submitters []Submitter, papers []*Paper) {
-// 	for _, p := range papers {
-// 		fmt.Println("Paper: " + fmt.Sprintf("%v", p.Id) + " looping")
-// 		rr := ec.GetRandomInt(pc.Keys.D)
-// 		PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-// 		reviewerList := p.ReviewerList
-// 		reviewerKeyList := []ecdsa.PublicKey{}
-// 		for _, r := range reviewerList {
-// 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
-// 		}
-// 		//pc.GetCommitMessageReviewPaper(PaperBigInt, rr) //C(P, rr)
-// 		nonce, _ := rand.Int(rand.Reader, curve.Params().N) //nonce_r
-// 		reviewStruct := ReviewSignedStruct{                 //Struct for signing commit, reviewer keys and nonce
-// 			nil,
-// 			reviewerKeyList,
-// 			*nonce,
-// 		}
-// 		PCsignedReviewCommitKeysNonce := Sign(pc.Keys, reviewStruct)
-// 		tree.Put("PCsignedReviewCommitKeysNonce"+fmt.Sprintf("%v", p.Id), PCsignedReviewCommitKeysNonce)
-// 		for _, s := range submitters {
-// 			fmt.Printf("\n %s %v \n ", "paperid: ", s.PaperCommittedValue.Paper.Id) //for testing delete later
-// 			if s.PaperCommittedValue.Paper.Id == p.Id {
-// 				rs := s.PaperCommittedValue.R
-// 				PaperSubmissionCommit := pc.GetPaperSubmissionCommit(1)                  //C(P, rs)
-// 				fmt.Printf("\n %s %v", "PaperSubmissionCommit: ", PaperSubmissionCommit) //for testing delete later
-// 				proof := *NewEqProofP256(PaperBigInt, rr, rs, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey)
-// 				C1 := Commitment{ //this is wrong, but trying for testing reasons, might need a for loop looping through reviewcommits
-// 					pc.reviewCommits[0].X,
-// 					pc.reviewCommits[0].Y,
-// 				}
-// 				fmt.Printf("\n %s %v ", "ReviewCommit: ", pc.reviewCommits[0])
-// 				C2 := Commitment{
-// 					PaperSubmissionCommit.X,
-// 					PaperSubmissionCommit.Y,
-// 				}
-// 				if !proof.OpenP256(&C1, &C2, nonce, &s.Keys.PublicKey, &pc.Keys.PublicKey) {
-// 					fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
-// 				} else {
-// 					fmt.Println("The review commit and paper submission commit hides the same paper")
-// 				}
-// 			}
-// 		}
-// 	}
-// }

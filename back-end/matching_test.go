@@ -64,7 +64,7 @@ func TestGetBiddedPaper(t *testing.T) {
 		&Paper{},
 	}
 	reviewerScope := &Reviewer{
-		"reviewer123123",
+		123123,
 		newKeys(),
 		commitStructPaper,
 		nil,
@@ -84,14 +84,14 @@ func TestGetBiddedPaper(t *testing.T) {
 
 func TestAssignPapers(t *testing.T) {
 	reviewer3 := Reviewer{
-		"reviewer3",
+		3,
 		newKeys(),
 		nil,
 		nil,
 		nil,
 	}
 	reviewer4 := Reviewer{
-		"reviewer4",
+		4,
 		newKeys(),
 		nil,
 		nil,
@@ -102,16 +102,19 @@ func TestAssignPapers(t *testing.T) {
 		false,
 		nil,
 		nil,
+		nil,
 	}
 	p2 := Paper{
 		2,
 		false,
 		nil,
 		nil,
+		nil,
 	}
 	p3 := Paper{
 		3,
 		false,
+		nil,
 		nil,
 		nil,
 	}
