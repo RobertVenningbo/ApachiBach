@@ -21,42 +21,6 @@ type someStruct struct {
 	keys *ecdsa.PrivateKey `json:"-"`
 }
 
-// type someStructJSON struct {
-// 	Name       string `json:"name"`
-// 	Id         int    `json:"id"`
-// 	file       []byte `json:"file"`
-// 	PrivateKey struct {
-// 		PublicKey struct {
-// 			X, Y BigInt `json:"file"`
-// 		}
-// 		D BigInt `json:"file"`
-// 	}
-// }
-
-// type BigInt struct {
-// 	big.Int
-// }
-
-// func (b BigInt) MarshalJSON() ([]byte, error) {
-// 	return []byte(b.String()), nil
-// }
-
-// func (b *BigInt) UnmarshalJSON(p []byte) error {
-// 	if string(p) == "null" {
-// 		return nil
-// 	}
-// 	var z big.Int
-// 	_, ok := z.SetString(string(p), 10)
-// 	if !ok {
-// 		return fmt.Errorf("not a valid big integer: %s", p)
-// 	}
-// 	b.Int = z
-// 	return nil
-// }
-// func NewJSONStruct(x someStruct) someStructJSON {
-// 	return someStructJSON{}
-// }
-
 func newKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	return a

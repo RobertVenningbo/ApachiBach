@@ -66,7 +66,7 @@ type Paper struct {
 	Selected            bool
 	ReviewSignatureByPC []byte
 	ReviewerList        []Reviewer
-	Reviews		   		[]ReviewStruct
+	Reviews             []ReviewStruct
 }
 
 type PaperBid struct {
@@ -146,6 +146,10 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(big.Int{})
 	gob.Register(PaperBid{})
 	gob.Register(Reviewer{})
+	gob.Register(ReviewStruct{})
+	gob.Register([]ReviewStruct{})
+	gob.Register(ReviewKpAndRg{})
+	gob.Register(ReviewCommitNonceStruct{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
@@ -254,7 +258,6 @@ func RemoveIndex(s []Reviewer, index int) []Reviewer {
 }
 
 func removeIndexOne(s []Reviewer, i int) []Reviewer {
-    s[len(s)-1], s[i] = s[i], s[len(s)-1]
-    return s[:len(s)-1]
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
 }
-

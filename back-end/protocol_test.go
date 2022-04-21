@@ -36,6 +36,20 @@ var (
 		&CommitStructPaper{},
 		nil,
 		nil,
+	}	
+	reviewer3 = Reviewer{
+		3,
+		newKeys(),
+		&CommitStructPaper{},
+		nil,
+		nil,
+	}
+	reviewer4 = Reviewer{
+		4,
+		newKeys(),
+		&CommitStructPaper{},
+		nil,
+		nil,
 	}
 	submitter = Submitter{
 		newKeys(),
