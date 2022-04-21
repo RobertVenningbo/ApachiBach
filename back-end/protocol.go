@@ -19,7 +19,15 @@ import (
 )
 
 type Reviewer struct {
-	UserID              string
+	UserID              int
+	Keys                *ecdsa.PrivateKey
+	PaperCommittedValue *CommitStructPaper
+	GradedPaperMap      map[int]int
+	GradeCommittedValue *CommitStruct
+}
+
+type ReviewerCopy struct {
+	UserID              int
 	Keys                *ecdsa.PrivateKey
 	PaperCommittedValue *CommitStructPaper
 	GradedPaperMap      map[int]int
@@ -58,6 +66,7 @@ type Paper struct {
 	Selected            bool
 	ReviewSignatureByPC []byte
 	ReviewerList        []Reviewer
+	Reviews		   		[]ReviewStruct
 }
 
 type PaperBid struct {
@@ -219,7 +228,6 @@ func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature
 	return splitArr[0], splitArr[1]
 }
 
-//Maybe should take []byte instead of interface.
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
@@ -227,13 +235,11 @@ func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase stri
 	x := [][]byte{}
 
 	if passphrase == "" { //if passphrase is empty dont encrypt
-		x = append(x, signature)
-		x = append(x, bytes)
+		x = append(x, signature, bytes)
 		return x
 	} else {
 		encrypted := Encrypt(bytes, passphrase)
-		x = append(x, signature)
-		x = append(x, encrypted)
+		x = append(x, signature, encrypted)
 		return x
 	}
 }

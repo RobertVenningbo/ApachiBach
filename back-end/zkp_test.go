@@ -15,12 +15,13 @@ import (
 
 func TestNewEqProofK256(t *testing.T) {
 	keys := newKeys()
-	p := Paper{
-		1,
-		true,
-		nil,
-		nil,
-	}
+
+	// p := Paper{
+	// 	1,
+	// 	true,
+	// 	nil,
+	// 	nil,
+	// }
 	submitter := Submitter{
 		keys,
 		"1", //userID
@@ -28,38 +29,29 @@ func TestNewEqProofK256(t *testing.T) {
 		&CommitStructPaper{},
 		&Receiver{},
 	}
-	reviewer := Reviewer{
-		"reviewer1",
-		newKeys(),
-		&CommitStructPaper{},
-		nil,
-		nil,
-	}
+
+	submitter.Submit(&p)
+	submitterKey := pc.GetPaperSubmitterPK(p.Id)
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-
-	r1 := ec.GetRandomInt(curve.N)
-	r2 := ec.GetRandomInt(curve.N)
+	
+	r1, _ := rand.Int(rand.Reader, curve.N)
+	r2, _ := rand.Int(rand.Reader, curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-
+	
+	//msg := ec.GetRandomInt(submitter.Keys.D)
 	msg := MsgToBigInt(EncodeToBytes(p))
-	fmt.Printf("%s %v \n", "msg : ", msg)
-	fmt.Printf("%s %v \n", "key : ", submitter.Keys.D)
-	//msg := ec.GetRandomInt(submitter.keys.D)
 
 	commit1, err := submitter.GetCommitMessagePaper(msg, r1)
-	fmt.Println(commit1)
-
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := reviewer.GetCommitMessageReviewPaper(msg, r2)
+	commit2, err := pc.GetCommitMessagePaperPC(msg, r2)
 	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaperReviewer: %v", err)
+		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
 	}
-	fmt.Printf("%#v", commit2)
 
 	c1 := &Commitment{
 		commit1.X,
@@ -70,10 +62,12 @@ func TestNewEqProofK256(t *testing.T) {
 		commit2.Y,
 	}
 
-	proof := NewEqProofP256(msg, r1, r2, nonce, &submitter.Keys.PublicKey, &reviewer.Keys.PublicKey)
-	if !proof.OpenP256(c1, c2, nonce, &submitter.Keys.PublicKey, &reviewer.Keys.PublicKey) {
-		t.Fail()
-	}
+	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &pc.Keys.PublicKey)
+
+	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &pc.Keys.PublicKey)
+	fmt.Printf("\n%s %v", "Commits hold same paper: ", got)
+	want := true
+	assert.Equal(t, want, got, "TestEqProof Failed")
 }
 
 func TestZKSetMembership(t *testing.T) {
@@ -117,4 +111,54 @@ func TestZKSetMembership(t *testing.T) {
 		t.FailNow()
 	}
 	assert.True(t, ok, "should verify")
+}
+
+func TestMsgToBigInt(t *testing.T){
+	msg := MsgToBigInt(EncodeToBytes(p))
+	msg1 := MsgToBigInt(EncodeToBytes(p))
+	assert.Equal(t, msg, msg1, "failzzMsgToBigInt") 
+}
+
+func TestNewEqualityProof(t *testing.T) {
+	x := MsgToBigInt(EncodeToBytes(p.Id))
+
+	curve1 := elliptic.P256()
+	curve := curve1.Params()
+
+	rr := ec.GetRandomInt(curve.N)
+	rs := ec.GetRandomInt(curve.N)
+	nonce, _ := rand.Int(rand.Reader, curve.N)
+
+	ReviewCommit, err := pc.GetCommitMessagePaperPC(x, rr)
+	if err != nil {
+		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
+	}
+
+
+	fmt.Printf("%s %v \n", "PCReviewCommit :", ReviewCommit)
+	PaperSubmissionCommit, err := submitter.GetCommitMessagePaper(x, rs)
+	if err != nil {
+		t.Errorf("Error in GetCommitMsgPaper: %v", err)
+	}
+	fmt.Printf("\n %s %v \n", "PSCommitX: ", PaperSubmissionCommit.X)
+	fmt.Printf("\n %s %v \n", "PSCommitY: ", PaperSubmissionCommit.Y)
+	fmt.Printf("\n %s %v \n","RCommitX: ", ReviewCommit.X)
+	fmt.Printf("\n %s %v \n","RCommitY: ", ReviewCommit.Y)
+
+	C1 := &Commitment{
+		PaperSubmissionCommit.X,
+		PaperSubmissionCommit.Y,
+	}
+	C2 := &Commitment{
+		ReviewCommit.X,
+		ReviewCommit.Y,
+	}
+
+	proof := NewEqualityProof(x, rr, rs, nonce)
+
+	got := proof.OpenEqualityProof(C1, C2, nonce)
+	want := true
+
+	assert.Equal(t, want, got, "TestNewEqualityProof Failed")
+
 }

@@ -16,85 +16,125 @@ type reviewCommitNonceStruct struct {
 	nonce  *big.Int
 }
 
-//TODO: Look at how we store values in the tree, keys.
-//planned to be called for every reviewer in the controller layer or whatever calls it
-func (r *Reviewer) FinishReview() { //step 8
+type ReviewStruct struct {
+	ReviewerId   int
+	Review  	 string
+	PaperId		 int
+}
+type ReviewKpAndRg struct {
+	GroupKey	*ecdsa.PrivateKey
+	Rg 			*big.Int
+}
+
+func (r *Reviewer) FinishReview(review string) { //step 8
 	Kpcr := generateSharedSecret(&pc, nil, r)
 
-	signAndEnc := SignzAndEncrypt(r.Keys, r.PaperCommittedValue, Kpcr) //Perhaps look at this when implementing more reviewers pr. paper
-	str := fmt.Sprintf("Reviewer, %s, finish review on paper\n", r.UserID)
+	reviewStruct := ReviewStruct{
+		r.UserID,
+		review,
+		r.PaperCommittedValue.Paper.Id,
+	}
+
+	signAndEnc := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewStruct), Kpcr) 
+	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
 	log.Printf(str)
 	tree.Put(str, signAndEnc)
 }
 
-// Logic should be OK, but casting, encoding and decoding might fuck it up.
-func (pc *PC) CollectReviews(reviewers []Reviewer) { // step 11
+func (r *Reviewer) SignReviewPaperCommit() { //step 9 
+	reviewSignedStruct := r.GetReviewSignedStruct(r.PaperCommittedValue.Paper.Id)
+	reviewCommit := reviewSignedStruct.Commit
 
-	log.Println("PC collects reviews from log")
-	list := []string{}
-	Kpcr := ""
-	KpcrRevId := ""
-	for _, r := range reviewers {
-		collectString := fmt.Sprintf("Reviewer, %s, finish review on paper\n", r.UserID)
-		result := tree.Find(collectString)
-		// all of this is verifying pretty much
-		signature, encrypted := SplitSignz(fmt.Sprintf("%v", result.value))
-		Kpcr = generateSharedSecret(pc, nil, &r)
-		KpcrRevId = r.UserID
-		decrypted := Decrypt([]byte(encrypted), Kpcr)
-		hash, _ := GetMessageHash(decrypted)
-		isLegit := Verify(&r.Keys.PublicKey, signature, hash)
-		if !isLegit {
-			log.Panic("Signature couldn't be verified.")
-		}
-		// all of this is verifying pretty much
+	nonce := reviewSignedStruct.Nonce
 
-		list = append(list, fmt.Sprint(result.value)) //watch out for fmt.Sprint formatting differently than wanting
-	}
-	log.Println("PC retrieves Kp")
-	str := fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", KpcrRevId)
-	KpSigAndEnc := tree.Find(str)
-	_, enc := SplitSignz(fmt.Sprintf("%v", KpSigAndEnc.value)) //could verify signature, but idk if it's needed for every received value. It's more "it's there if u wanna verify it".
-	plaintext := Decrypt([]byte(enc), Kpcr)
-	Kp := DecodeToStruct(plaintext)
-	listSignature := SignzAndEncrypt(pc.Keys, list, Kp.(ecdsa.PrivateKey).D.String())
-	putStr := fmt.Sprint("Sharing reviews with Reviewers")
-	log.Println(putStr)
-	tree.Put(putStr, listSignature)
-}
-
-//planned to be called for every reviewer in the controller layer or whatever calls it
-func (r *Reviewer) SignReviewPaperCommit() { //step 9
-	PaperCommit := r.PaperCommittedValue.CommittedValue
-
-	nonce := tree.Find("nonce") //find nonce in reviewSignStruct
 	reviewCommitNonce := reviewCommitNonceStruct{
-		PaperCommit,
-		nonce.value.(*big.Int),
+		reviewCommit,
+		nonce,
 	}
-	rCommitSignature := Sign(r.Keys, reviewCommitNonce) //
+	rCommitSignature := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewCommitNonce), "") 
 
-	str := fmt.Sprintf("%s signs paper review commit %s\n", r.UserID, rCommitSignature)
-	log.Printf("%s=%s", str, rCommitSignature)
+	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
+	log.Println(str)
 	tree.Put(str, rCommitSignature)
 }
 
-func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) {
+func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 	kp := newKeys() //generating new group key
 
 	rg := ec.GetRandomInt(pc.Keys.D) //generating new grade randomness rg for later commits.
 
 	for _, r := range reviewers {
 		Kpcr := generateSharedSecret(pc, nil, &r)
-		someSigKp := SignzAndEncrypt(pc.Keys, kp, Kpcr) //return string([]byteSignature|someEncryptedString)
+		GroupKeyAndRg := ReviewKpAndRg{
+			kp,
+			rg,
+		}
+		
+		reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(GroupKeyAndRg), Kpcr)
 
-		str := fmt.Sprintf("PC sign and encrypt Kp with Kpcr between PC and reviewer id %s", r.UserID)
-		log.Printf("\n" + str + someSigKp)
-		tree.Put(str, someSigKp)
-
-		someSigRg := SignzAndEncrypt(pc.Keys, rg, Kpcr) //return string([]byteSignature|someEncryptedString)
-		str = fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", r.UserID)
-		log.Printf("\n" + str + someSigRg)
-		tree.Put(str, someSigRg)
+		str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
+		log.Printf("\n%s",str)
+		tree.Put(str, reviewKpAndRg)
 	}
 }
+
+
+func (pc *PC) CollectReviews(pId int) { //step 11
+	ReviewStructList := []ReviewStruct{}
+	revKpAndRg := ReviewKpAndRg{}
+	for _, p := range pc.allPapers {
+		if pId == p.Id {
+			for _, r := range p.ReviewerList {
+				reviewStruct, err := pc.GetReviewStruct(r)
+				if err != nil {
+					log.Panic(err)
+				}
+				ReviewStructList = append(ReviewStructList, reviewStruct) 
+				revKpAndRg = pc.GetReviewKpAndRg(r)
+				
+			}
+		}
+	}
+	log.Println("PC collects reviews from log")
+	log.Println("PC retrieves Kp")
+
+	Kp := revKpAndRg.GroupKey
+	
+	listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
+	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v",pId)
+	log.Println(putStr)
+	tree.Put(putStr, listSignature)
+}
+
+func (pc *PC) GetReviewKpAndRg(reviewer Reviewer) ReviewKpAndRg {
+	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", reviewer.UserID)
+	pc.GetReviewSignedStruct(reviewer.UserID)
+	reviewKpAndRg := tree.Find(str).value
+	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
+	Kpcr := generateSharedSecret(pc, nil, &reviewer)
+	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, Kpcr)
+	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
+
+	return decodedReviewKpAndRg
+
+}
+
+func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error){
+	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", reviewer.UserID)
+	signedReviewStruct := (tree.Find(str)).value
+	sig, encryptedReviewStruct := SplitSignatureAndMsg(signedReviewStruct.([][]byte))
+	Kpcr := generateSharedSecret(pc, nil, &reviewer)
+	encodedReviewStruct := Decrypt(encryptedReviewStruct, Kpcr)
+	decodedReviewStruct := DecodeToStruct(encodedReviewStruct).(ReviewStruct)
+	hash, _ := GetMessageHash(encodedReviewStruct)
+
+	isLegit := Verify(&reviewer.Keys.PublicKey, sig, hash)
+	if decodedReviewStruct.Review == "" || !isLegit {
+		err := fmt.Errorf("Error in GetReviewStruct, Review is empty or verification failed")
+		return ReviewStruct{}, err
+	}
+
+
+	return decodedReviewStruct, nil
+}
+

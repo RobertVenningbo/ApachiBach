@@ -13,24 +13,25 @@ import (
 
 var (
 	paperListTest = []Paper{
-		Paper{1, false, nil, nil},
-		Paper{2, false, nil, nil},
+		Paper{1, false, nil, nil, nil},
+		Paper{2, false, nil, nil, nil},
 	}
 	p = Paper{
 		1,
 		false,
 		nil,
 		nil,
+		nil,
 	}
 	reviewer = Reviewer{
-		"reviewer",
+		1,
 		newKeys(),
 		&CommitStructPaper{},
 		nil,
 		nil,
 	}
 	reviewer2 = Reviewer{
-		"reviewer2",
+		2,
 		newKeys(),
 		&CommitStructPaper{},
 		nil,
@@ -227,13 +228,13 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 		EncodeToBytes(commit),
 		EncodeToBytes(commit2),
 	}
-
+	msg := fmt.Sprintf("signedCommitMsg%v", p.Id)
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	
+	tree.Put(msg, signedCommitMsg)
 
-	foundCommit := pc.GetPaperSubmissionCommit(&submitter)
+	foundCommit := pc.GetPaperSubmissionCommit(p.Id)
 	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
-
 }
 
 func TestGetPaperSubmissionSignature(t *testing.T) {
@@ -256,4 +257,34 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 	hash, _ := GetMessageHash(txt)
 	got := Verify(&submitter.Keys.PublicKey, sig, hash)
 	assert.Equal(t, true, got, "TestGetPaperSubmissionSignature failed")
+}
+
+func TestGetPaperAndRandomness(t *testing.T) {
+	
+	rr := ec.GetRandomInt(pc.Keys.D) 
+    rs := ec.GetRandomInt(pc.Keys.D) 
+
+	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
+	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
+		&p,
+		rr,
+		rs,
+	}
+	submitMsg := SubmitMessage{
+		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
+		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
+	}
+
+	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
+	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+
+	want := pc.GetPaperAndRandomness(p.Id)
+
+	assert.Equal(t, PaperAndRandomness, want, "TestGetPaperAndRandomness failed")
+}
+
+func TestSubmit(t *testing.T) {
+	submitter.Submit(&p)
+	
 }
