@@ -130,6 +130,7 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
 
+//TODO make init func for registering when starting server
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
@@ -150,6 +151,8 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register([]ReviewStruct{})
 	gob.Register(ReviewKpAndRg{})
 	gob.Register(ReviewCommitNonceStruct{})
+	gob.Register(GradeStruct{})
+	gob.Register(GradeReviewCommits{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)

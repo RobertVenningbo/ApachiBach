@@ -119,6 +119,7 @@ func (pc *PC) GetReviewKpAndRg(reviewer Reviewer) ReviewKpAndRg {
 
 func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
+	log.Printf("Getting cosigned Kp group key by reviewer: %v\n", r.UserID)
 	reviewKpAndRg := tree.Find(str).value
 	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
 	Kpcr := generateSharedSecret(&pc, nil, r)

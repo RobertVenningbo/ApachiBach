@@ -12,35 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//  func TestMatchPapers(t *testing.T) {
-//  	p := Paper{
-//  		1,
-//  		true,
-//  		nil,
-//  		nil,
-//  	}
-//  	submitter.PaperCommittedValue.Paper = &p
-//  	allPapers := append(pc.allPapers, &p)
-//  	fmt.Printf("Paper: %v in allPapers", p.Id)
-//  	submitters := []Submitter{submitter}
-//  	reviewers := []Reviewer{reviewer}
-//  	r := ec.GetRandomInt(submitter.Keys.D)
-//  	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-//  	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-//  	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-//  	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
-//  	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
-//  	commitMsg := CommitMsg{
-//  		EncodeToBytes(IdentityCommit),
-//  		EncodeToBytes(PaperSubmissionCommit),
-//  	}
-//  	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-//  	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
-//  	reviewer.SignBidAndEncrypt(&p)
-//  	// got :=pc.assignPaper(reviewers)
-//  	// fmt.Printf("%v  \n", got)
-//  	pc.matchPapers(nil,nil,nil)
-//  }
 
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 	pc.allPapers = append(pc.allPapers, &p)
