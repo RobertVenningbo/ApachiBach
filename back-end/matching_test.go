@@ -38,8 +38,6 @@ func TestGetBiddedPaper(t *testing.T) {
 		123123,
 		newKeys(),
 		commitStructPaper,
-		nil,
-		nil,
 	}
 
 	reviewerScope.SignBidAndEncrypt(&p)
@@ -58,35 +56,25 @@ func TestAssignPapers(t *testing.T) {
 		3,
 		newKeys(),
 		nil,
-		nil,
-		nil,
 	}
 	reviewer4 := Reviewer{
 		4,
 		newKeys(),
-		nil,
-		nil,
 		nil,
 	}
 	p1 := Paper{
 		1,
 		false,
 		nil,
-		nil,
-		nil,
 	}
 	p2 := Paper{
 		2,
 		false,
 		nil,
-		nil,
-		nil,
 	}
 	p3 := Paper{
 		3,
 		false,
-		nil,
-		nil,
 		nil,
 	}
 
@@ -107,7 +95,7 @@ func TestSupplyNizk(t *testing.T) {
 	keys := newKeys()
 	submitter1 := Submitter{
 		keys,
-		"2", //userID
+		2, //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
 		&Receiver{},

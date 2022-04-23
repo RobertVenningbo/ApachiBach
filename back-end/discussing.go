@@ -6,12 +6,18 @@ import (
 	"log"
 	Math "math"
 	"math/big"
+	"math/rand"
 )
 
-type GradeStruct struct {
+type IndividualGrade struct {
 	PaperId		int
 	ReviewerId	int
 	Grade		int
+}
+
+type Grade struct {
+	Grade int
+	Randomness int
 }
 
 type GradeReviewCommits struct {
@@ -31,7 +37,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 
 
 func (r *Reviewer) GradePaper(grade int) {
-	gradeStruct := GradeStruct{
+	gradeStruct := IndividualGrade{
 		r.PaperCommittedValue.Paper.Id,
 		r.UserID,
 		grade,
@@ -46,18 +52,18 @@ func (r *Reviewer) GradePaper(grade int) {
 
 }
 
-func (r *Reviewer) getGradeForReviewer(rId int) GradeStruct {
+func (r *Reviewer) getGradeForReviewer(rId int) IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper",rId)
 	gradeStruct := tree.Find(msg).value
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
 	_, encryptedGradeStruct := SplitSignatureAndMsg(gradeStruct.([][]byte))
 	encodedGradeStruct := Decrypt(encryptedGradeStruct, Kp.D.String())
-	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(GradeStruct)
+	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
 	return decodedGradeStruct
 }
 
-func AgreeOnGrade(paper *Paper) int {
+func AgreeOnGrade(paper *Paper) Grade {
 	result := 0
 	length := len(paper.ReviewerList)
 	for _, r := range paper.ReviewerList {
@@ -66,7 +72,13 @@ func AgreeOnGrade(paper *Paper) int {
 	}
 	avg := float64(result)/float64(length)
 	grade := calculateNearestGrade(avg)
-	return grade
+
+	agreedGrade := Grade{
+		grade,
+		rand.Intn(100),
+	}
+
+	return agreedGrade
 }
 
 func calculateNearestGrade(avg float64) int {
@@ -122,7 +134,7 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 	
 }
 
-func (r *Reviewer) SignAndEncryptGrade() {
+func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every reviewer
 	grade := AgreeOnGrade(r.PaperCommittedValue.Paper) //acquire agreed grade
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey

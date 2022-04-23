@@ -23,9 +23,13 @@ func TestFinishReview_And_GetReviewStruct(t *testing.T) {
 func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 	reviewerList := []Reviewer{}
 	reviewerList = append(reviewerList, reviewer, reviewer2)
+	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
+	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	pc.GenerateKeysForDiscussing(reviewerList)
+	pc.allPapers = append(pc.allPapers, &paperListTest[0])
+	pc.allPapers[0].ReviewerList = reviewerList
 
-	GetStruct := pc.GetReviewKpAndRg(reviewer)
+	GetStruct := pc.GetKpAndRgPC(pc.allPapers[0].Id)
 
 	fmt.Printf("%#v \n", GetStruct)
 
@@ -88,9 +92,8 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 
 	reviewer.SignReviewPaperCommit()  //step 9
 	reviewer2.SignReviewPaperCommit() //step 9
-	// reviewer3.SignReviewPaperCommit() //step 9 -- Shouldn't be called currently as GetReviewSignedStruct from the calling of this method would fail as we don't currently have something in the tree with the following string "ReviewSignedStruct with p%v", p.Id) for p.Id=2.  
+	// reviewer3.SignReviewPaperCommit() //step 9 -- Shouldn't be called currently as GetReviewSignedStruct from the calling of this method would fail as we don't currently have something in the tree with the following string "ReviewSignedStruct with p%v", p.Id) for p.Id=2.
 	// reviewer4.SignReviewPaperCommit() //step 9
-
 
 	// Generating keys for both paperReview groups.
 	pc.GenerateKeysForDiscussing(paperListTest[0].ReviewerList) //step 10

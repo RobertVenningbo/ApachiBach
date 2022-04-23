@@ -6,40 +6,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	ec "swag/ec"
+	_ "swag/ec"
 	"testing"
 
 	"github.com/0xdecaf/zkrp/bulletproofs"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewEqProofK256(t *testing.T) {
-	keys := newKeys()
-
-	// p := Paper{
-	// 	1,
-	// 	true,
-	// 	nil,
-	// 	nil,
-	// }
-	submitter := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&CommitStructPaper{},
-		&Receiver{},
-	}
-
+func TestNewEqProofP256(t *testing.T) {
 	submitter.Submit(&p)
 	submitterKey := pc.GetPaperSubmitterPK(p.Id)
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
-	
+
 	r1, _ := rand.Int(rand.Reader, curve.N)
 	r2, _ := rand.Int(rand.Reader, curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	
+
 	//msg := ec.GetRandomInt(submitter.Keys.D)
 	msg := MsgToBigInt(EncodeToBytes(p))
 
@@ -113,52 +97,8 @@ func TestZKSetMembership(t *testing.T) {
 	assert.True(t, ok, "should verify")
 }
 
-func TestMsgToBigInt(t *testing.T){
+func TestMsgToBigInt(t *testing.T) {
 	msg := MsgToBigInt(EncodeToBytes(p))
 	msg1 := MsgToBigInt(EncodeToBytes(p))
-	assert.Equal(t, msg, msg1, "failzzMsgToBigInt") 
-}
-
-func TestNewEqualityProof(t *testing.T) {
-	x := MsgToBigInt(EncodeToBytes(p.Id))
-
-	curve1 := elliptic.P256()
-	curve := curve1.Params()
-
-	rr := ec.GetRandomInt(curve.N)
-	rs := ec.GetRandomInt(curve.N)
-	nonce, _ := rand.Int(rand.Reader, curve.N)
-
-	ReviewCommit, err := pc.GetCommitMessagePaperPC(x, rr)
-	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
-	}
-
-
-	fmt.Printf("%s %v \n", "PCReviewCommit :", ReviewCommit)
-	PaperSubmissionCommit, err := submitter.GetCommitMessagePaper(x, rs)
-	if err != nil {
-		t.Errorf("Error in GetCommitMsgPaper: %v", err)
-	}
-	fmt.Printf("\n %s %v \n", "PSCommitX: ", PaperSubmissionCommit.X)
-	fmt.Printf("\n %s %v \n", "PSCommitY: ", PaperSubmissionCommit.Y)
-	fmt.Printf("\n %s %v \n","RCommitX: ", ReviewCommit.X)
-	fmt.Printf("\n %s %v \n","RCommitY: ", ReviewCommit.Y)
-
-	C1 := &Commitment{
-		PaperSubmissionCommit.X,
-		PaperSubmissionCommit.Y,
-	}
-	C2 := &Commitment{
-		ReviewCommit.X,
-		ReviewCommit.Y,
-	}
-
-	proof := NewEqualityProof(x, rr, rs, nonce)
-
-	got := proof.OpenEqualityProof(C1, C2, nonce)
-	want := true
-
-	assert.Equal(t, want, got, "TestNewEqualityProof Failed")
-
+	assert.Equal(t, msg, msg1, "failzzMsgToBigInt")
 }

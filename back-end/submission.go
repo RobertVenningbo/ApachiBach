@@ -102,7 +102,8 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 }
 
 func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
-	signedCommitMsg := tree.Find("signedCommitMsg" + submitter.UserID)
+	putStr := fmt.Sprintf("signedCommitMsg%v",submitter.UserID)
+	signedCommitMsg := tree.Find(putStr)
 	bytes := signedCommitMsg.value.([][]byte)
 	sig, _ := SplitSignatureAndMsg(bytes)
 	return sig

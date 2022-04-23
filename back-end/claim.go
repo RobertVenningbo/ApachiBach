@@ -21,14 +21,14 @@ func (s *Submitter) ClaimPaper() { //step 19
 		s,
 		ri,
 	}
-	str := fmt.Sprintf("Submitter, %s, claims paper by revealing paper and ri.", s.UserID)
+	str := fmt.Sprintf("Submitter, %v, claims paper by revealing paper and ri.", s.UserID)
 	signature := Sign(s.Keys, msg)
 	log.Println(str, signature)
 	tree.Put(str, signature)
 }
 
 func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
-	getStr := fmt.Sprintf("Submitter, %s, claims paper by revealing paper and ri.", s.UserID)
+	getStr := fmt.Sprintf("Submitter, %v, claims paper by revealing paper and ri.", s.UserID)
 	item := tree.Find(getStr)
 
 	claimMsg := item.value.(ClaimMessage)
@@ -37,7 +37,7 @@ func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 
 	signature := Sign(pc.Keys, claimMsg)
 
-	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %s", claimMsg.paper.Id, s.UserID)
+	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claimMsg.paper.Id, s.UserID)
 	log.Println(putStr, " with signature: ", signature)
 	tree.Put(putStr, signature)
 }

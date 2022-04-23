@@ -2,18 +2,14 @@ package backend
 
 import (
 	"bytes"
-	_ "bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	_ "crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	_ "errors"
 	"fmt"
-	_ "fmt"
 	"log"
-	_ "log"
 	"math/big"
 	"strings"
 )
@@ -22,21 +18,11 @@ type Reviewer struct {
 	UserID              int
 	Keys                *ecdsa.PrivateKey
 	PaperCommittedValue *CommitStructPaper
-	GradedPaperMap      map[int]int
-	GradeCommittedValue *CommitStruct
-}
-
-type ReviewerCopy struct {
-	UserID              int
-	Keys                *ecdsa.PrivateKey
-	PaperCommittedValue *CommitStructPaper
-	GradedPaperMap      map[int]int
-	GradeCommittedValue *CommitStruct
 }
 
 type Submitter struct {
 	Keys                    *ecdsa.PrivateKey
-	UserID                  string
+	UserID                  int
 	SubmitterCommittedValue *CommitStruct //commitstruct
 	PaperCommittedValue     *CommitStructPaper
 	Receiver                *Receiver
@@ -58,15 +44,13 @@ type CommitStructPaper struct {
 type PC struct {
 	Keys          *ecdsa.PrivateKey
 	allPapers     []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
-	reviewCommits []ecdsa.PublicKey
 }
 
 type Paper struct {
 	Id                  int
 	Selected            bool
-	ReviewSignatureByPC []byte
 	ReviewerList        []Reviewer
-	Reviews             []ReviewStruct
+
 }
 
 type PaperBid struct {
@@ -79,10 +63,7 @@ var (
 	pc   = PC{
 		newKeys(),
 		nil,
-		nil,
 	}
-
-	schnorrProofs []SchnorrProof
 )
 
 type SubmitStruct struct {
@@ -113,7 +94,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 }
 
 func newKeys() *ecdsa.PrivateKey {
-	a, _ := ecdsa.GenerateKey(curve, rand.Reader)
+	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	return a
 }
 
@@ -151,13 +132,14 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register([]ReviewStruct{})
 	gob.Register(ReviewKpAndRg{})
 	gob.Register(ReviewCommitNonceStruct{})
-	gob.Register(GradeStruct{})
+	gob.Register(IndividualGrade{})
 	gob.Register(GradeReviewCommits{})
+	gob.Register(Grade{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
+	//fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
 }
 

@@ -13,47 +13,38 @@ import (
 
 var (
 	paperListTest = []Paper{
-		{1, false, nil, nil, nil},
-		{2, false, nil, nil, nil},
+		{1, false, nil},
+		{2, false, nil},
 	}
 	p = Paper{
 		1,
 		false,
 		nil,
-		nil,
-		nil,
+
 	}
 	reviewer = Reviewer{
 		1,
 		newKeys(),
 		&CommitStructPaper{},
-		nil,
-		nil,
 	}
 	reviewer2 = Reviewer{
 		2,
 		newKeys(),
 		&CommitStructPaper{},
-		nil,
-		nil,
 	}	
 	reviewer3 = Reviewer{
 		3,
 		newKeys(),
 		&CommitStructPaper{},
-		nil,
-		nil,
 	}
 	reviewer4 = Reviewer{
 		4,
 		newKeys(),
 		&CommitStructPaper{},
-		nil,
-		nil,
 	}
 	submitter = Submitter{
 		newKeys(),
-		"submitter", //userID
+		1, //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
 		&Receiver{},
@@ -68,7 +59,8 @@ func TestGenerateSharedSecret(t *testing.T) {
 }
 
 func TestVerifyTrapdoorSubmitter(t *testing.T) {
-
+	rec := NewReceiver(submitter.Keys)
+	submitter.Receiver = rec
 	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.Receiver))
 
 	want := true
@@ -176,41 +168,6 @@ func TestVerifyMethod(t *testing.T) {
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
 
-/*
-func TestSignAndVerify(t *testing.T) {
-	keys := newKeys()
-	s := Submitter{
-		keys,
-		"1", //userID
-		&CommitStruct{},
-		&Paper{},
-		&Receiver{},
-		nil,
-		nil,
-	}
-	str := "hello"
-	//signed, _ := ecdsa.SignASN1(rand.Reader, s.keys, []byte(str))
-
-	//sig, msg := SplitSignz(signed)
-//	fmt.Println("'" + msg + "'")
-	//hash, _ := GetMessageHash([]byte(msg))
-
-	signed2 := Sign(s.keys, str)
-	sig, msg := SplitSignz(signed2)
-	fmt.Println(msg)
-	fmt.Printf("%s %v \n", "Sig from SignASN1 test: ", signed2)
-	fmt.Printf("%s %v", "Sig from Sign Test: ", sig)
-
-
-	//fmt.Printf("%s%v\n", "Hash from test1:", hash)
-
-
-	got := ecdsa.VerifyASN1(&s.keys.PublicKey, []byte(str), []byte(signed2))
-
-//	fmt.Println("Sig from test:" + sig)
-	assert.Equal(t, true, got, "TestSignAndVerify Failed")
-
-} */
 
 func TestLogging(t *testing.T) {
 
@@ -263,7 +220,8 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 	}
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
+	putStr := fmt.Sprintf("signedCommitMsg%v",submitter.UserID)
+	tree.Put(putStr, signedCommitMsg)
 
 	sig := pc.GetPaperSubmissionSignature(&submitter)
 
