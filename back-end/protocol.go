@@ -42,15 +42,14 @@ type CommitStructPaper struct {
 }
 
 type PC struct {
-	Keys          *ecdsa.PrivateKey
-	allPapers     []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
+	Keys      *ecdsa.PrivateKey
+	allPapers []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
 }
 
 type Paper struct {
-	Id                  int
-	Selected            bool
-	ReviewerList        []Reviewer
-
+	Id           int
+	Selected     bool
+	ReviewerList []Reviewer
 }
 
 type PaperBid struct {
@@ -135,6 +134,9 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(IndividualGrade{})
 	gob.Register(GradeReviewCommits{})
 	gob.Register(Grade{})
+	gob.Register(RevealPaper{})
+	gob.Register(RejectMessage{})
+	gob.Register(SendGradeStruct{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 	pc.allPapers = append(pc.allPapers, &p)
 	reviewers := []Reviewer{reviewer, reviewer2}
@@ -122,7 +121,6 @@ func TestSupplyNizk(t *testing.T) {
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
 
-	
 	got := pc.supplyNIZK(&p)
 	want := true
 
@@ -163,4 +161,3 @@ func TestMatchPapers(t *testing.T) {
 	pc.assignPaper(reviewerSlice)
 	pc.MatchPapers()
 }
-

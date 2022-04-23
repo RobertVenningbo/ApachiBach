@@ -20,7 +20,6 @@ var (
 		1,
 		false,
 		nil,
-
 	}
 	reviewer = Reviewer{
 		1,
@@ -31,7 +30,7 @@ var (
 		2,
 		newKeys(),
 		&CommitStructPaper{},
-	}	
+	}
 	reviewer3 = Reviewer{
 		3,
 		newKeys(),
@@ -168,7 +167,6 @@ func TestVerifyMethod(t *testing.T) {
 	assert.Equal(t, true, got, "Sign and Verify failed")
 }
 
-
 func TestLogging(t *testing.T) {
 
 	number := ec.GetRandomInt(submitter.Keys.D)
@@ -201,7 +199,7 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 	}
 	msg := fmt.Sprintf("signedCommitMsg%v", p.Id)
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	
+
 	tree.Put(msg, signedCommitMsg)
 
 	foundCommit := pc.GetPaperSubmissionCommit(p.Id)
@@ -220,7 +218,7 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 	}
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-	putStr := fmt.Sprintf("signedCommitMsg%v",submitter.UserID)
+	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
 	tree.Put(putStr, signedCommitMsg)
 
 	sig := pc.GetPaperSubmissionSignature(&submitter)
@@ -232,9 +230,9 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 }
 
 func TestGetPaperAndRandomness(t *testing.T) {
-	
-	rr := ec.GetRandomInt(pc.Keys.D) 
-    rs := ec.GetRandomInt(pc.Keys.D) 
+
+	rr := ec.GetRandomInt(pc.Keys.D)
+	rs := ec.GetRandomInt(pc.Keys.D)
 
 	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
@@ -247,7 +245,7 @@ func TestGetPaperAndRandomness(t *testing.T) {
 		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "")  //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
 	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 
@@ -258,5 +256,5 @@ func TestGetPaperAndRandomness(t *testing.T) {
 
 func TestSubmit(t *testing.T) {
 	submitter.Submit(&p)
-	
+
 }

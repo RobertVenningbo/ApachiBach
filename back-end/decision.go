@@ -2,6 +2,8 @@ package backend
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"math/big"
@@ -10,14 +12,14 @@ import (
 )
 
 type SendGradeStruct struct {
-	reviews []string
-	grade   int
+	Reviews []string
+	Grade   int
 }
 
 type RejectMessage struct {
-	commit *ecdsa.PublicKey
-	grade  int
-	rg     *big.Int
+	Commit *ecdsa.PublicKey
+	Grade  int
+	Rg     *big.Int
 }
 
 type RevealPaper struct {
@@ -43,7 +45,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 
 /*PC DECLINES PAPER PATH*/
 
-func (pc *PC) RejectPaper(pId int) { //step 16
+func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 	Grade := pc.GetGrade(pId)
 
 	KpAndRg := pc.GetKpAndRgPC(pId)
@@ -62,19 +64,13 @@ func (pc *PC) RejectPaper(pId int) { //step 16
 	logMsg := fmt.Sprintf("PC rejects Paper: %v", pId)
 	log.Println(logMsg)
 	tree.Put(logMsg, signature)
+
+	return rejectMsg
 }
 
 /*PC ACCEPTS PAPER PATH*/
 
 var AcceptedPapers []Paper //Global
-
-func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
-	for _, p := range pc.allPapers {
-		if p.Id == pId {
-			AcceptedPapers = append(AcceptedPapers, *p)
-		}
-	}
-}
 
 func (pc *PC) CompileGrades() { //step 17
 	grades := []int{}
@@ -89,17 +85,23 @@ func (pc *PC) CompileGrades() { //step 17
 	tree.Put(str, signStr)
 }
 
-func (pc *PC) GetCompiledGrades() []int {
+func (pc *PC) GetCompiledGrades() []int64 {
 	getStr := fmt.Sprintf("PC compiles grades")
 	item := tree.Find(getStr).value.([][]byte)
 	_, EncodedGrades := SplitSignatureAndMsg(item)
 	DecodedGrades := DecodeToStruct(EncodedGrades).([]int)
-	return DecodedGrades
+
+	var i64 []int64
+	for _, v := range DecodedGrades {
+		i64 = append(i64, int64(v))
+	}
+	return i64
 }
 
-func (pc *PC) RevealAcceptedPaperInfo(s *Submitter) {
+func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 
-	p := pc.GetPaperAndRandomness(s.PaperCommittedValue.Paper.Id)
+	p := pc.GetPaperAndRandomness(pId)
+	grades := pc.GetCompiledGrades()
 
 	revealPaperMsg := RevealPaper{
 		*p.Paper,
@@ -112,8 +114,33 @@ func (pc *PC) RevealAcceptedPaperInfo(s *Submitter) {
 	tree.Put(str, signature)
 
 	/*NIZK*/
-	// params := cc08.SetupSet()
+	params, errSetup := ccs08.SetupSet(grades)
+	if errSetup != nil {
+		log.Panicln(errSetup)
+	}
+	var i64 int64
+	IntGrade := pc.GetGrade(pId)
+	i64 = int64(IntGrade)
+	//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
+	r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
+	proof_out, _ := ccs08.ProveSet(i64, r, params)
+	result, _ := ccs08.VerifySet(&proof_out, &params)
+	if result != true {
+		log.Panicf("Assert failure: expected true, actual: %v", result)
+	} else {
+		log.Println("PC proves that grade is in set of compiled grades.")
+	}
+	return revealPaperMsg
+}
 
+/*HELPER METHODS*/
+
+func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
+	for _, p := range pc.allPapers {
+		if p.Id == pId {
+			AcceptedPapers = append(AcceptedPapers, *p)
+		}
+	}
 }
 
 func (pc *PC) GetGrade(pId int) int {
@@ -150,3 +177,16 @@ func (pc *PC) GetReviewsOnly(pId int) []string {
 	return reviews
 }
 
+//This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
+func (s *Submitter) RetrieveGrades() SendGradeStruct {
+	Kpcs := generateSharedSecret(&pc, s, nil)
+
+	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
+	log.Println(getStr)
+	item := tree.Find(getStr).value.([][]byte)
+	_, enc := SplitSignatureAndMsg(item)
+	encoded := Decrypt(enc, Kpcs)
+	decoded := DecodeToStruct(encoded).(SendGradeStruct)
+
+	return decoded
+}

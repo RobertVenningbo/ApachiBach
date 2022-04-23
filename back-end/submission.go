@@ -19,7 +19,7 @@ type CommitMsg struct {
 }
 
 func (s *Submitter) Submit(p *Paper) {
-
+	s.PaperCommittedValue.Paper = p
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
 
@@ -102,7 +102,7 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 }
 
 func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
-	putStr := fmt.Sprintf("signedCommitMsg%v",submitter.UserID)
+	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
 	signedCommitMsg := tree.Find(putStr)
 	bytes := signedCommitMsg.value.([][]byte)
 	sig, _ := SplitSignatureAndMsg(bytes)

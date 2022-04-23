@@ -7,6 +7,7 @@ import (
 	"crypto/sha512"
 	"math/big"
 )
+
 /*
 	https://github.com/mikelodder7/commit_twin/blob/main/go/pkg/secp256k1.go
 */
@@ -102,7 +103,6 @@ func (eq *EqProof) OpenP256(b, c *Commitment, nonce *big.Int, pk1 *ecdsa.PublicK
 
 	return chal.Cmp(eq.C) == 0
 }
-
 
 func MsgToBigInt(msg []byte) *big.Int {
 	curve1 := elliptic.P256()

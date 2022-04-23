@@ -8,7 +8,7 @@ import (
 )
 
 func TestCalculateNearestGrade(t *testing.T) {
-	
+
 	avg := 5.6
 	want := 7
 
@@ -23,7 +23,7 @@ func TestGradePaperAndGetGrade(t *testing.T) {
 	want := 7
 	reviewer.GradePaper(want)
 
-	GradeStruct :=reviewer.getGradeForReviewer(reviewer.UserID)
+	GradeStruct := reviewer.getGradeForReviewer(reviewer.UserID)
 	got := GradeStruct.Grade
 
 	assert.Equal(t, want, got, "TestGradePaperAndGetGrade failed")
@@ -32,7 +32,7 @@ func TestGradePaperAndGetGrade(t *testing.T) {
 func TestAgreeOnGrade(t *testing.T) {
 	reviewerSlice := []Reviewer{reviewer, reviewer2, reviewer3}
 	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
-	
+
 	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer3.PaperCommittedValue.Paper = &paperListTest[0]
@@ -44,7 +44,7 @@ func TestAgreeOnGrade(t *testing.T) {
 
 	got := AgreeOnGrade(&paperListTest[0])
 	want := 7
-	
+
 	assert.Equal(t, want, got, "TestAgreeOnGrade")
 }
 
@@ -53,9 +53,9 @@ func TestMakeGradeCommit(t *testing.T) {
 	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	reviewer.PaperCommittedValue.Paper = &p
 	reviewer2.PaperCommittedValue.Paper = &p
-	gradeCommit := reviewer.MakeGradeCommit()	
+	gradeCommit := reviewer.MakeGradeCommit()
 	gradeCommit2 := reviewer2.MakeGradeCommit()
-	
+
 	assert.Equal(t, gradeCommit, gradeCommit2, "TestMakeGradeCommit Failed")
 }
 
@@ -67,7 +67,7 @@ func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
 	reviewer.SignBidAndEncrypt(&p)
 	pc.assignPaper(reviewerSlice)
 	pc.MatchPapers()
-	
+
 	pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	reviewer.PaperCommittedValue.Paper = &p
 	reviewer.GradePaper(7)
@@ -81,6 +81,6 @@ func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
 		reviewer.GetReviewCommitNonceStruct().Nonce,
 	}
 
-	fmt.Printf("%#v\n",gradeReviewCommit)
-	
+	fmt.Printf("%#v\n", gradeReviewCommit)
+
 }

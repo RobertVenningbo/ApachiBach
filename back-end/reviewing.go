@@ -21,6 +21,7 @@ type ReviewStruct struct {
 	Review     string
 	PaperId    int
 }
+
 type ReviewKpAndRg struct {
 	GroupKey *ecdsa.PrivateKey
 	Rg       *big.Int
@@ -87,7 +88,7 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 	tree.Put(strPC, reviewKpAndRg)
 }
 
-func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg{
+func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 	strPC := fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", pId)
 
 	reviewKpAndRg := tree.Find(strPC).value

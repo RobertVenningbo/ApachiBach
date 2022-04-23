@@ -6,24 +6,23 @@ import (
 	"log"
 	Math "math"
 	"math/big"
-	"math/rand"
 )
 
 type IndividualGrade struct {
-	PaperId		int
-	ReviewerId	int
-	Grade		int
+	PaperId    int
+	ReviewerId int
+	Grade      int
 }
 
 type Grade struct {
-	Grade int
+	Grade      int
 	Randomness int
 }
 
 type GradeReviewCommits struct {
 	PaperReviewCommit *ecdsa.PublicKey
-	GradeCommit		  *ecdsa.PublicKey
-	Nonce			  *big.Int
+	GradeCommit       *ecdsa.PublicKey
+	Nonce             *big.Int
 }
 
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
@@ -35,7 +34,6 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	tree.Put(logStr, encryptedSignedMsg)
 }
 
-
 func (r *Reviewer) GradePaper(grade int) {
 	gradeStruct := IndividualGrade{
 		r.PaperCommittedValue.Paper.Id,
@@ -46,14 +44,14 @@ func (r *Reviewer) GradePaper(grade int) {
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
 	encryptedSignedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
-	msg := fmt.Sprintf("Reviewer%v graded a paper",r.UserID)
+	msg := fmt.Sprintf("Reviewer%v graded a paper", r.UserID)
 	tree.Put(msg, encryptedSignedGradeStruct)
 	log.Println(msg)
 
 }
 
 func (r *Reviewer) getGradeForReviewer(rId int) IndividualGrade {
-	msg := fmt.Sprintf("Reviewer%v graded a paper",rId)
+	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
 	gradeStruct := tree.Find(msg).value
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
@@ -63,28 +61,29 @@ func (r *Reviewer) getGradeForReviewer(rId int) IndividualGrade {
 	return decodedGradeStruct
 }
 
-func AgreeOnGrade(paper *Paper) Grade {
+func AgreeOnGrade(paper *Paper) int {
 	result := 0
 	length := len(paper.ReviewerList)
 	for _, r := range paper.ReviewerList {
 		gradeStruct := r.getGradeForReviewer(r.UserID)
 		result += gradeStruct.Grade
 	}
-	avg := float64(result)/float64(length)
+	avg := float64(result) / float64(length)
 	grade := calculateNearestGrade(avg)
 
-	agreedGrade := Grade{
-		grade,
-		rand.Intn(100),
-	}
+	//For random grade?
+	// agreedGrade := Grade{
+	// 	grade,
+	// 	rand.Intn(100),
+	// }
 
-	return agreedGrade
+	return grade
 }
 
 func calculateNearestGrade(avg float64) int {
 	closest := 999
 	minDiff := 999.0
-	possibleGrades := []int{-3,00,02,4,7,10,12}
+	possibleGrades := []int{-3, 00, 02, 4, 7, 10, 12}
 	var diff float64
 	for _, v := range possibleGrades {
 		diff = Math.Abs(float64(v) - avg)
@@ -97,7 +96,7 @@ func calculateNearestGrade(avg float64) int {
 }
 
 func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
-	str := fmt.Sprintf("GradeCommit for P%v has been made",r.PaperCommittedValue.Paper.Id)
+	str := fmt.Sprintf("GradeCommit for P%v has been made", r.PaperCommittedValue.Paper.Id)
 	found := tree.Find(str)
 	if found == nil {
 		KpAndRg := r.GetReviewKpAndRg()
@@ -116,22 +115,22 @@ func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
 }
 
 func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when reviewers have settled on a grade
-		GradeCommit := r.MakeGradeCommit()
-		ReviewCommitNonceStruct := r.GetReviewCommitNonceStruct()
-		PaperReviewCommit := ReviewCommitNonceStruct.Commit
-		Nonce := ReviewCommitNonceStruct.Nonce
-	
-		gradeReviewCommits := GradeReviewCommits{
-			PaperReviewCommit,
-			GradeCommit,
-			Nonce,
-		}
-		fmt.Printf("%#v\n",gradeReviewCommits)
-		signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
-		str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
-		tree.Put(str, signedGradeReviewCommits)
-		log.Println(str)
-	
+	GradeCommit := r.MakeGradeCommit()
+	ReviewCommitNonceStruct := r.GetReviewCommitNonceStruct()
+	PaperReviewCommit := ReviewCommitNonceStruct.Commit
+	Nonce := ReviewCommitNonceStruct.Nonce
+
+	gradeReviewCommits := GradeReviewCommits{
+		PaperReviewCommit,
+		GradeCommit,
+		Nonce,
+	}
+	fmt.Printf("%#v\n", gradeReviewCommits)
+	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
+	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
+	tree.Put(str, signedGradeReviewCommits)
+	log.Println(str)
+
 }
 
 func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every reviewer

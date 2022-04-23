@@ -97,8 +97,6 @@ func (pc *PC) GetCommitMessagePaperPC(val *big.Int, r *big.Int) (*ecdsa.PublicKe
 	return comm, nil
 } //C(P, r)  C(S, r)
 
-
-
 func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	if val.Cmp(rev.Keys.D) == 1 || val.Cmp(big.NewInt(0)) == -1 {
 		err := fmt.Errorf("the committed value needs to be in Z_q (order of a base point)")
@@ -118,7 +116,6 @@ func (rev *Reviewer) GetCommitMessageReviewPaper(val *big.Int, r *big.Int) (*ecd
 
 	return comm, nil
 } //C(P, r)  C(S, r)
-
 
 func (rev *Reviewer) GetCommitMessageReviewGrade(val *big.Int, r *big.Int) (*ecdsa.PublicKey, error) {
 	// c = g^x * h^r
