@@ -137,6 +137,7 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(RevealPaper{})
 	gob.Register(RejectMessage{})
 	gob.Register(SendGradeStruct{})
+	gob.Register(ClaimMessage{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
