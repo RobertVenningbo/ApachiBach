@@ -83,7 +83,7 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.makeBid(p)
 	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
-	msg := fmt.Sprintf("EncryptedSignedBids %v",r.UserID)
+	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
 	tree.Put(msg, EncryptedSignedBid)
 	log.Println(msg + "logged.")
 }
@@ -241,7 +241,7 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 }
 
 func (pc *PC) supplyNIZK(p *Paper) bool {
-	works := false                                         //for testing
+	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
 	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers

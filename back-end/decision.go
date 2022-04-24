@@ -1,124 +1,192 @@
 package backend
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"log"
 	"math/big"
+
+	"github.com/0xdecaf/zkrp/ccs08"
 )
 
 type SendGradeStruct struct {
-	reviews interface{} //idk if this type
-	grade   interface{}
+	Reviews []string
+	Grade   int
 }
 
 type RejectMessage struct {
-	commit interface{}
-	grade  interface{}
-	rg     interface{}
+	Commit *ecdsa.PublicKey
+	Grade  int
+	Rg     *big.Int
 }
 
 type RevealPaper struct {
-	paper interface{}
-	rs    interface{}
+	Paper Paper
+	Rs    *big.Int
 }
 
-//needs >>a little<< more love
-func (pc *PC) SendGrades(subm *Submitter) { //maybe dont use *Submitter as parameter but call gRPC method later on which gets the pub key
-	grade := "get the grade" //retrieve grade
-	putStr := fmt.Sprint("Sharing reviews with Reviewers")
-	listSignatureItem := tree.Find(putStr)              //these are the reviews
-	listSignature := listSignatureItem.value.([]string) //cast this to list somehow
-	Kpcr := generateSharedSecret(pc, subm, nil)         //jf. kommentar ved metodenavn
-	list := []string{}
-	for _, v := range listSignature {
-		//maybe verify signature
-		_, txt := SplitSignz(v)
-		list = append(list, txt)
-	}
-	signatureAndTextOfStruct := SignzAndEncrypt(pc.Keys, list, Kpcr)
-
+func (pc *PC) SendGrades(subm *Submitter) { //step 15
+	grade := pc.GetGrade(subm.PaperCommittedValue.Paper.Id)
+	reviews := pc.GetReviewsOnly(subm.PaperCommittedValue.Paper.Id)
+	Kpcs := generateSharedSecret(pc, subm, nil)
 	msgStruct := SendGradeStruct{
-		signatureAndTextOfStruct,
+		reviews,
 		grade,
 	}
-	str := fmt.Sprintf("PC sends grades to submitter, %s", subm.UserID)
+
+	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
+
+	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
 	log.Println(str)
-	tree.Put(str, msgStruct)
+	tree.Put(str, EncMsgStruct)
 }
 
 /*PC DECLINES PAPER PATH*/
 
-func (pc *PC) RejectPaper(rUserID string, grade string) { //step 16
-	grade = "get the grade somehow, right now it's assumed that it's given from somewhere else"
-	getRgStr := fmt.Sprintf("PC sign and encrypt Rg with Kpcr between PC and reviewer id %s", rUserID)
+func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
+	Grade := pc.GetGrade(pId)
 
-	rgItem := tree.Find(getRgStr)
-	sigAndRgVal := rgItem.value.(string)
-	_, rg := SplitSignz(sigAndRgVal)
-	getReviewCommitStruct := fmt.Sprintf("%s signs paper review commit \n", rUserID)
-
-	reviewCommitStructItem := tree.Find(getReviewCommitStruct)
-
-	_, commitStruct := SplitSignz(reviewCommitStructItem.value.(string))
+	KpAndRg := pc.GetKpAndRgPC(pId)
+	Rg := KpAndRg.Rg
+	ReviewSignedStruct := pc.GetReviewSignedStruct(pId)
+	ReviewCommit := ReviewSignedStruct.Commit
 
 	rejectMsg := RejectMessage{
-		commitStruct, //notice commitStruct also contains nonce, might break security properties. Delete this comment when you find out.
-		grade,
-		rg,
+		ReviewCommit,
+		Grade,
+		Rg,
 	}
 
-	signature := Sign(pc.Keys, rejectMsg)
+	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(rejectMsg), "")
 
-	logMsg := fmt.Sprintf("Following paper was rejected: %s", signature)
+	logMsg := fmt.Sprintf("PC rejects Paper: %v", pId)
 	log.Println(logMsg)
-	tree.Put(logMsg, logMsg)
+	tree.Put(logMsg, signature)
 
+	return rejectMsg
 }
 
 /*PC ACCEPTS PAPER PATH*/
 
+var AcceptedPapers []Paper //Global
+
 func (pc *PC) CompileGrades() { //step 17
-	grades := "get the grades somehow, right now it's assumed that it's given from somewhere else"
+	grades := []int{}
+	for _, p := range AcceptedPapers {
+		grade := pc.GetGrade(p.Id)
+		grades = append(grades, grade)
+	}
 
-	signStr := Sign(pc.Keys, grades)
-
+	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
 	str := fmt.Sprint("PC compiles grades")
 	log.Println(str)
 	tree.Put(str, signStr)
 }
 
-func (pc *PC) getPaperAndRs(submitter *Submitter) (*Paper, *big.Int) {
-	submitMsgInTree := tree.Find("SignedSubmitMsg" + submitter.UserID)
-	EncryptedPaperAndRandomness := submitMsgInTree.value.(SubmitMessage).PaperAndRandomness
-	Kpcs := generateSharedSecret(pc, submitter, nil)
-	DecryptedPaperAndRandomness := Decrypt(EncryptedPaperAndRandomness, Kpcs)
-	DecodedPaperAndRandomness := DecodeToStruct(DecryptedPaperAndRandomness)
+func (pc *PC) GetCompiledGrades() []int64 {
+	getStr := fmt.Sprintf("PC compiles grades")
+	item := tree.Find(getStr).value.([][]byte)
+	_, EncodedGrades := SplitSignatureAndMsg(item)
+	DecodedGrades := DecodeToStruct(EncodedGrades).([]int)
 
-	p := DecodedPaperAndRandomness.(SubmitStruct).Paper
-	rs := DecodedPaperAndRandomness.(SubmitStruct).Rs
-
-	return p, rs
+	var i64 []int64
+	for _, v := range DecodedGrades {
+		i64 = append(i64, int64(v))
+	}
+	return i64
 }
 
-func (pc *PC) RevealAcceptedPaperInfo(s *Submitter) {
+func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 
-	p, rs := pc.getPaperAndRs(s)
-	grades := "grades"
+	p := pc.GetPaperAndRandomness(pId)
+	grades := pc.GetCompiledGrades()
 
 	revealPaperMsg := RevealPaper{
-		p,
-		rs,
+		*p.Paper,
+		p.Rs,
 	}
 
-	signature := Sign(pc.Keys, revealPaperMsg)
+	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
 	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
 	log.Println(str)
 	tree.Put(str, signature)
 
-	/*
-		NIZK proof which proofs that grade g is port of the set of compiled grades
-		of the accepted papers and that it's the hiding factor in the grade commit
-		C(g, rg)
-	*/
-	fmt.Println(grades, "create nizk for this")
+	/*NIZK*/
+	params, errSetup := ccs08.SetupSet(grades)
+	if errSetup != nil {
+		log.Panicln(errSetup)
+	}
+	var i64 int64
+	IntGrade := pc.GetGrade(pId)
+	i64 = int64(IntGrade)
+	//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
+	r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
+	proof_out, _ := ccs08.ProveSet(i64, r, params)
+	result, _ := ccs08.VerifySet(&proof_out, &params)
+	if result != true {
+		log.Panicf("Assert failure: expected true, actual: %v", result)
+	} else {
+		log.Println("PC proves that grade is in set of compiled grades.")
+	}
+	return revealPaperMsg
+}
+
+/*HELPER METHODS*/
+
+func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
+	for _, p := range pc.allPapers {
+		if p.Id == pId {
+			AcceptedPapers = append(AcceptedPapers, *p)
+		}
+	}
+}
+
+func (pc *PC) GetGrade(pId int) int {
+	KpAndRg := pc.GetKpAndRgPC(pId)
+	holder := 0
+	Kp := KpAndRg.GroupKey
+	for _, v := range pc.allPapers {
+		if pId == v.Id {
+			holder = v.ReviewerList[0].UserID
+		}
+	}
+	GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", holder)
+	item := tree.Find(GetStr).value.([][]byte)
+
+	_, enc := SplitSignatureAndMsg(item)
+
+	encodedGrade := Decrypt(enc, Kp.D.String())
+	decodedGrade := DecodeToStruct(encodedGrade).(int)
+	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
+
+	return decodedGrade
+}
+
+func (pc *PC) GetReviewsOnly(pId int) []string {
+	reviews := []string{}
+	for _, v := range pc.allPapers {
+		if pId == v.Id {
+			for _, r := range v.ReviewerList {
+				result, _ := pc.GetReviewStruct(r)
+				reviews = append(reviews, result.Review)
+			}
+		}
+	}
+	return reviews
+}
+
+//This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
+func (s *Submitter) RetrieveGrades() SendGradeStruct {
+	Kpcs := generateSharedSecret(&pc, s, nil)
+
+	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
+	log.Println(getStr)
+	item := tree.Find(getStr).value.([][]byte)
+	_, enc := SplitSignatureAndMsg(item)
+	encoded := Decrypt(enc, Kpcs)
+	decoded := DecodeToStruct(encoded).(SendGradeStruct)
+
+	return decoded
 }

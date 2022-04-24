@@ -12,36 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//  func TestMatchPapers(t *testing.T) {
-//  	p := Paper{
-//  		1,
-//  		true,
-//  		nil,
-//  		nil,
-//  	}
-//  	submitter.PaperCommittedValue.Paper = &p
-//  	allPapers := append(pc.allPapers, &p)
-//  	fmt.Printf("Paper: %v in allPapers", p.Id)
-//  	submitters := []Submitter{submitter}
-//  	reviewers := []Reviewer{reviewer}
-//  	r := ec.GetRandomInt(submitter.Keys.D)
-//  	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-//  	SubmitterBigInt := MsgToBigInt(EncodeToBytes(submitter))
-//  	PaperSubmissionCommit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-//  	fmt.Printf("%s %v \n","PaperSubmissionCommitT:", *PaperSubmissionCommit)
-//  	IdentityCommit, _ := submitter.GetCommitMessage(SubmitterBigInt, r)
-//  	commitMsg := CommitMsg{
-//  		EncodeToBytes(IdentityCommit),
-//  		EncodeToBytes(PaperSubmissionCommit),
-//  	}
-//  	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
-//  	tree.Put("signedCommitMsg"+submitter.UserID, signedCommitMsg)
-//  	reviewer.SignBidAndEncrypt(&p)
-//  	// got :=pc.assignPaper(reviewers)
-//  	// fmt.Printf("%v  \n", got)
-//  	pc.matchPapers(nil,nil,nil)
-//  }
-
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 	pc.allPapers = append(pc.allPapers, &p)
 	reviewers := []Reviewer{reviewer, reviewer2}
@@ -67,8 +37,6 @@ func TestGetBiddedPaper(t *testing.T) {
 		123123,
 		newKeys(),
 		commitStructPaper,
-		nil,
-		nil,
 	}
 
 	reviewerScope.SignBidAndEncrypt(&p)
@@ -87,35 +55,25 @@ func TestAssignPapers(t *testing.T) {
 		3,
 		newKeys(),
 		nil,
-		nil,
-		nil,
 	}
 	reviewer4 := Reviewer{
 		4,
 		newKeys(),
-		nil,
-		nil,
 		nil,
 	}
 	p1 := Paper{
 		1,
 		false,
 		nil,
-		nil,
-		nil,
 	}
 	p2 := Paper{
 		2,
 		false,
 		nil,
-		nil,
-		nil,
 	}
 	p3 := Paper{
 		3,
 		false,
-		nil,
-		nil,
 		nil,
 	}
 
@@ -136,7 +94,7 @@ func TestSupplyNizk(t *testing.T) {
 	keys := newKeys()
 	submitter1 := Submitter{
 		keys,
-		"2", //userID
+		2, //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
 		&Receiver{},
@@ -163,7 +121,6 @@ func TestSupplyNizk(t *testing.T) {
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
 
-	
 	got := pc.supplyNIZK(&p)
 	want := true
 
@@ -204,4 +161,3 @@ func TestMatchPapers(t *testing.T) {
 	pc.assignPaper(reviewerSlice)
 	pc.MatchPapers()
 }
-

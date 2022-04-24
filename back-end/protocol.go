@@ -2,18 +2,14 @@ package backend
 
 import (
 	"bytes"
-	_ "bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	_ "crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/gob"
 	_ "errors"
 	"fmt"
-	_ "fmt"
 	"log"
-	_ "log"
 	"math/big"
 	"strings"
 )
@@ -22,21 +18,11 @@ type Reviewer struct {
 	UserID              int
 	Keys                *ecdsa.PrivateKey
 	PaperCommittedValue *CommitStructPaper
-	GradedPaperMap      map[int]int
-	GradeCommittedValue *CommitStruct
-}
-
-type ReviewerCopy struct {
-	UserID              int
-	Keys                *ecdsa.PrivateKey
-	PaperCommittedValue *CommitStructPaper
-	GradedPaperMap      map[int]int
-	GradeCommittedValue *CommitStruct
 }
 
 type Submitter struct {
 	Keys                    *ecdsa.PrivateKey
-	UserID                  string
+	UserID                  int
 	SubmitterCommittedValue *CommitStruct //commitstruct
 	PaperCommittedValue     *CommitStructPaper
 	Receiver                *Receiver
@@ -56,17 +42,14 @@ type CommitStructPaper struct {
 }
 
 type PC struct {
-	Keys          *ecdsa.PrivateKey
-	allPapers     []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
-	reviewCommits []ecdsa.PublicKey
+	Keys      *ecdsa.PrivateKey
+	allPapers []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
 }
 
 type Paper struct {
-	Id                  int
-	Selected            bool
-	ReviewSignatureByPC []byte
-	ReviewerList        []Reviewer
-	Reviews		   		[]ReviewStruct
+	Id           int
+	Selected     bool
+	ReviewerList []Reviewer
 }
 
 type PaperBid struct {
@@ -79,10 +62,7 @@ var (
 	pc   = PC{
 		newKeys(),
 		nil,
-		nil,
 	}
-
-	schnorrProofs []SchnorrProof
 )
 
 type SubmitStruct struct {
@@ -113,7 +93,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 }
 
 func newKeys() *ecdsa.PrivateKey {
-	a, _ := ecdsa.GenerateKey(curve, rand.Reader)
+	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	return a
 }
 
@@ -130,6 +110,7 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
 
+//TODO make init func for registering when starting server
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
@@ -146,11 +127,22 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(big.Int{})
 	gob.Register(PaperBid{})
 	gob.Register(Reviewer{})
+	gob.Register(ReviewStruct{})
+	gob.Register([]ReviewStruct{})
+	gob.Register(ReviewKpAndRg{})
+	gob.Register(ReviewCommitNonceStruct{})
+	gob.Register(IndividualGrade{})
+	gob.Register(GradeReviewCommits{})
+	gob.Register(Grade{})
+	gob.Register(RevealPaper{})
+	gob.Register(RejectMessage{})
+	gob.Register(SendGradeStruct{})
+	gob.Register(ClaimMessage{})
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
+	//fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
 }
 
@@ -254,7 +246,6 @@ func RemoveIndex(s []Reviewer, index int) []Reviewer {
 }
 
 func removeIndexOne(s []Reviewer, i int) []Reviewer {
-    s[len(s)-1], s[i] = s[i], s[len(s)-1]
-    return s[:len(s)-1]
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
 }
-
