@@ -183,7 +183,6 @@ func (pc *PC) MatchPapers() {
 	for _, p := range pc.allPapers {
 		PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
 
-		//TODO: rr should be retrieved from log (DELETE WHEN DONE)
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
 
 		reviewerKeyList := []ecdsa.PublicKey{}

@@ -38,7 +38,7 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 }
 
 func NewPrivateKey() *ecdsa.PrivateKey {
-	c, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
+	c, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	privateKey := ecdsa.PrivateKey{
 		PublicKey: c.PublicKey,
 		D:         c.Params().N, // order of generator G
