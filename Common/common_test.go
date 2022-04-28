@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"os"
-	backend "swag/back-end"
+	. "swag/backend"
 	"testing"
 
 	"github.com/clarketm/json"
@@ -46,9 +46,9 @@ func TestJson(t *testing.T) {
 
 func TestFileEncrypt(t *testing.T) {
 	file := getFile("1614288602.pdf") //this is a previously uploaded file
-	encodedFile := backend.EncodeToBytes(file)
-	encryptedFile := backend.Encrypt(encodedFile, "privateKey")
-	decodedFile := backend.Decrypt(encryptedFile, "privateKey")
-	got := backend.DecodeToStruct(decodedFile)
+	encodedFile := EncodeToBytes(file)
+	encryptedFile := Encrypt(encodedFile, "privateKey")
+	decodedFile := Decrypt(encryptedFile, "privateKey")
+	got := DecodeToStruct(decodedFile)
 	assert.Equal(t, file, got.(*os.File), "TestFileEncrypt Failed")
 }

@@ -8,7 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
-	backend "swag/back-end"
+	. "swag/backend"
 )
 
 func getFile(filename string) *os.File {
@@ -40,6 +40,6 @@ func ReadFileByteData(filename string) ([]byte, error) {
 }
 
 func main() {
-	fmt.Println(backend.EncodeToBytes(getFile("1614288602.pdf")))
+	fmt.Println(EncodeToBytes(getFile("1614288602.pdf")))
 	fmt.Println(ReadFileByteData("1614288602.pdf"))
 }
