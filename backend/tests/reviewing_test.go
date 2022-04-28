@@ -40,7 +40,7 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 }
 
 func TestSignReviewPaperCommit_And_GetReviewCommitNonceStruct(t *testing.T) {
-	//reviewer.PaperCommittedValue.Paper = &p //TODO: intended to be removed in later stages as the struct reference shouldn't exist.
+	reviewer.PaperCommittedValue.Paper = &p //TODO: intended to be removed in later stages as the struct reference shouldn't exist.
 
 	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
