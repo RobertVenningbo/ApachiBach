@@ -17,7 +17,7 @@ func (s *Submitter) ClaimPaper() { //step 19
 	str := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
 	signature := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(msg), "")
 	log.Println(str)
-	tree.Put(str, signature)
+	Trae.Put(str, signature)
 }
 
 func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
@@ -36,7 +36,7 @@ func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 
 	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
 	log.Println(putStr)
-	tree.Put(putStr, signature)
+	Trae.Put(putStr, signature)
 }
 
 func GetConfirmMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature from the submitter and the ClaimMessage
@@ -44,7 +44,7 @@ func GetConfirmMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signatur
 	// message for a submitter which haven't submitted one
 	_, claim := GetClaimMessage(s)
 	getStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
-	item := tree.Find(getStr)
+	item := Trae.Find(getStr)
 
 	claimMsgBytes := item.value.([][]byte)
 	sig, encoded := SplitSignatureAndMsg(claimMsgBytes)
@@ -58,7 +58,7 @@ func GetClaimMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature 
 	// message for a submitter which haven't submitted one
 
 	getStr := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
-	item := tree.Find(getStr)
+	item := Trae.Find(getStr)
 
 	claimMsgBytes := item.value.([][]byte)
 	sig, encoded := SplitSignatureAndMsg(claimMsgBytes)

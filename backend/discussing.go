@@ -13,7 +13,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(input), Kp.D.String())
 	logStr := fmt.Sprintf("Sending msg to the log by reviewer: %v", r.UserID)
 	log.Println(logStr)
-	tree.Put(logStr, encryptedSignedMsg)
+	Trae.Put(logStr, encryptedSignedMsg)
 }
 
 func (r *Reviewer) GradePaper(grade int) {
@@ -27,14 +27,14 @@ func (r *Reviewer) GradePaper(grade int) {
 	Kp := KpAndRg.GroupKey
 	encryptedSignedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
 	msg := fmt.Sprintf("Reviewer%v graded a paper", r.UserID)
-	tree.Put(msg, encryptedSignedGradeStruct)
+	Trae.Put(msg, encryptedSignedGradeStruct)
 	log.Println(msg)
 
 }
 
 func (r *Reviewer) GetGradeForReviewer(rId int) IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
-	gradeStruct := tree.Find(msg).value
+	gradeStruct := Trae.Find(msg).value
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
 	_, encryptedGradeStruct := SplitSignatureAndMsg(gradeStruct.([][]byte))
@@ -73,14 +73,14 @@ func CalculateNearestGrade(avg float64) int {
 
 func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
 	str := fmt.Sprintf("GradeCommit for P%v has been made", r.PaperCommittedValue.Paper.Id)
-	found := tree.Find(str)
+	found := Trae.Find(str)
 	if found == nil {
 		KpAndRg := r.GetReviewKpAndRg()
 		Rg := KpAndRg.Rg
 		grade := AgreeOnGrade(r.PaperCommittedValue.Paper)
 		GradeBigInt := MsgToBigInt(EncodeToBytes(grade))
 		GradeCommit, _ := r.GetCommitMessageReviewGrade(GradeBigInt, Rg)
-		tree.Put(str, EncodeToBytes(GradeCommit))
+		Trae.Put(str, EncodeToBytes(GradeCommit))
 		log.Println(str)
 		return GradeCommit
 	} else {
@@ -104,7 +104,7 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 	fmt.Printf("%#v\n", gradeReviewCommits)
 	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
 	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
-	tree.Put(str, signedGradeReviewCommits)
+	Trae.Put(str, signedGradeReviewCommits)
 	log.Println(str)
 
 }
@@ -115,6 +115,6 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	Kp := KpAndRg.GroupKey
 	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(grade), Kp.D.String()) //Notice Kp.(ecdsa.PrivateKey).D.String() seems super fishy, plz work.
 	submitStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
-	tree.Put(submitStr, signedGrade)
+	Trae.Put(submitStr, signedGrade)
 	log.Println(submitStr)
 }

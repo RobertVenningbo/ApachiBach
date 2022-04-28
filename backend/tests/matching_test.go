@@ -14,17 +14,17 @@ import (
 )
 
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
-	pc.AllPapers = append(pc.AllPapers, &p)
+	Pc.AllPapers = append(Pc.AllPapers, &p)
 	reviewers := []Reviewer{reviewer, reviewer2}
 
 	//Papers have been put into the log encrypted with a shared secret key between the given reviewer and the pc.
-	pc.DistributePapers(reviewers, pc.AllPapers)
+	Pc.DistributePapers(reviewers, Pc.AllPapers)
 
 	//reviewer2 now wants to retrieve his papers.
 	//intended to be called with pc.allPapers which is a general lookup table for paper.Ids etc.
-	retrievedPapers := reviewer2.GetPapersReviewer(pc.AllPapers)
+	retrievedPapers := reviewer2.GetPapersReviewer(Pc.AllPapers)
 
-	assert.Equal(t, pc.AllPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
+	assert.Equal(t, Pc.AllPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
 }
 
 func TestGetBiddedPaper(t *testing.T) {
@@ -78,7 +78,7 @@ func TestAssignPapers(t *testing.T) {
 		nil,
 	}
 
-	pc.AllPapers = append(pc.AllPapers, &p1, &p2, &p3)
+	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2, &p3)
 	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
 
 	reviewer.SignBidAndEncrypt(&p1)
@@ -86,7 +86,7 @@ func TestAssignPapers(t *testing.T) {
 	reviewer3.SignBidAndEncrypt(&p1)
 	reviewer4.SignBidAndEncrypt(&p1)
 
-	pc.AssignPaper(reviewerSlice)
+	Pc.AssignPaper(reviewerSlice)
 
 	//TODO insert assert
 }
@@ -104,12 +104,12 @@ func TestSupplyNizk(t *testing.T) {
 	curve := curve1.Params()
 
 	submitter1.Submit(&p)
-	submitStruct := pc.GetPaperAndRandomness(p.Id)
+	submitStruct := Pc.GetPaperAndRandomness(p.Id)
 	rr := submitStruct.Rr
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	ReviewCommit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	ReviewCommit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
 		ReviewCommit,
@@ -117,24 +117,24 @@ func TestSupplyNizk(t *testing.T) {
 		nonce,
 	}
 
-	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+	signature := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(reviewStruct), "")
 
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-	tree.Put(msg, signature)
+	Trae.Put(msg, signature)
 
-	got := pc.SupplyNIZK(&p)
+	got := Pc.SupplyNIZK(&p)
 	want := true
 
 	assert.Equal(t, want, got, "Nizk failed")
 }
 
 func TestGetReviewSignedStruct(t *testing.T) {
-	pc.AllPapers = append(pc.AllPapers, &p)
-	rr := ec.GetRandomInt(pc.Keys.D)
+	Pc.AllPapers = append(Pc.AllPapers, &p)
+	rr := ec.GetRandomInt(Pc.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
-	commit, _ := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
-	nonce_r := ec.GetRandomInt(pc.Keys.D)
+	commit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	//reviewerKeyList := []ecdsa.PublicKey{}
 
@@ -144,12 +144,12 @@ func TestGetReviewSignedStruct(t *testing.T) {
 		nonce_r,
 	}
 
-	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+	signature := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(reviewStruct), "")
 
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-	tree.Put(msg, signature)
+	Trae.Put(msg, signature)
 
-	r_struct := pc.GetReviewSignedStruct(p.Id)
+	r_struct := Pc.GetReviewSignedStruct(p.Id)
 
 	assert.Equal(t, reviewStruct, r_struct, "TestGetReviewStruct Failed")
 
@@ -159,6 +159,6 @@ func TestMatchPapers(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()
 }

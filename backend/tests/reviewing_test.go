@@ -3,9 +3,9 @@ package backend_test
 import (
 	"crypto/ecdsa"
 	"fmt"
+	. "swag/backend"
 	ec "swag/ec"
 	"testing"
-	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +15,7 @@ func TestFinishReview_And_GetReviewStruct(t *testing.T) {
 
 	reviewer.FinishReview("Very nice paper (y)")
 
-	ReviewStruct, _ := pc.GetReviewStruct(reviewer)
+	ReviewStruct, _ := Pc.GetReviewStruct(reviewer)
 
 	assert.Equal(t, "Very nice paper (y)", ReviewStruct.Review, "TestFinishReview_And_GetReviewStruct FAILED")
 	assert.Equal(t, reviewer.UserID, ReviewStruct.ReviewerId, "TestFinishReview_And_GetReviewStruct FAILED")
@@ -26,11 +26,11 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 	reviewerList = append(reviewerList, reviewer, reviewer2)
 	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
-	pc.GenerateKeysForDiscussing(reviewerList)
-	pc.AllPapers = append(pc.AllPapers, &paperListTest[0])
-	pc.AllPapers[0].ReviewerList = reviewerList
+	Pc.GenerateKeysForDiscussing(reviewerList)
+	Pc.AllPapers = append(Pc.AllPapers, &paperListTest[0])
+	Pc.AllPapers[0].ReviewerList = reviewerList
 
-	GetStruct := pc.GetKpAndRgPC(pc.AllPapers[0].Id)
+	GetStruct := Pc.GetKpAndRgPC(Pc.AllPapers[0].Id)
 
 	fmt.Printf("%#v \n", GetStruct)
 
@@ -42,7 +42,7 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 func TestSignReviewPaperCommit_And_GetReviewCommitNonceStruct(t *testing.T) {
 	//reviewer.PaperCommittedValue.Paper = &p //TODO: intended to be removed in later stages as the struct reference shouldn't exist.
 
-	nonce_r := ec.GetRandomInt(pc.Keys.D)
+	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	reviewStruct := ReviewSignedStruct{
 		&reviewer.Keys.PublicKey, //ignore that it's not a commit ;-)
@@ -50,10 +50,10 @@ func TestSignReviewPaperCommit_And_GetReviewCommitNonceStruct(t *testing.T) {
 		nonce_r,
 	}
 
-	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+	signature := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(reviewStruct), "")
 
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-	tree.Put(msg, signature)
+	Trae.Put(msg, signature)
 
 	reviewer.SignReviewPaperCommit()
 
@@ -69,9 +69,9 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 	reviewer4.PaperCommittedValue.Paper = &paperListTest[1]
 	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewer, reviewer2)
 	paperListTest[1].ReviewerList = append(paperListTest[1].ReviewerList, reviewer3, reviewer4)
-	pc.AllPapers = append(pc.AllPapers, &paperListTest[0], &paperListTest[1])
+	Pc.AllPapers = append(Pc.AllPapers, &paperListTest[0], &paperListTest[1])
 
-	nonce_r := ec.GetRandomInt(pc.Keys.D)
+	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	reviewStruct := ReviewSignedStruct{
 		&reviewer.Keys.PublicKey, //ignore that it's not a commit ;-)
@@ -79,10 +79,10 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 		nonce_r,
 	}
 
-	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
+	signature := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(reviewStruct), "")
 
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-	tree.Put(msg, signature)
+	Trae.Put(msg, signature)
 
 	// ^A lot of setup, manually setting up what the previous steps would've done^.
 
@@ -97,8 +97,8 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 	// reviewer4.SignReviewPaperCommit() //step 9
 
 	// Generating keys for both paperReview groups.
-	pc.GenerateKeysForDiscussing(paperListTest[0].ReviewerList) //step 10
-	pc.GenerateKeysForDiscussing(paperListTest[1].ReviewerList) //step 10
+	Pc.GenerateKeysForDiscussing(paperListTest[0].ReviewerList) //step 10
+	Pc.GenerateKeysForDiscussing(paperListTest[1].ReviewerList) //step 10
 
 	//Fabricating expected structs
 
@@ -106,16 +106,16 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 		{
 			reviewer.UserID,
 			"Pretty rad paper!",
-			pc.AllPapers[0].Id,
+			Pc.AllPapers[0].Id,
 		},
 		{
 			reviewer2.UserID,
 			"Pretty dope",
-			pc.AllPapers[0].Id,
+			Pc.AllPapers[0].Id,
 		},
 	}
 
-	pc.CollectReviews(pc.AllPapers[0].Id) //step 11
+	Pc.CollectReviews(Pc.AllPapers[0].Id) //step 11
 
 	ActualReviewStructList := reviewer.GetCollectedReviews()
 

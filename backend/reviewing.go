@@ -9,7 +9,7 @@ import (
 )
 
 func (r *Reviewer) FinishReview(review string) { //step 8
-	Kpcr := GenerateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 
 	reviewStruct := ReviewStruct{
 		r.UserID,
@@ -20,7 +20,7 @@ func (r *Reviewer) FinishReview(review string) { //step 8
 	signAndEnc := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewStruct), Kpcr)
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
 	log.Printf(str)
-	tree.Put(str, signAndEnc)
+	Trae.Put(str, signAndEnc)
 }
 
 func (r *Reviewer) SignReviewPaperCommit() { //step 9
@@ -37,7 +37,7 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
 	log.Println(str)
-	tree.Put(str, rCommitSignature)
+	Trae.Put(str, rCommitSignature)
 }
 
 func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
@@ -58,7 +58,7 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 
 		str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
 		log.Printf("\n%s", str)
-		tree.Put(str, reviewKpAndRg)
+		Trae.Put(str, reviewKpAndRg)
 		tempStruct = GroupKeyAndRg
 		strPC = fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", r.PaperCommittedValue.Paper.Id)
 	}
@@ -66,13 +66,13 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 	reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(tempStruct), pc.Keys.D.String())
 
 	log.Printf("\n%s", strPC)
-	tree.Put(strPC, reviewKpAndRg)
+	Trae.Put(strPC, reviewKpAndRg)
 }
 
 func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 	strPC := fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", pId)
 
-	reviewKpAndRg := tree.Find(strPC).value
+	reviewKpAndRg := Trae.Find(strPC).value
 	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
 	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, pc.Keys.D.String())
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
@@ -104,15 +104,15 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 	listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
 	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", pId)
 	log.Println(putStr)
-	tree.Put(putStr, listSignature)
+	Trae.Put(putStr, listSignature)
 }
 
 func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
 	log.Printf("Getting cosigned Kp group key by reviewer: %v\n", r.UserID)
-	reviewKpAndRg := tree.Find(str).value
+	reviewKpAndRg := Trae.Find(str).value
 	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
-	Kpcr := GenerateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, Kpcr)
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
 
@@ -121,7 +121,7 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 
 func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", reviewer.UserID)
-	signedReviewStruct := (tree.Find(str)).value
+	signedReviewStruct := (Trae.Find(str)).value
 	sig, encryptedReviewStruct := SplitSignatureAndMsg(signedReviewStruct.([][]byte))
 	Kpcr := GenerateSharedSecret(pc, nil, &reviewer)
 	encodedReviewStruct := Decrypt(encryptedReviewStruct, Kpcr)
@@ -140,7 +140,7 @@ func (r *Reviewer) GetReviewCommitNonceStruct() ReviewCommitNonceStruct {
 
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
 	log.Printf("Reviewer: %v gets ReviewCommitNonce \n", r.UserID)
-	TreeItem := tree.Find(str)
+	TreeItem := Trae.Find(str)
 	_, encodedTheStruct := SplitSignatureAndMsg(TreeItem.value.([][]byte))
 
 	theStruct := DecodeToStruct(encodedTheStruct).(ReviewCommitNonceStruct)
@@ -152,7 +152,7 @@ func (r *Reviewer) GetCollectedReviews() []ReviewStruct {
 	kpAndRg := r.GetReviewKpAndRg()
 	getStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", r.PaperCommittedValue.Paper.Id)
 
-	treeItem := tree.Find(getStr).value
+	treeItem := Trae.Find(getStr).value
 	_, encryptedReviewStructList := SplitSignatureAndMsg(treeItem.([][]byte))
 	encodedReviewStructList := Decrypt(encryptedReviewStructList, kpAndRg.GroupKey.D.String())
 	decodedReviewStructList := DecodeToStruct(encodedReviewStructList).([]ReviewStruct)

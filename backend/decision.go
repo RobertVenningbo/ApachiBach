@@ -21,7 +21,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 
 	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
 	log.Println(str)
-	tree.Put(str, EncMsgStruct)
+	Trae.Put(str, EncMsgStruct)
 }
 
 /*PC DECLINES PAPER PATH*/
@@ -44,7 +44,7 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 	logMsg := fmt.Sprintf("PC rejects Paper: %v", pId)
 	log.Println(logMsg)
-	tree.Put(logMsg, signature)
+	Trae.Put(logMsg, signature)
 
 	return rejectMsg
 }
@@ -63,12 +63,12 @@ func (pc *PC) CompileGrades() { //step 17
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
 	str := fmt.Sprint("PC compiles grades")
 	log.Println(str)
-	tree.Put(str, signStr)
+	Trae.Put(str, signStr)
 }
 
 func (pc *PC) GetCompiledGrades() []int64 {
 	getStr := fmt.Sprintf("PC compiles grades")
-	item := tree.Find(getStr).value.([][]byte)
+	item := Trae.Find(getStr).value.([][]byte)
 	_, EncodedGrades := SplitSignatureAndMsg(item)
 	DecodedGrades := DecodeToStruct(EncodedGrades).([]int)
 
@@ -92,7 +92,7 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
 	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
 	log.Println(str)
-	tree.Put(str, signature)
+	Trae.Put(str, signature)
 
 	/*NIZK*/
 	params, errSetup := ccs08.SetupSet(grades)
@@ -134,7 +134,7 @@ func (pc *PC) GetGrade(pId int) int {
 		}
 	}
 	GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", holder)
-	item := tree.Find(GetStr).value.([][]byte)
+	item := Trae.Find(GetStr).value.([][]byte)
 
 	_, enc := SplitSignatureAndMsg(item)
 
@@ -160,11 +160,11 @@ func (pc *PC) GetReviewsOnly(pId int) []string {
 
 //This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
 func (s *Submitter) RetrieveGrades() SendGradeStruct {
-	Kpcs := GenerateSharedSecret(&pc, s, nil)
+	Kpcs := GenerateSharedSecret(&Pc, s, nil)
 
 	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
 	log.Println(getStr)
-	item := tree.Find(getStr).value.([][]byte)
+	item := Trae.Find(getStr).value.([][]byte)
 	_, enc := SplitSignatureAndMsg(item)
 	encoded := Decrypt(enc, Kpcs)
 	decoded := DecodeToStruct(encoded).(SendGradeStruct)

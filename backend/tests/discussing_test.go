@@ -19,7 +19,7 @@ func TestCalculateNearestGrade(t *testing.T) {
 
 func TestGradePaperAndGetGrade(t *testing.T) {
 	reviewerSlice := []Reviewer{reviewer}
-	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	reviewer.PaperCommittedValue.Paper = &p
 	want := 7
 	reviewer.GradePaper(want)
@@ -35,7 +35,7 @@ func TestAgreeOnGrade(t *testing.T) {
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer3.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewerSlice := []Reviewer{reviewer, reviewer2, reviewer3}
-	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 
 	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewer, reviewer2, reviewer3)
 
@@ -51,7 +51,7 @@ func TestAgreeOnGrade(t *testing.T) {
 
 func TestMakeGradeCommit(t *testing.T) {
 	reviewerSlice := []Reviewer{reviewer, reviewer2}
-	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	reviewer.PaperCommittedValue.Paper = &p
 	reviewer2.PaperCommittedValue.Paper = &p
 	gradeCommit := reviewer.MakeGradeCommit()
@@ -61,15 +61,15 @@ func TestMakeGradeCommit(t *testing.T) {
 }
 
 func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
-	pc.AllPapers = append(pc.AllPapers, &p)
+	Pc.AllPapers = append(Pc.AllPapers, &p)
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewerSlice1 := []Reviewer{reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()
 
-	pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	reviewer.PaperCommittedValue.Paper = &p
 	reviewer.GradePaper(7)
 	reviewer.SignReviewPaperCommit()

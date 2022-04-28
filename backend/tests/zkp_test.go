@@ -16,7 +16,7 @@ import (
 
 func TestNewEqProofP256(t *testing.T) {
 	submitter.Submit(&p)
-	submitterKey := pc.GetPaperSubmitterPK(p.Id)
+	submitterKey := Pc.GetPaperSubmitterPK(p.Id)
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
@@ -32,7 +32,7 @@ func TestNewEqProofP256(t *testing.T) {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := pc.GetCommitMessagePaperPC(msg, r2)
+	commit2, err := Pc.GetCommitMessagePaperPC(msg, r2)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
 	}
@@ -46,9 +46,9 @@ func TestNewEqProofP256(t *testing.T) {
 		commit2.Y,
 	}
 
-	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &pc.Keys.PublicKey)
+	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &Pc.Keys.PublicKey)
 
-	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &pc.Keys.PublicKey)
+	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &Pc.Keys.PublicKey)
 	fmt.Printf("\n%s %v", "Commits hold same paper: ", got)
 	want := true
 	assert.Equal(t, want, got, "TestEqProof Failed")

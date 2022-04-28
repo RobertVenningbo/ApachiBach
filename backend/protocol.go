@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	tree = NewTree(DefaultMinItems)
-	pc   = PC{
+	Trae = NewTree(DefaultMinItems)
+	Pc   = PC{
 		NewKeys(),
 		nil,
 	}

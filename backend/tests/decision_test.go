@@ -11,18 +11,18 @@ func TestSendGrades_And_GetGrade(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()                           //step 7
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
-	pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
-	pc.CollectReviews(p.Id) //step 11
+	Pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
+	Pc.CollectReviews(p.Id) //step 11
 	reviewer.GradePaper(7)
 	reviewer.SignReviewPaperCommit()
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 
-	pc.SendGrades(&submitter)
+	Pc.SendGrades(&submitter)
 	sendGradeStructActual := submitter.RetrieveGrades()
 	sendGradeStructExpected := SendGradeStruct{
 		[]string{"Pretty rad paper!"},
@@ -36,23 +36,23 @@ func TestRejectPaper(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()                           //step 7
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
-	pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
-	pc.CollectReviews(p.Id) //step 11
+	Pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
+	Pc.CollectReviews(p.Id) //step 11
 	reviewer.GradePaper(2)
 	reviewer.SignReviewPaperCommit()
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 
-	pc.SendGrades(&submitter)
-	actual := pc.RejectPaper(p.Id)
-	KpAndRg := pc.GetKpAndRgPC(p.Id)
+	Pc.SendGrades(&submitter)
+	actual := Pc.RejectPaper(p.Id)
+	KpAndRg := Pc.GetKpAndRgPC(p.Id)
 	expected := RejectMessage{
-		pc.GetReviewSignedStruct(p.Id).Commit,
-		pc.GetGrade(p.Id),
+		Pc.GetReviewSignedStruct(p.Id).Commit,
+		Pc.GetGrade(p.Id),
 		KpAndRg.Rg,
 	}
 
@@ -63,21 +63,21 @@ func TestGetCompiledGrades_And_Get(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()                           //step 7
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
-	pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
-	pc.CollectReviews(p.Id) //step 11
+	Pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
+	Pc.CollectReviews(p.Id) //step 11
 	reviewer.GradePaper(2)
 	reviewer.SignReviewPaperCommit()
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 	
-	pc.AcceptPaper(p.Id)
-	pc.CompileGrades()
-	actual := pc.GetCompiledGrades()
-	pc.RevealAcceptedPaperInfo(p.Id)
+	Pc.AcceptPaper(p.Id)
+	Pc.CompileGrades()
+	actual := Pc.GetCompiledGrades()
+	Pc.RevealAcceptedPaperInfo(p.Id)
 	expected := []int64{2}
 
 	assert.Equal(t, expected, actual, "failz")
@@ -87,21 +87,21 @@ func TestRevealAcceptedPaperInfo(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.AssignPaper(reviewerSlice)
-	pc.MatchPapers()                           //step 7
+	Pc.AssignPaper(reviewerSlice)
+	Pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
-	pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
-	pc.CollectReviews(p.Id) //step 11
+	Pc.GenerateKeysForDiscussing([]Reviewer{reviewer})
+	Pc.CollectReviews(p.Id) //step 11
 	reviewer.GradePaper(2)
 	reviewer.SignReviewPaperCommit()
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 	
-	pc.AcceptPaper(p.Id)
-	pc.CompileGrades()
-	actual := pc.RevealAcceptedPaperInfo(p.Id)
-	p := pc.GetPaperAndRandomness(p.Id)
+	Pc.AcceptPaper(p.Id)
+	Pc.CompileGrades()
+	actual := Pc.RevealAcceptedPaperInfo(p.Id)
+	p := Pc.GetPaperAndRandomness(p.Id)
 	expected := RevealPaper{
 		*p.Paper,
 		p.Rs,

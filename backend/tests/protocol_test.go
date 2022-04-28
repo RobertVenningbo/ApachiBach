@@ -47,16 +47,12 @@ var (
 		&CommitStructPaper{},
 		&Receiver{},
 	}
-	pc = PC{
-		NewKeys(),
-		nil,
-	}
-	tree = NewTree(DefaultMinItems)
+
 )
 
 func TestGenerateSharedSecret(t *testing.T) {
-	got := GenerateSharedSecret(&pc, &submitter, nil)
-	want := GenerateSharedSecret(&pc, &submitter, nil)
+	got := GenerateSharedSecret(&Pc, &submitter, nil)
+	want := GenerateSharedSecret(&Pc, &submitter, nil)
 	assert.Equal(t, got, want, "Test failed")
 
 }
@@ -183,9 +179,9 @@ func TestGetPaperSubmissionCommit(t *testing.T) {
 	msg := fmt.Sprintf("signedCommitMsg%v", p.Id)
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 
-	tree.Put(msg, signedCommitMsg)
+	Trae.Put(msg, signedCommitMsg)
 
-	foundCommit := pc.GetPaperSubmissionCommit(p.Id)
+	foundCommit := Pc.GetPaperSubmissionCommit(p.Id)
 	assert.Equal(t, *commit, foundCommit, "TestGetPaperSubmissionCommit failed")
 }
 
@@ -202,9 +198,9 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 
 	signedCommitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(commitMsg), "")
 	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
-	tree.Put(putStr, signedCommitMsg)
+	Trae.Put(putStr, signedCommitMsg)
 
-	sig := pc.GetPaperSubmissionSignature(&submitter)
+	sig := Pc.GetPaperSubmissionSignature(&submitter)
 
 	_, txt := SplitSignatureAndMsg(signedCommitMsg)
 	hash, _ := GetMessageHash(txt)
@@ -214,10 +210,10 @@ func TestGetPaperSubmissionSignature(t *testing.T) {
 
 func TestGetPaperAndRandomness(t *testing.T) {
 
-	rr := ec.GetRandomInt(pc.Keys.D)
-	rs := ec.GetRandomInt(pc.Keys.D)
+	rr := ec.GetRandomInt(Pc.Keys.D)
+	rs := ec.GetRandomInt(Pc.Keys.D)
 
-	sharedKpcs := GenerateSharedSecret(&pc, &submitter, nil)
+	sharedKpcs := GenerateSharedSecret(&Pc, &submitter, nil)
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
 		&p,
 		rr,
@@ -225,14 +221,14 @@ func TestGetPaperAndRandomness(t *testing.T) {
 	}
 	submitMsg := SubmitMessage{
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
-		Encrypt(EncodeToBytes(sharedKpcs), pc.Keys.PublicKey.X.String()),
+		Encrypt(EncodeToBytes(sharedKpcs), Pc.Keys.PublicKey.X.String()),
 	}
 
 	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
-	tree.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
+	Trae.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 
-	want := pc.GetPaperAndRandomness(p.Id)
+	want := Pc.GetPaperAndRandomness(p.Id)
 
 	assert.Equal(t, PaperAndRandomness, want, "TestGetPaperAndRandomness failed")
 }

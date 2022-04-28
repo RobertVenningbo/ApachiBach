@@ -16,7 +16,7 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
-			tree.Put(msg, SignedAndEncryptedPaper)
+			Trae.Put(msg, SignedAndEncryptedPaper)
 			log.Println(msg)
 		}
 	}
@@ -26,12 +26,12 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 //Gets all papers for each reviewer from log.
 //Expected to be called for every reviewer when reviewers want to see list of all papers on frontend.
 func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
-	Kpcr := GenerateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 
 	pList := []*Paper{}
 	for i := 0; i < len(paperSlice); i++ {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[i].Id, r.UserID)
-		EncryptedSignedBid := tree.Find(GetMsg)
+		EncryptedSignedBid := Trae.Find(GetMsg)
 		bytes := EncryptedSignedBid.value.([][]byte)
 		sig, enc := SplitSignatureAndMsg(bytes)
 		decrypted := Decrypt(enc, Kpcr)
@@ -39,7 +39,7 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 		if err != nil {
 			log.Fatal(err)
 		}
-		isVerified := Verify(&pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
+		isVerified := Verify(&Pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
 		if !isVerified {
 			log.Fatalf("Couldn't verify signature of paper: %v", (paperSlice[i].Id))
 		}
@@ -52,9 +52,9 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 
 func (r *Reviewer) GetBiddedPaper() *PaperBid {
 
-	Kpcr := GenerateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
-	EncryptedSignedBid := tree.Find(msg)
+	EncryptedSignedBid := Trae.Find(msg)
 	bytes := EncryptedSignedBid.value.([][]byte)
 	_, enc := SplitSignatureAndMsg(bytes)
 	decrypted := Decrypt([]byte(enc), Kpcr)
@@ -74,10 +74,10 @@ func (r *Reviewer) MakeBid(pap *Paper) *PaperBid {
 //step 5
 func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.MakeBid(p)
-	Kpcr := GenerateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
+	Kpcr := GenerateSharedSecret(&Pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
-	tree.Put(msg, EncryptedSignedBid)
+	Trae.Put(msg, EncryptedSignedBid)
 	log.Println(msg + "logged.")
 }
 
@@ -199,7 +199,7 @@ func (pc *PC) MatchPapers() {
 		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-		tree.Put(msg, signature)
+		Trae.Put(msg, signature)
 
 		nizkBool := pc.SupplyNIZK(p)
 		if !nizkBool {
@@ -211,7 +211,7 @@ func (pc *PC) MatchPapers() {
 func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
-	item := tree.Find(msg)
+	item := Trae.Find(msg)
 	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
 	decodedStruct := DecodeToStruct(encodedStruct)
 	ret = decodedStruct.(ReviewSignedStruct)
@@ -223,7 +223,7 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
-	item := tree.Find(msg)
+	item := Trae.Find(msg)
 	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
 	decodedStruct := DecodeToStruct(encodedStruct)
 	ret = decodedStruct.(ReviewSignedStruct)

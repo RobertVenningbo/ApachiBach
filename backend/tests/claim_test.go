@@ -12,7 +12,7 @@ func TestClaimAndConfirmPaper(t *testing.T) {
 
 	submitter.ClaimPaper()
 
-	pc.ConfirmOwnership(&submitter)
+	Pc.ConfirmOwnership(&submitter)
 
 	// Asserting
 	_, ClaimPC := GetConfirmMessage(&submitter)
