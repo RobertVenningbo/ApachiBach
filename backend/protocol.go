@@ -14,69 +14,15 @@ import (
 	"strings"
 )
 
-type Reviewer struct {
-	UserID              int
-	Keys                *ecdsa.PrivateKey
-	PaperCommittedValue *CommitStructPaper
-}
-
-type Submitter struct {
-	Keys                    *ecdsa.PrivateKey
-	UserID                  int
-	SubmitterCommittedValue *CommitStruct //commitstruct
-	PaperCommittedValue     *CommitStructPaper
-	Receiver                *Receiver
-}
-
-type CommitStruct struct {
-	CommittedValue *ecdsa.PublicKey
-	R              *big.Int
-	Val            *big.Int
-}
-
-type CommitStructPaper struct {
-	CommittedValue *ecdsa.PublicKey
-	R              *big.Int
-	Val            *big.Int
-	Paper          *Paper
-}
-
-type PC struct {
-	Keys      *ecdsa.PrivateKey
-	allPapers []*Paper //As long as this is only used for reference for withdrawel etc. then this is fine. We shouldn't mutate values within this.
-}
-
-type Paper struct {
-	Id           int
-	Selected     bool
-	ReviewerList []Reviewer
-}
-
-type PaperBid struct {
-	Paper    *Paper
-	Reviewer *Reviewer
-}
-
 var (
 	tree = NewTree(DefaultMinItems)
 	pc   = PC{
-		newKeys(),
+		NewKeys(),
 		nil,
 	}
 )
 
-type SubmitStruct struct {
-	Paper *Paper
-	Rr    *big.Int
-	Rs    *big.Int
-}
-
-type Receiver struct {
-	Keys       *ecdsa.PrivateKey
-	Commitment *ecdsa.PublicKey
-}
-
-func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
+func GenerateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
 	publicPC := pc.Keys.PublicKey
 	var sharedHash [32]byte
 	if reviewer == nil {
@@ -92,7 +38,7 @@ func generateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 	return string(sharedHash[:])
 }
 
-func newKeys() *ecdsa.PrivateKey {
+func NewKeys() *ecdsa.PrivateKey {
 	a, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	return a
 }
@@ -239,13 +185,4 @@ func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase stri
 func SplitSignatureAndMsg(bytes [][]byte) ([]byte, []byte) { // returns signature and msg or encrypted msg
 	sig, msg := bytes[0], bytes[1]
 	return sig, msg
-}
-
-func RemoveIndex(s []Reviewer, index int) []Reviewer {
-	return append(s[:index], s[index+1:]...)
-}
-
-func removeIndexOne(s []Reviewer, i int) []Reviewer {
-	s[len(s)-1], s[i] = s[i], s[len(s)-1]
-	return s[:len(s)-1]
 }

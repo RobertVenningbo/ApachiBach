@@ -1,10 +1,11 @@
-package backend
+package backend_test
 
 import (
 	"crypto/ecdsa"
 	"fmt"
 	ec "swag/ec"
 	"testing"
+	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,10 +27,10 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	pc.GenerateKeysForDiscussing(reviewerList)
-	pc.allPapers = append(pc.allPapers, &paperListTest[0])
-	pc.allPapers[0].ReviewerList = reviewerList
+	pc.AllPapers = append(pc.AllPapers, &paperListTest[0])
+	pc.AllPapers[0].ReviewerList = reviewerList
 
-	GetStruct := pc.GetKpAndRgPC(pc.allPapers[0].Id)
+	GetStruct := pc.GetKpAndRgPC(pc.AllPapers[0].Id)
 
 	fmt.Printf("%#v \n", GetStruct)
 
@@ -68,7 +69,7 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 	reviewer4.PaperCommittedValue.Paper = &paperListTest[1]
 	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewer, reviewer2)
 	paperListTest[1].ReviewerList = append(paperListTest[1].ReviewerList, reviewer3, reviewer4)
-	pc.allPapers = append(pc.allPapers, &paperListTest[0], &paperListTest[1])
+	pc.AllPapers = append(pc.AllPapers, &paperListTest[0], &paperListTest[1])
 
 	nonce_r := ec.GetRandomInt(pc.Keys.D)
 
@@ -105,16 +106,16 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 		{
 			reviewer.UserID,
 			"Pretty rad paper!",
-			pc.allPapers[0].Id,
+			pc.AllPapers[0].Id,
 		},
 		{
 			reviewer2.UserID,
 			"Pretty dope",
-			pc.allPapers[0].Id,
+			pc.AllPapers[0].Id,
 		},
 	}
 
-	pc.CollectReviews(pc.allPapers[0].Id) //step 11
+	pc.CollectReviews(pc.AllPapers[0].Id) //step 11
 
 	ActualReviewStructList := reviewer.GetCollectedReviews()
 

@@ -5,21 +5,14 @@ import (
 	_ "crypto/rand"
 	"fmt"
 	"log"
-	"math/big"
 	ec "swag/ec"
 )
 
-type ReviewSignedStruct struct {
-	Commit *ecdsa.PublicKey
-	Keys   []ecdsa.PublicKey
-	Nonce  *big.Int
-}
-
 //step 4
-func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
+func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 	//Find a way to retrieve a list of all Reviewers
 	for r := range reviewerSlice {
-		Kpcr := generateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
+		Kpcr := GenerateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
@@ -33,7 +26,7 @@ func (pc *PC) distributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 //Gets all papers for each reviewer from log.
 //Expected to be called for every reviewer when reviewers want to see list of all papers on frontend.
 func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
-	Kpcr := generateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&pc, nil, r)
 
 	pList := []*Paper{}
 	for i := 0; i < len(paperSlice); i++ {
@@ -57,9 +50,9 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	return pList
 }
 
-func (r *Reviewer) getBiddedPaper() *PaperBid {
+func (r *Reviewer) GetBiddedPaper() *PaperBid {
 
-	Kpcr := generateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&pc, nil, r)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
 	EncryptedSignedBid := tree.Find(msg)
 	bytes := EncryptedSignedBid.value.([][]byte)
@@ -71,7 +64,7 @@ func (r *Reviewer) getBiddedPaper() *PaperBid {
 	return &bid
 }
 
-func (r *Reviewer) makeBid(pap *Paper) *PaperBid {
+func (r *Reviewer) MakeBid(pap *Paper) *PaperBid {
 	return &PaperBid{
 		pap,
 		r,
@@ -80,22 +73,22 @@ func (r *Reviewer) makeBid(pap *Paper) *PaperBid {
 
 //step 5
 func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
-	bid := r.makeBid(p)
-	Kpcr := generateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
+	bid := r.MakeBid(p)
+	Kpcr := GenerateSharedSecret(&pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
 	tree.Put(msg, EncryptedSignedBid)
 	log.Println(msg + "logged.")
 }
 
-func (pc *PC) replaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) {
+func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) {
 	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].getBiddedPaper()
+		p := reviewerSlice[i].GetBiddedPaper()
 		bidList = append(bidList, p)
 	}
 
-	for _, p := range pc.allPapers {
+	for _, p := range pc.AllPapers {
 		for _, b := range bidList {
 			if p.Id == b.Paper.Id {
 				p = b.Paper
@@ -103,18 +96,18 @@ func (pc *PC) replaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid)
 			}
 		}
 	}
-	return pc.allPapers, bidList
+	return pc.AllPapers, bidList
 }
 
-func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
+func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
 	reviewersBidsTaken := []Reviewer{}
 	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].getBiddedPaper()
+		p := reviewerSlice[i].GetBiddedPaper()
 		bidList = append(bidList, p)
 	}
 	for _, bid := range bidList {
-		for _, p := range pc.allPapers {
+		for _, p := range pc.AllPapers {
 			if p.Id == bid.Paper.Id {
 				if !p.Selected {
 					if bid.Reviewer.PaperCommittedValue == nil {
@@ -135,7 +128,7 @@ func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
 		if r.PaperCommittedValue == nil {
 			r.PaperCommittedValue = &CommitStructPaper{}
 		}
-		for _, p := range pc.allPapers {
+		for _, p := range pc.AllPapers {
 			if !p.Selected {
 				x = true
 				p.Selected = true
@@ -152,7 +145,7 @@ func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
 	for _, r := range reviewersBidsTaken {
 		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != -1) {
 			r.PaperCommittedValue = &CommitStructPaper{}
-			for _, p := range pc.allPapers {
+			for _, p := range pc.AllPapers {
 				p.Selected = true
 				p.ReviewerList = append(p.ReviewerList, r)
 				break
@@ -166,7 +159,7 @@ func (pc *PC) assignPaper(reviewerSlice []*Reviewer) {
 // **Finds every assigned reviewer for every paper and makes it bidirectional, such that a reviewer also has a reference to a paper**
 // **Basically a fast reversal of assignPaper in terms of being bidirectional**
 func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
-	for _, p := range pc.allPapers {
+	for _, p := range pc.AllPapers {
 		for _, r := range p.ReviewerList {
 			for _, r1 := range reviewerList {
 				if r.UserID == r1.UserID {
@@ -180,7 +173,7 @@ func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
 	}
 }
 func (pc *PC) MatchPapers() {
-	for _, p := range pc.allPapers {
+	for _, p := range pc.AllPapers {
 		PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
 
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
@@ -208,7 +201,7 @@ func (pc *PC) MatchPapers() {
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 		tree.Put(msg, signature)
 
-		nizkBool := pc.supplyNIZK(p)
+		nizkBool := pc.SupplyNIZK(p)
 		if !nizkBool {
 			fmt.Println("NIZK Failed in MatchPapers")
 		}
@@ -239,7 +232,7 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	return ret
 }
 
-func (pc *PC) supplyNIZK(p *Paper) bool {
+func (pc *PC) SupplyNIZK(p *Paper) bool {
 	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)

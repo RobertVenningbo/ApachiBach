@@ -1,7 +1,8 @@
-package backend
+package backend_test
 
 import (
 	"testing"
+	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -10,7 +11,7 @@ func TestSendGrades_And_GetGrade(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
@@ -35,7 +36,7 @@ func TestRejectPaper(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
@@ -62,7 +63,7 @@ func TestGetCompiledGrades_And_Get(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9
@@ -86,7 +87,7 @@ func TestRevealAcceptedPaperInfo(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()                           //step 7
 	reviewer.FinishReview("Pretty rad paper!") //step 8
 	reviewer.SignReviewPaperCommit()           //step 9

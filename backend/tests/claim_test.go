@@ -1,7 +1,8 @@
-package backend
+package backend_test
 
 import (
 	"testing"
+	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )

@@ -1,34 +1,15 @@
 package backend
 
 import (
-	"crypto/ecdsa"
-	_ "crypto/elliptic"
 	_ "errors"
 	"fmt"
 	_ "fmt"
 	"log"
-	"math/big"
 	ec "swag/ec"
 )
 
-type ReviewCommitNonceStruct struct {
-	Commit *ecdsa.PublicKey
-	Nonce  *big.Int
-}
-
-type ReviewStruct struct {
-	ReviewerId int
-	Review     string
-	PaperId    int
-}
-
-type ReviewKpAndRg struct {
-	GroupKey *ecdsa.PrivateKey
-	Rg       *big.Int
-}
-
 func (r *Reviewer) FinishReview(review string) { //step 8
-	Kpcr := generateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&pc, nil, r)
 
 	reviewStruct := ReviewStruct{
 		r.UserID,
@@ -60,13 +41,13 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 }
 
 func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
-	kp := newKeys() //generating new group key
+	kp := NewKeys() //generating new group key
 
 	rg := ec.GetRandomInt(pc.Keys.D) //generating new grade randomness rg for later commits.
 	strPC := ""
 	tempStruct := ReviewKpAndRg{}
 	for _, r := range reviewers {
-		Kpcr := generateSharedSecret(pc, nil, &r)
+		Kpcr := GenerateSharedSecret(pc, nil, &r)
 		GroupKeyAndRg := ReviewKpAndRg{
 			kp,
 			rg,
@@ -102,7 +83,7 @@ func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 func (pc *PC) CollectReviews(pId int) { //step 11
 	ReviewStructList := []ReviewStruct{}
 	revKpAndRg := ReviewKpAndRg{}
-	for _, p := range pc.allPapers {
+	for _, p := range pc.AllPapers {
 		if pId == p.Id {
 			for _, r := range p.ReviewerList {
 				reviewStruct, err := pc.GetReviewStruct(r)
@@ -131,7 +112,7 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 	log.Printf("Getting cosigned Kp group key by reviewer: %v\n", r.UserID)
 	reviewKpAndRg := tree.Find(str).value
 	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
-	Kpcr := generateSharedSecret(&pc, nil, r)
+	Kpcr := GenerateSharedSecret(&pc, nil, r)
 	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, Kpcr)
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
 
@@ -142,7 +123,7 @@ func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", reviewer.UserID)
 	signedReviewStruct := (tree.Find(str)).value
 	sig, encryptedReviewStruct := SplitSignatureAndMsg(signedReviewStruct.([][]byte))
-	Kpcr := generateSharedSecret(pc, nil, &reviewer)
+	Kpcr := GenerateSharedSecret(pc, nil, &reviewer)
 	encodedReviewStruct := Decrypt(encryptedReviewStruct, Kpcr)
 	decodedReviewStruct := DecodeToStruct(encodedReviewStruct).(ReviewStruct)
 	hash, _ := GetMessageHash(encodedReviewStruct)

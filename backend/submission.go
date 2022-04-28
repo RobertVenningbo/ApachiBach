@@ -9,16 +9,6 @@ import (
 	"math/big"
 )
 
-type SubmitMessage struct {
-	PaperAndRandomness []byte
-	EncryptedKpcs      []byte
-}
-
-type CommitMsg struct {
-	IdenityCommit []byte
-	PaperCommit   []byte
-}
-
 func (s *Submitter) Submit(p *Paper) {
 	s.PaperCommittedValue.Paper = p
 	curve1 := elliptic.P256()
@@ -28,7 +18,7 @@ func (s *Submitter) Submit(p *Paper) {
 	rs, _ := rand.Int(rand.Reader, curve.N)
 	ri, _ := rand.Int(rand.Reader, curve.N)
 
-	sharedKpcs := generateSharedSecret(&pc, s, nil) //Shared secret key between Submitter and PC (Kpcs)
+	sharedKpcs := GenerateSharedSecret(&pc, s, nil) //Shared secret key between Submitter and PC (Kpcs)
 
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
 		p,
@@ -81,7 +71,7 @@ func (s *Submitter) Submit(p *Paper) {
 
 	s.StorePrivateBigInt(ri, "ri")
 
-	pc.allPapers = append(pc.allPapers, p)
+	pc.AllPapers = append(pc.AllPapers, p)
 }
 
 func (s *Submitter) StorePrivateBigInt(i *big.Int, txt string) {

@@ -1,4 +1,4 @@
-package backend
+package backend_test
 
 import (
 	"crypto/ecdsa"
@@ -8,22 +8,23 @@ import (
 	_ "swag/ec"
 	ec "swag/ec"
 	"testing"
+	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDistributeAndGetPapersForReviewers(t *testing.T) {
-	pc.allPapers = append(pc.allPapers, &p)
+	pc.AllPapers = append(pc.AllPapers, &p)
 	reviewers := []Reviewer{reviewer, reviewer2}
 
 	//Papers have been put into the log encrypted with a shared secret key between the given reviewer and the pc.
-	pc.distributePapers(reviewers, pc.allPapers)
+	pc.DistributePapers(reviewers, pc.AllPapers)
 
 	//reviewer2 now wants to retrieve his papers.
 	//intended to be called with pc.allPapers which is a general lookup table for paper.Ids etc.
-	retrievedPapers := reviewer2.GetPapersReviewer(pc.allPapers)
+	retrievedPapers := reviewer2.GetPapersReviewer(pc.AllPapers)
 
-	assert.Equal(t, pc.allPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
+	assert.Equal(t, pc.AllPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
 }
 
 func TestGetBiddedPaper(t *testing.T) {
@@ -35,13 +36,13 @@ func TestGetBiddedPaper(t *testing.T) {
 	}
 	reviewerScope := &Reviewer{
 		123123,
-		newKeys(),
+		NewKeys(),
 		commitStructPaper,
 	}
 
 	reviewerScope.SignBidAndEncrypt(&p)
 
-	paperBid := reviewerScope.getBiddedPaper()
+	paperBid := reviewerScope.GetBiddedPaper()
 
 	fmt.Printf("%s %v \n", "reviewer1: ", reviewerScope)
 	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
@@ -53,12 +54,12 @@ func TestGetBiddedPaper(t *testing.T) {
 func TestAssignPapers(t *testing.T) {
 	reviewer3 := Reviewer{
 		3,
-		newKeys(),
+		NewKeys(),
 		nil,
 	}
 	reviewer4 := Reviewer{
 		4,
-		newKeys(),
+		NewKeys(),
 		nil,
 	}
 	p1 := Paper{
@@ -77,7 +78,7 @@ func TestAssignPapers(t *testing.T) {
 		nil,
 	}
 
-	pc.allPapers = append(pc.allPapers, &p1, &p2, &p3)
+	pc.AllPapers = append(pc.AllPapers, &p1, &p2, &p3)
 	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
 
 	reviewer.SignBidAndEncrypt(&p1)
@@ -85,13 +86,13 @@ func TestAssignPapers(t *testing.T) {
 	reviewer3.SignBidAndEncrypt(&p1)
 	reviewer4.SignBidAndEncrypt(&p1)
 
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 
 	//TODO insert assert
 }
 
 func TestSupplyNizk(t *testing.T) {
-	keys := newKeys()
+	keys := NewKeys()
 	submitter1 := Submitter{
 		keys,
 		2, //userID
@@ -121,14 +122,14 @@ func TestSupplyNizk(t *testing.T) {
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 	tree.Put(msg, signature)
 
-	got := pc.supplyNIZK(&p)
+	got := pc.SupplyNIZK(&p)
 	want := true
 
 	assert.Equal(t, want, got, "Nizk failed")
 }
 
 func TestGetReviewSignedStruct(t *testing.T) {
-	pc.allPapers = append(pc.allPapers, &p)
+	pc.AllPapers = append(pc.AllPapers, &p)
 	rr := ec.GetRandomInt(pc.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
@@ -158,6 +159,6 @@ func TestMatchPapers(t *testing.T) {
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()
 }

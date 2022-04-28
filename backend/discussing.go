@@ -5,25 +5,7 @@ import (
 	"fmt"
 	"log"
 	Math "math"
-	"math/big"
 )
-
-type IndividualGrade struct {
-	PaperId    int
-	ReviewerId int
-	Grade      int
-}
-
-type Grade struct {
-	Grade      int
-	Randomness int
-}
-
-type GradeReviewCommits struct {
-	PaperReviewCommit *ecdsa.PublicKey
-	GradeCommit       *ecdsa.PublicKey
-	Nonce             *big.Int
-}
 
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
 	KpAndRg := r.GetReviewKpAndRg()
@@ -50,7 +32,7 @@ func (r *Reviewer) GradePaper(grade int) {
 
 }
 
-func (r *Reviewer) getGradeForReviewer(rId int) IndividualGrade {
+func (r *Reviewer) GetGradeForReviewer(rId int) IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
 	gradeStruct := tree.Find(msg).value
 	KpAndRg := r.GetReviewKpAndRg()
@@ -65,22 +47,16 @@ func AgreeOnGrade(paper *Paper) int {
 	result := 0
 	length := len(paper.ReviewerList)
 	for _, r := range paper.ReviewerList {
-		gradeStruct := r.getGradeForReviewer(r.UserID)
+		gradeStruct := r.GetGradeForReviewer(r.UserID)
 		result += gradeStruct.Grade
 	}
 	avg := float64(result) / float64(length)
-	grade := calculateNearestGrade(avg)
-
-	//For random grade?
-	// agreedGrade := Grade{
-	// 	grade,
-	// 	rand.Intn(100),
-	// }
+	grade := CalculateNearestGrade(avg)
 
 	return grade
 }
 
-func calculateNearestGrade(avg float64) int {
+func CalculateNearestGrade(avg float64) int {
 	closest := 999
 	minDiff := 999.0
 	possibleGrades := []int{-3, 00, 02, 4, 7, 10, 12}

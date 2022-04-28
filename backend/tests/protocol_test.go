@@ -1,13 +1,12 @@
-package backend
+package backend_test
 
 import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
-	"math/big"
 	"swag/ec"
 	"testing"
-
+	. "swag/backend"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,36 +22,41 @@ var (
 	}
 	reviewer = Reviewer{
 		1,
-		newKeys(),
+		NewKeys(),
 		&CommitStructPaper{},
 	}
 	reviewer2 = Reviewer{
 		2,
-		newKeys(),
+		NewKeys(),
 		&CommitStructPaper{},
 	}
 	reviewer3 = Reviewer{
 		3,
-		newKeys(),
+		NewKeys(),
 		&CommitStructPaper{},
 	}
 	reviewer4 = Reviewer{
 		4,
-		newKeys(),
+		NewKeys(),
 		&CommitStructPaper{},
 	}
 	submitter = Submitter{
-		newKeys(),
+		NewKeys(),
 		1, //userID
 		&CommitStruct{},
 		&CommitStructPaper{},
 		&Receiver{},
 	}
+	pc = PC{
+		NewKeys(),
+		nil,
+	}
+	tree = NewTree(DefaultMinItems)
 )
 
 func TestGenerateSharedSecret(t *testing.T) {
-	got := generateSharedSecret(&pc, &submitter, nil)
-	want := generateSharedSecret(&pc, &submitter, nil)
+	got := GenerateSharedSecret(&pc, &submitter, nil)
+	want := GenerateSharedSecret(&pc, &submitter, nil)
 	assert.Equal(t, got, want, "Test failed")
 
 }
@@ -148,7 +152,6 @@ func TestDecodeToStruct(t *testing.T) {
 	EncodedStruct := EncodeToBytes(p)
 	DecodedStruct := DecodeToStruct1(EncodedStruct, Paper{})
 	assert.Equal(t, DecodedStruct, p, "Test failed")
-
 }
 
 func TestVerifyMethod(t *testing.T) {
@@ -165,26 +168,6 @@ func TestVerifyMethod(t *testing.T) {
 	got := Verify(&submitter.Keys.PublicKey, signature, hashedText)
 
 	assert.Equal(t, true, got, "Sign and Verify failed")
-}
-
-func TestLogging(t *testing.T) {
-
-	number := ec.GetRandomInt(submitter.Keys.D)
-	bytes := EncodeToBytes(number)
-	Kpcs := generateSharedSecret(&pc, &submitter, nil)
-	encryptedNumber := Encrypt(bytes, Kpcs)
-	tree.Put("encryptedNumber", encryptedNumber)
-	tree.Put("Kpcs", Kpcs)
-
-	encryptedNumberFromTree := tree.Find("encryptedNumber")
-	KpcsFromTree := tree.Find("Kpcs")
-
-	decryptedNumber := Decrypt(encryptedNumberFromTree.value.([]byte), KpcsFromTree.value.(string))
-	decodedNumber := DecodeToStruct(decryptedNumber)
-	got := decodedNumber.(big.Int)
-
-	assert.Equal(t, number, &got, "logging test failed")
-
 }
 
 func TestGetPaperSubmissionCommit(t *testing.T) {
@@ -234,7 +217,7 @@ func TestGetPaperAndRandomness(t *testing.T) {
 	rr := ec.GetRandomInt(pc.Keys.D)
 	rs := ec.GetRandomInt(pc.Keys.D)
 
-	sharedKpcs := generateSharedSecret(&pc, &submitter, nil)
+	sharedKpcs := GenerateSharedSecret(&pc, &submitter, nil)
 	PaperAndRandomness := SubmitStruct{ //Encrypted Paper and Random numbers
 		&p,
 		rr,

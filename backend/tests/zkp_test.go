@@ -1,4 +1,4 @@
-package backend
+package backend_test
 
 import (
 	"crypto/elliptic"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	. "swag/backend"
 	_ "swag/ec"
 	"testing"
 
@@ -24,7 +25,6 @@ func TestNewEqProofP256(t *testing.T) {
 	r2, _ := rand.Int(rand.Reader, curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
 
-	//msg := ec.GetRandomInt(submitter.Keys.D)
 	msg := MsgToBigInt(EncodeToBytes(p))
 
 	commit1, err := submitter.GetCommitMessagePaper(msg, r1)

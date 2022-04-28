@@ -11,17 +11,6 @@ import (
 /*
 	https://github.com/mikelodder7/commit_twin/blob/main/go/pkg/secp256k1.go
 */
-type EqProof struct {
-	C  *big.Int
-	D  *big.Int
-	D1 *big.Int
-	D2 *big.Int
-}
-
-type Commitment struct {
-	X *big.Int
-	Y *big.Int
-}
 
 var (
 	nothingUpMySleeveQ1 = []byte("Cowards die many times before their deaths; The valiant never taste of death but once")

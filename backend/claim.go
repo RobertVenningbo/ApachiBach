@@ -3,14 +3,7 @@ package backend
 import (
 	"fmt"
 	"log"
-	"math/big"
 )
-
-type ClaimMessage struct {
-	Paper     *Paper
-	Submitter *Submitter
-	Ri        *big.Int
-}
 
 func (s *Submitter) ClaimPaper() { //step 19
 	paper := s.PaperCommittedValue.Paper

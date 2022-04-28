@@ -1,8 +1,9 @@
-package backend
+package backend_test
 
 import (
 	"fmt"
 	"testing"
+	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +13,7 @@ func TestCalculateNearestGrade(t *testing.T) {
 	avg := 5.6
 	want := 7
 
-	got := calculateNearestGrade(avg)
+	got := CalculateNearestGrade(avg)
 	assert.Equal(t, want, got, "TestCalculateNearestGrade failed")
 }
 
@@ -23,19 +24,19 @@ func TestGradePaperAndGetGrade(t *testing.T) {
 	want := 7
 	reviewer.GradePaper(want)
 
-	GradeStruct := reviewer.getGradeForReviewer(reviewer.UserID)
+	GradeStruct := reviewer.GetGradeForReviewer(reviewer.UserID)
 	got := GradeStruct.Grade
 
 	assert.Equal(t, want, got, "TestGradePaperAndGetGrade failed")
 }
 
 func TestAgreeOnGrade(t *testing.T) {
-	reviewerSlice := []Reviewer{reviewer, reviewer2, reviewer3}
-	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
-
 	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer3.PaperCommittedValue.Paper = &paperListTest[0]
+	reviewerSlice := []Reviewer{reviewer, reviewer2, reviewer3}
+	pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+
 	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewer, reviewer2, reviewer3)
 
 	reviewer.GradePaper(4)
@@ -60,12 +61,12 @@ func TestMakeGradeCommit(t *testing.T) {
 }
 
 func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
-	pc.allPapers = append(pc.allPapers, &p)
+	pc.AllPapers = append(pc.AllPapers, &p)
 	submitter.Submit(&p)
 	reviewerSlice := []*Reviewer{&reviewer}
 	reviewerSlice1 := []Reviewer{reviewer}
 	reviewer.SignBidAndEncrypt(&p)
-	pc.assignPaper(reviewerSlice)
+	pc.AssignPaper(reviewerSlice)
 	pc.MatchPapers()
 
 	pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go

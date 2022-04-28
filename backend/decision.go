@@ -1,36 +1,17 @@
 package backend
 
 import (
-	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
 	"log"
-	"math/big"
-
 	"github.com/0xdecaf/zkrp/ccs08"
 )
-
-type SendGradeStruct struct {
-	Reviews []string
-	Grade   int
-}
-
-type RejectMessage struct {
-	Commit *ecdsa.PublicKey
-	Grade  int
-	Rg     *big.Int
-}
-
-type RevealPaper struct {
-	Paper Paper
-	Rs    *big.Int
-}
 
 func (pc *PC) SendGrades(subm *Submitter) { //step 15
 	grade := pc.GetGrade(subm.PaperCommittedValue.Paper.Id)
 	reviews := pc.GetReviewsOnly(subm.PaperCommittedValue.Paper.Id)
-	Kpcs := generateSharedSecret(pc, subm, nil)
+	Kpcs := GenerateSharedSecret(pc, subm, nil)
 	msgStruct := SendGradeStruct{
 		reviews,
 		grade,
@@ -136,7 +117,7 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 /*HELPER METHODS*/
 
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
-	for _, p := range pc.allPapers {
+	for _, p := range pc.AllPapers {
 		if p.Id == pId {
 			AcceptedPapers = append(AcceptedPapers, *p)
 		}
@@ -147,7 +128,7 @@ func (pc *PC) GetGrade(pId int) int {
 	KpAndRg := pc.GetKpAndRgPC(pId)
 	holder := 0
 	Kp := KpAndRg.GroupKey
-	for _, v := range pc.allPapers {
+	for _, v := range pc.AllPapers {
 		if pId == v.Id {
 			holder = v.ReviewerList[0].UserID
 		}
@@ -166,7 +147,7 @@ func (pc *PC) GetGrade(pId int) int {
 
 func (pc *PC) GetReviewsOnly(pId int) []string {
 	reviews := []string{}
-	for _, v := range pc.allPapers {
+	for _, v := range pc.AllPapers {
 		if pId == v.Id {
 			for _, r := range v.ReviewerList {
 				result, _ := pc.GetReviewStruct(r)
@@ -179,7 +160,7 @@ func (pc *PC) GetReviewsOnly(pId int) []string {
 
 //This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
 func (s *Submitter) RetrieveGrades() SendGradeStruct {
-	Kpcs := generateSharedSecret(&pc, s, nil)
+	Kpcs := GenerateSharedSecret(&pc, s, nil)
 
 	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
 	log.Println(getStr)

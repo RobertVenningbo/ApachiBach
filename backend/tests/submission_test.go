@@ -1,11 +1,6 @@
-package backend
+package backend_test
 
 import (
-	_ "crypto/ecdsa"
-	_ "crypto/rand"
-	_ "fmt"
-	_ "math/big"
-	_ "swag/ec"
 	"testing"
 
 	_ "github.com/stretchr/testify/assert"
