@@ -56,57 +56,59 @@ html {
 }
 
 body {
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
     width: 100%;
     height: 100%;
     background: gray;
 }
 
-#log {
-    background: white;
-    margin: 0;
-    padding: 0.5em 0.5em 0.5em 0.5em;
-    position: absolute;
-    top: 0.5em;
-    left: 0.5em;
-    right: 0.5em;
-    bottom: 3em;
-    overflow: auto;
-    width: 50%
+#wrapper{
+    position: relative;
 }
-
 #form {
-    padding: 0 0.5em 0 0.5em;
-    margin: 0;
     position: absolute;
-    bottom: 1em;
-    left: 0px;
-    width: 100%;
-    overflow: hidden;
+    height:100%;
+    padding: 0 0.5em 0 0.5em;
+    background-color: white;
+}
+#log {
+    position: absolute;
+    background: white;
+    width: 45%;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    top: 1.5em;
+    overflow: auto;
+
 }
 
-.container{
-    display: flex;
-    flex-wrap: wrap;
+#hey{
+  position: absolute;
+  overflow: auto;
+  right: 0;
+  z-index: 10;
+  padding: 1.2rem;
+  left: 50%;
+  background: lightblue;
+  top: 1.5em;
+
 }
+
 
 </style>
 </head>
 <body>
-
-    <div id="log">
+    <div id="wrapper">
+        <div id="log">
+        </div>
         <form id="form">
             <input type="submit" value="Send" />
             <input type="text" id="msg" size="64" autofocus />
         </form>
+        <div id="hey">
+            <div>
+                <p>!Hey</p>
+            </div> 
+            <button id="claimsub" onclick="{{.}}">Claim Submitter</button>
+            <button id="claimrev">Claim Reviewer</button>
+        </div>
     </div>
-    <div class="container">
-    <div>
-        <p>!Hey</p>
-    </div> 
-    </button>
-</div>
 </body>
-</html>

@@ -4,6 +4,10 @@
 
 package main
 
+import (
+	"github.com/google/uuid"
+)
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -33,6 +37,12 @@ func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
+			if client.Id == "" {
+				client.Id = uuid.Must(uuid.NewRandom()).String()
+				for client := range h.clients {
+					client.send <- []byte(string("Client with id: " + client.Id + " just joined"))
+				}
+			}
 			h.clients[client] = true
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
