@@ -15,16 +15,24 @@ import (
 
 var (
 	addr    = flag.String("addr", ":8080", "http service address")
-	tpl     *template.Template
-	funcMap template.FuncMap
+//	tpl     *template.Template
+//	funcMap template.FuncMap
 )
 
-func FuncMappings() { //TODO: SETUP FUNCMAP WITH `tpl` for passing data/functions to DOM
-	funcMap = template.FuncMap{
-		// The name "title" is what the function will be called in the template text.
-		"submitter": strings.Title,
-	}
+// func FuncMappings() { //TODO: SETUP FUNCMAP WITH `tpl` for passing data/functions to DOM
+// 	funcMap = template.FuncMap{
+// 		// The name "title" is what the function will be called in the template text.
+// 		"submitter": strings.ToUpper,
+// 	}
 
+// }
+
+var tpl, _ = template.New("home.html").Funcs(template.FuncMap{
+	"Upper": strings.ToUpper,
+}).ParseFiles("home.html")
+
+func testFunc() {
+	fmt.Println("pressed")
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
@@ -41,15 +49,12 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 	// if err != nil {
 	// 	log.Panic("Panic in serveHome")
 	// }
-	http.ServeFile(w, r, "home.html")
+	tpl.ExecuteTemplate(w, "home.html", nil)
 }
 
-func testfunc(){
-	fmt.Print("test")
-}
 
 func main() {
-	FuncMappings()
+	tpl, _ = tpl.ParseFiles("home.html")
 	flag.Parse()
 	hub := newHub()
 	go hub.run()

@@ -6,13 +6,13 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/sessions v1.2.1
+	github.com/julienschmidt/httprouter v1.1.1-0.20170430222011-975b5c4c7c21
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
 )
 
 require (
 	github.com/ethereum/go-ethereum v1.9.10 // indirect
 	github.com/ing-bank/zkrp v0.0.0-20211018091920-bc4eff1b3466 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 )
 
 require (
@@ -26,6 +26,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/julienschmidt/sse v0.0.0-20190921213156-72db694fe9e6
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )

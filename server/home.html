@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<title>Chat Example</title>
+    <head>
+        <link rel="stylesheet" href="/home.css">
+        <script src="/homepage.js" defer></script>
+        <meta charset="UTF-8">
+        <title>Apachi</title>
+    </head>
 <script type="text/javascript">
 window.onload = function () {
     var conn;
@@ -107,8 +111,9 @@ body {
             <div>
                 <p>!Hey</p>
             </div> 
-            <button id="claimsub" onclick="{{.}}">Claim Submitter</button>
-            <button id="claimrev">Claim Reviewer</button>
+            This is capitalized: {{Upper "this will be capitalized"}}
+            <button onaction="press" id="claimsub">Submit paper</button>
+            <button id="claimrev">Review paper</button>
         </div>
     </div>
 </body>
