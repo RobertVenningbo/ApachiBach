@@ -19,6 +19,7 @@ window.onload = function () {
             return false;
         }
         conn.send(msg.value);
+        console.log(msg.value);
         msg.value = "";
         return false;
     };
