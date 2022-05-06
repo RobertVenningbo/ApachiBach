@@ -2,10 +2,11 @@ package main
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 	. "swag/components"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/maxence-charriere/go-app/v9/pkg/app"
 )

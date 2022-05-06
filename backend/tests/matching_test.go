@@ -23,7 +23,7 @@ func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 	//reviewer2 now wants to retrieve his papers.
 	//intended to be called with pc.allPapers which is a general lookup table for paper.Ids etc.
 	retrievedPapers := reviewer2.GetPapersReviewer(Pc.AllPapers)
-
+	fmt.Print(Pc.Keys)
 	assert.Equal(t, Pc.AllPapers, retrievedPapers, "TestDistributeAndGetPapersForReviewers failed")
 }
 
