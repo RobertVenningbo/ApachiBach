@@ -1,0 +1,20 @@
+#footer{
+    width: 960px;
+    border: 1px;
+}
+#footerleftpane{
+    width: 300px;
+    float: left;
+    background-color: green;
+}
+#footerRightPane{
+    width: 300px;
+    float: right;
+    background-color: blue;
+}
+#footerMidPane{
+    width: 340px;
+    float: left;
+    padding: 10px;
+    background-color: red;
+}
