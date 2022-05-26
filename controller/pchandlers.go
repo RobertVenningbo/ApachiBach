@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"net/http"
 	"text/template"
+	"github.com/gin-gonic/gin"
 )
 
-func PCHandler(w http.ResponseWriter, r *http.Request) {
+func PCHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc.html"))
-	tpl.Execute(w, nil)
+	tpl.Execute(c.Writer, nil)
 }

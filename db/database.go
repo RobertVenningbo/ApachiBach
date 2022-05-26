@@ -1,36 +1,33 @@
 package db
 
 import (
-	"gorm.io/gorm"
-	"gorm.io/driver/postgres"
 	"fmt"
-)
 
-var Conn *gorm.DB
+	"swag/model"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
 
 const (
 	host     = "localhost"
 	port     = 5432
 	user     = "postgres"
-	password = "q"
+	password = "password"
 	dbname   = "apachi"
 )
 
-func ConnectDB(){
+func Init() *gorm.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
-	
-	Conn, err := gorm.Open(postgres.Open(psqlInfo), gorm.DB{})
+	db, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
-	sqldb, err :=  Conn.DB()
-	defer sqldb.Close()
 
-	err = sqldb.Ping()
-	if err != nil {
-		panic(err)
-	}
+	db.AutoMigrate(&model.Log{})
+
 	fmt.Println("Successfully connected to database")
+	return db
 }

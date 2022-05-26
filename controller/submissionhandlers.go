@@ -5,11 +5,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"text/template"
+	"github.com/gin-gonic/gin"
 )
 
 var tpl = template.Must(template.ParseFiles("templates/submitter/submission.html"))
-func SubmissionHandler(w http.ResponseWriter, r *http.Request) {
-	tpl.Execute(w, nil)
+func SubmissionHandler(c *gin.Context) {
+	tpl.Execute(c.Writer, nil)
 }
 
 
