@@ -21,7 +21,7 @@ func ConnectDB(){
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 	
-	Conn, err := gorm.Open(postgres.Open(psqlInfo), gorm.DB{})
+	Conn, err := gorm.Open(postgres.Open(psqlInfo), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
