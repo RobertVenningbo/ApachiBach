@@ -14,7 +14,11 @@ CREATE TABLE log (
   `Id` INT NOT NULL AUTO_INCREMENT,
   `logMsg` VARCHAR(45) NOT NULL,
   `FromUserId` VARCHAR(45) NOT NULL,
-  `Value1` BIGINT NULL,
-  `Value2` BIGINT NULL,
-  `Value3` BIGINT NULL,
+  `Value` GLOB NULL,
   PRIMARY KEY (`Id`));
+
+
+DROP ROLE IF EXISTS my_user;
+CREATE ROLE my_user LOGIN PASSWORD 'my_password';
+GRANT INSERT, SELECT TO my_user;
+
