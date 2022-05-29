@@ -8,9 +8,9 @@
 <body>
 <h1>Submit paper</h1>
 <div style="width: 500px">
-  <form enctype="multipart/form-data" action="http://localhost:80/upload" method="post">
-      <label>Paper title:</label><br>
-      <input type="text" style= "width: 100%"> <br><br>
+  <form enctype="multipart/form-data" action="http://localhost:5432/v1/api/logmsg" method="POST">
+      <label>Paper title:</label>
+      <input type="text" style= "width: 100%"> 
       <input type="file"  name="myFile" />
       <input type="submit" value="Submit"/>
   </form>

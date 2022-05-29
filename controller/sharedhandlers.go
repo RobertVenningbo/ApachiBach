@@ -23,6 +23,7 @@ func (h handler) CreateMessage(c *gin.Context) {
 
 func (h handler) GetMessages(c *gin.Context) {
 	var msgs []model.Log
+	c.BindJSON(&msgs)
 	err := model.GetAllLogMsgs(h.DB, &msgs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
