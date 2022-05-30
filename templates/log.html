@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+    <div>
+        <blockquote>
+            <table >
+
+                <!-- Table header -->
+    
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>State</th>
+                    <th>Message</th>
+                    <th>From user id</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+    
+                <!-- Table footer -->
+    
+                <tfoot>
+                <tr>
+                    <td>END</td>
+                </tr>
+                </tfoot>
+    
+                <!-- Table body -->
+    
+                <tbody>
+                {{ range .Log }}
+                <tr>
+                    <td>{{ .Id }}</td>
+                    <td>{{ .State }}</td>
+                    <td>{{ .LogMsg }}</td>
+                    <td>{{ .FromUserId }}</td>
+                    <td>{{ .Value }}</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </blockquote>   
+    </div>
+</body>
+</html>
+
