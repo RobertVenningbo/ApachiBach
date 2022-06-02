@@ -1,0 +1,26 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>PC</title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="">
+    </head>
+    <body>
+        <div style="text-align: center;">
+          <h1>PC</h1>
+          <label>Choose submission deadline</label>
+          <input type="datetime-local">
+          <button style="margin-bottom: 30px;">Set deadline</button>
+          <button href="">Get submitted papers</button>
+            <div>
+              {{ range . }}
+                <p>Paper: {{ .Title }}</p>
+              {{ end }}
+            </div>
+          <button>Send papers to reviewers</button>
+        </div>
+    </body>
+</html>
