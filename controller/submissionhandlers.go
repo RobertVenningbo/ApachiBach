@@ -11,7 +11,46 @@ import (
 var tpl = template.Must(template.ParseFiles("templates/submitter/submission.html"))
 
 func SubmissionHandler(c *gin.Context) {
-    tpl.Execute(c.Writer, nil)
+	tpl.Execute(c.Writer, nil)
+}
+
+func WaitHandler(c *gin.Context) {
+	//TODO get data
+	//retrieve latest message from the log, check its state and depending on
+	//the state you change a string saying pending, ok, error or something along those lines
+	type Message struct {
+		Msg  string
+		Cont bool
+	}
+	msg := Message{
+		Msg:  "pending...",
+		Cont: false, //true for button, just trying some frontend logic
+	}
+	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
+	tpl.Execute(c.Writer, &msg)
+}
+
+func GradedPaperHandler(c *gin.Context) {
+
+	type Reviewer struct {
+	}
+	type Message struct {
+		Status string
+		Grade  int
+		Count  []Reviewer
+	}
+	reviewers := []Reviewer{
+		{},
+		{},
+	}
+	msg := Message{
+		Status: "pending...",
+		Grade:  4,
+		Count:  reviewers,
+	}
+
+	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
+	tpl.Execute(c.Writer, &msg)
 }
 
 func uploadFile(c *gin.Context) {

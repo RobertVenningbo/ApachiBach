@@ -10,9 +10,10 @@
     </head>
     <body>
         <div style="text-align: center;">
-            <h1 style="margin-bottom: 50px;">You have submitted a paper</h1>
+            <h1 style="margin-bottom: 50px; margin-top: 100px">You have submitted a paper</h1>
             <p>Your paper is being reviewed</p>            
-            <p>Status: {{ .Status }}</p>            
+            <p>Status: {{ .Msg }}</p>
+            {{if .Cont }} <button>click me</button> {{end}}            
         </div>
     </body>
 </html>

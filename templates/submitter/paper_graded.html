@@ -9,19 +9,17 @@
       <link rel="stylesheet" href="">
     </head>
     <body>
-        <div style="text-align: center;">
+        <div style="margin: auto; width: 50%; padding: 10px; text-align: center;">
             <h2 style="margin-bottom: 50px;">You have submitted a paper</h2>
             <p>Your paper is being reviewed</p>            
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>            
-            <div style="display: flex; justify-content: center;">
-                {% comment "Loop for hver reviewer" %}  {% endcomment %}
-                {{ range . }}
-                    <div style="border-color: coral;"> 
-                        {% comment "border-color for debug, måske også fixed størrelse needed" %} {% endcomment %}
-                        <p>Very nice paper </p> 
-                        {% comment "indsæt {{ .Something }} af hvad deres review er" %}  {% endcomment %}
-                    </div>
+            
+            <div style="display: flex; justify-content: center; flex-direction: row">
+                {{ range .Count }}
+                <div style="margin: 30px">
+                    <h2>Very nice paper</h2> 
+                </div>            
                 {{ end }}
             </div>
         </div>

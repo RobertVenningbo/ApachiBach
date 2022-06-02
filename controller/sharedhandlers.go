@@ -17,6 +17,7 @@ func LogHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/log.html"))
 	var logs []model.Log
+	// do something with different the getting method.
 	data, err := http.Get("http://127.0.0.1:2533/v1/api/logmsg")
 	if err != nil {
 		log.Fatal("err in logHandler")
@@ -32,6 +33,8 @@ func LogHandler(c *gin.Context) {
 	fmt.Printf("%#v", logs)
 	tpl.Execute(c.Writer, logs)
 }
+
+
 
 func (h handler) CreateMessage(c *gin.Context) {
 	var msg model.Log

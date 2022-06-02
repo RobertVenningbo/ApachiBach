@@ -35,6 +35,8 @@ func main() {
 	serverport := os.Args[2]
 	if os.Args[1] == "submitter" {
 		router.GET("/", controller.SubmissionHandler)
+		router.GET("/wait", controller.WaitHandler)
+		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.SubmissionHandler) //fix, give a reviewer its own
