@@ -13,11 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 func LogHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/log.html"))
-	var logs model.Log
+	var logs []model.Log
 	data, err := http.Get("http://127.0.0.1:2533/v1/api/logmsg")
 	if err != nil {
 		log.Fatal("err in logHandler")
@@ -31,7 +30,7 @@ func LogHandler(c *gin.Context) {
 	}
 	json.Unmarshal(bodyBytes, &logs)
 	fmt.Printf("%#v", logs)
-	tpl.Execute(c.Writer, &logs)
+	tpl.Execute(c.Writer, logs)
 }
 
 func (h handler) CreateMessage(c *gin.Context) {
@@ -54,6 +53,18 @@ func (h handler) GetMessages(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, msgs)
+}
+
+func (h handler) GetMessage(c *gin.Context) {
+	id, _ := c.Params.Get("id")
+	var msg model.Log
+	c.BindJSON(msg)
+	err := model.GetLogMsgById(h.DB, &msg, id)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	c.JSON(http.StatusOK, msg)
 }
 
 func createMessage_notGIN(w http.ResponseWriter, r *http.Request) {

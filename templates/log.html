@@ -28,12 +28,12 @@
                 <!-- Table body -->
     
                 <tbody>
-                {{ range .Log }}
+                {{ range . }}
                 <tr>
                     <td>{{ .Id }}</td>
                     <td>{{ .State }}</td>
                     <td>{{ .LogMsg }}</td>
-                    <td>{{ .FromUserId }}</td>
+                    <td>FromUserId currently not implemented</td>
                     <td>{{ .Value }}</td>
                 </tr>
                 {{ end }}

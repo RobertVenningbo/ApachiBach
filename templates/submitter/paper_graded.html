@@ -1,0 +1,29 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title></title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="">
+    </head>
+    <body>
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 50px;">You have submitted a paper</h2>
+            <p>Your paper is being reviewed</p>            
+            <p>Status: {{ .Status }}</p>
+            <p>Grade: {{ .Grade }}</p>            
+            <div style="display: flex; justify-content: center;">
+                {% comment "Loop for hver reviewer" %}  {% endcomment %}
+                {{ range . }}
+                    <div style="border-color: coral;"> 
+                        {% comment "border-color for debug, måske også fixed størrelse needed" %} {% endcomment %}
+                        <p>Very nice paper </p> 
+                        {% comment "indsæt {{ .Something }} af hvad deres review er" %}  {% endcomment %}
+                    </div>
+                {{ end }}
+            </div>
+        </div>
+    </body>
+</html>

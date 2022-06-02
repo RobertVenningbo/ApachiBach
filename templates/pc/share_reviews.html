@@ -1,0 +1,46 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>PC</title>
+      <meta name="description" content="">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="">
+    </head>
+    <body>
+        <div style="text-align: center;">
+          <div style="border-color: cyan;"> <!-- debugging border-color-->
+            <blockquote>
+                <table >
+    
+                    <!-- Table header -->
+        
+                    <thead>
+                    <tr>
+                        <th>Paper Title</th>
+                        <th>Reviewers</th>
+                        <th>Share Reviews</th>
+                    </tr>
+                    </thead>
+               
+                    <!-- Table body -->
+        
+                    <tbody>
+                    {{ range . }}
+                    <tr>
+                        <td>{{ .Title }}</td>
+                        <td>{{ .Reviewers }}</td> {% comment "" %}{% endcomment %}
+                        <td>
+                            <button>Share reviews</button>
+                        </td>
+                    </tr>
+                    {{ end }}
+                    </tbody>
+                </table>
+            </blockquote>   
+          </div>
+
+        </div>
+    </body>
+</html>

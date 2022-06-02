@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	_ "log"
-	"net/http"
 	_ "net/http"
 	"os"
 	_ "swag/backend"
@@ -27,6 +26,7 @@ func main() {
 		// set&get for the log
 		v1.POST("/logmsg", h.CreateMessage)
 		v1.GET("/logmsg", h.GetMessages)
+		v1.GET("/logmsg/:id", h.GetMessage)
 	}
 
 	router.GET("/log", controller.LogHandler)
@@ -35,7 +35,7 @@ func main() {
 	serverport := os.Args[2]
 	if os.Args[1] == "submitter" {
 		router.GET("/", controller.SubmissionHandler)
-		http.ListenAndServe(":"+serverport, nil)
+		router.Run(":" + serverport)
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.SubmissionHandler) //fix, give a reviewer its own
 		router.Run(":" + serverport)
