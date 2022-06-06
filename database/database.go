@@ -1,13 +1,13 @@
-package db
+package database
 
 import (
 	"fmt"
 
-	"swag/model"
-
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+var DB *gorm.DB
 
 const (
 	host     = "localhost"
@@ -25,9 +25,7 @@ func Init() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-
-	db.AutoMigrate(&model.Log{})
-
+	DB = db
 	fmt.Println("Successfully connected to database")
 	return db
 }

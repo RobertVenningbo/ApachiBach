@@ -3,17 +3,23 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
-      <title>Submitter</title>
+      <title>PC</title>
       <meta name="description" content="">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
     <body>
+        <h2>Decision</h2>
         <div style="text-align: center;">
-            <h1 style="margin-bottom: 50px; margin-top: 100px">You have submitted a paper</h1>
-            <p>Your paper is being reviewed</p>            
-            <p>Status: {{ .Msg }}</p>
-            {{if .Cont }} <button>click me</button> {{end}}            
+            <p>Graded papers:</p> 
+            {{range .}}
+            <div style="display: flex; justify-content: center; flex-direction: column">
+                <p>{{.Title}}</p> 
+                <p>{{.Grade}}</p> 
+                <button>Accept</button>
+                <button>Reject</button>
+            </div>
+            {{end}}
         </div>
     </body>
 </html>

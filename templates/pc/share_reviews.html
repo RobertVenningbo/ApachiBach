@@ -30,7 +30,7 @@
                     {{ range . }}
                     <tr>
                         <td>{{ .Title }}</td>
-                        <td>{{ .Reviewers }}</td> {% comment "" %}{% endcomment %}
+                        <td><p>{{ .Reviewers }}</p></td> 
                         <td>
                             <button>Share reviews</button>
                         </td>
@@ -40,7 +40,9 @@
                 </table>
             </blockquote>   
           </div>
-
         </div>
+        <button>
+            Proceed to decision
+        </button>
     </body>
 </html>
