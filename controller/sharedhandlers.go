@@ -34,11 +34,9 @@ func LogHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, logs)
 }
 
-
-
 func (h handler) CreateMessage(c *gin.Context) {
 	var msg model.Log
-	c.BindJSON(&msg)
+	c.BindJSON(msg)
 	err := model.CreateLogMsg(h.DB, &msg)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())

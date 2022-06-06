@@ -1,8 +1,12 @@
 package controller
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"swag/model"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -53,9 +57,8 @@ func GradedPaperHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, &msg)
 }
 
-func uploadFile(c *gin.Context) {
+func UploadFile(c *gin.Context) {
 	fmt.Println("File Upload Endpoint Hit")
-
 	// Parse our multipart form, 10 << 20 specifies a maximum
 	// upload of 10 MB files.
 	c.Request.ParseMultipartForm(10 << 20)
@@ -75,11 +78,11 @@ func uploadFile(c *gin.Context) {
 
 	// Create a temporary file within our temp-images directory that follows
 	// a particular naming pattern
-	tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer tempFile.Close()
+	// tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// defer tempFile.Close()
 
 	// read all of the contents of our uploaded file into a
 	// byte array
@@ -88,7 +91,36 @@ func uploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 	// write this byte array to our temporary file
-	tempFile.Write(fileBytes)
+    
+	// jsondata := map[string]string{
+	// 	"state":      "2",
+	// 	"logmsg":     "File uploaded",
+	// 	"fromuserid": "1",
+	// 	"value":      string(fileBytes),
+	// }
+	msg := model.Log{
+		State:      2,
+		LogMsg:     "File uploaded",
+		FromUserID: 1,
+		Value:      fileBytes,
+	}
+	data, _ := json.Marshal(msg)
+	fmt.Println(string(data))
+	// if err := c.BindJSON(data); err != nil {
+	// 	c.AbortWithStatusJSON(http.StatusBadRequest,
+	// 		gin.H{
+	// 			"error":   "VALIDATEERR-1",
+	// 			"message": "Invalid inputs. Please check your inputs"})
+	// 	return
+	// }
+	// c.JSON(http.StatusAccepted, data)
+
+	http.Post("http://localhost:2533/v1/api/logmsg", "application/json", bytes.NewBuffer(data))
+
+
+	//tempFile.Write(fileBytes)
 	// return that we have successfully uploaded our file!
 	fmt.Fprintf(c.Writer, "Successfully Uploaded File\n")
+
+
 }
