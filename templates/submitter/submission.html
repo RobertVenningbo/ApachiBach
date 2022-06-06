@@ -5,17 +5,15 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>Submission</title>
 </head>
-<body>
-<h1>Submit paper</h1>
-<div style="width: 500px">
-  <form enctype="multipart/form-data" action="http://localhost:80/upload" method="post">
-      <label>Paper title:</label><br>
-      <input type="text" style= "width: 100%"> <br><br>
-      <input type="file"  name="myFile" />
-      <input type="submit" value="Submit" />
-  </form>
-<h2>Deadline: todo</h2>
-<h2 id="deadline"></h2>
-</div>
-</body>
+  <body>
+    <h1>Submit paper</h1>
+      <div style="width: 500px">
+        <form enctype="multipart/form-data" action="http://localhost:4000/v1/api/logmsg" method="POST">
+            <label>Paper title:</label>
+            <input type="text" style= "width: 100%"> 
+            <input type="file"  name="myFile" />
+            <input type="submit" value="Submit"/>
+        </form>
+      </div>
+  </body>
 </html>

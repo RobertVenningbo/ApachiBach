@@ -2,13 +2,37 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"swag/model"
+	"text/template"
 
 	"github.com/gin-gonic/gin"
 )
+
+func LogHandler(c *gin.Context) {
+
+	var tpl = template.Must(template.ParseFiles("templates/log.html"))
+	var logs []model.Log
+	// do something with different the getting method.
+	data, err := http.Get("http://127.0.0.1:2533/v1/api/logmsg")
+	if err != nil {
+		log.Fatal("err in logHandler")
+	}
+	// if data.StatusCode != http.StatusOK {
+	// 	return
+	// }
+	bodyBytes, err := io.ReadAll(data.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	json.Unmarshal(bodyBytes, &logs)
+	fmt.Printf("%#v", logs)
+	tpl.Execute(c.Writer, logs)
+}
 
 func (h handler) CreateMessage(c *gin.Context) {
 	var msg model.Log
