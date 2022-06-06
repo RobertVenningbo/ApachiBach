@@ -44,7 +44,9 @@ func main() {
 	} else if os.Args[1] == "pc" {
 		if !ispctaken {
 			ispctaken = true //TODO: make this work
-			router.GET("/", controller.PCHandler)
+			router.GET("/", controller.PCHomeHandler)
+			router.GET("/decision", controller.DecisionHandler)
+			router.GET("/sharereviews", controller.ShareReviewsHandler)
 			router.Run(":" + serverport)
 		} else {
 			fmt.Println("PC is already running")

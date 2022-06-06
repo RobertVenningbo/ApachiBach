@@ -31,6 +31,7 @@ func LogHandler(c *gin.Context) {
 	}
 	json.Unmarshal(bodyBytes, &logs)
 	fmt.Printf("%#v", logs)
+	fmt.Println()
 	tpl.Execute(c.Writer, logs)
 }
 
