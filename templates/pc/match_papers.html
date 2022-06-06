@@ -10,17 +10,11 @@
     </head>
     <body>
         <div style="text-align: center;">
-          <h1>PC</h1>
-          <label>Choose submission deadline</label>
-          <input type="datetime-local">
-          <button style="margin-bottom: 30px;">Set deadline</button>
-          <button href="">Get submitted papers</button>
-            <div>
-              {{ range . }}
-                <p>Paper: {{ .Title }}</p>
-              {{ end }}
-            </div>
-          <button>Send papers to reviewers</button>
+          <p>Status: {{ .Status}}</p>
+          <button style="margin-bottom: 30px;">Get bids</button>
+          
+          <p>Received {{ .PaperBidCount }} bids</p>
+          <button>Match papers</button>
         </div>
     </body>
 </html>
