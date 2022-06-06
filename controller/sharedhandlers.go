@@ -35,12 +35,10 @@ func LogHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, logs)
 }
 
-
-
 func (h handler) CreateMessage(c *gin.Context) {
 	var msg model.Log
 	c.BindJSON(&msg)
-	err := model.CreateLogMsg(h.DB, &msg)
+	err := model.CreateLogMsg(&msg)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
@@ -51,7 +49,7 @@ func (h handler) CreateMessage(c *gin.Context) {
 func (h handler) GetMessages(c *gin.Context) {
 	var msgs []model.Log
 	c.BindJSON(msgs)
-	err := model.GetAllLogMsgs(h.DB, &msgs)
+	err := model.GetAllLogMsgs(&msgs)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
@@ -63,7 +61,7 @@ func (h handler) GetMessage(c *gin.Context) {
 	id, _ := c.Params.Get("id")
 	var msg model.Log
 	c.BindJSON(msg)
-	err := model.GetLogMsgById(h.DB, &msg, id)
+	err := model.GetLogMsgById(&msg, id)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return

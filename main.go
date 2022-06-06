@@ -7,7 +7,8 @@ import (
 	"os"
 	_ "swag/backend"
 	"swag/controller"
-	"swag/db"
+	"swag/database"
+	"swag/model"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -15,8 +16,10 @@ import (
 
 func main() {
 	router := gin.Default()
-	DB := db.Init()
-	h := controller.New(DB)
+	db := database.Init()
+	h := controller.New(db)
+	db.AutoMigrate(&model.Log{})
+	db.AutoMigrate(&model.User{})
 	/*
 		Shared routes/end-points
 	*/
