@@ -42,7 +42,7 @@ func main() {
 		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "reviewer" {
-		router.GET("/", controller.SubmissionHandler) //fix, give a reviewer its own
+		router.GET("/", controller.PrepStageHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		if !ispctaken {

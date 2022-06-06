@@ -39,3 +39,11 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 	}
 	return nil
 }
+
+func GetLastLogMsg(log *Log) (err error) {
+	err = database.DB.Last(log).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
