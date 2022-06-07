@@ -41,11 +41,11 @@ var (
 		&CommitStructPaper{},
 	}
 	submitter = Submitter{
-		NewKeys(),
-		1, //userID
-		&CommitStruct{},
-		&CommitStructPaper{},
-		&Receiver{},
+		Keys: NewKeys(),
+		UserID: 1, //userID
+		SubmitterCommittedValue: &CommitStruct{},
+		PaperCommittedValue: &CommitStructPaper{},
+		Receiver: &Receiver{},
 	}
 
 )

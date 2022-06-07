@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"swag/backend"
 	"swag/model"
 	"text/template"
 
@@ -66,6 +67,7 @@ func UploadFile(c *gin.Context) {
 	// it also returns the FileHeader so we can get the Filename,
 	// the Header and the size of the file
 	name := c.Request.FormValue("name")
+	//title := c.Request.FormValue("title") //TODO sende det her videre, så reviewerne kan se titlen af papiret når de skal bidde
 	file, handler, err := c.Request.FormFile("myFile")
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
@@ -76,22 +78,10 @@ func UploadFile(c *gin.Context) {
 	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
 	fmt.Printf("File Size: %+v\n", handler.Size)
 	fmt.Printf("MIME Header: %+v\n", handler.Header)
-	
-	// Create a temporary file within our temp-images directory that follows
-	// a particular naming pattern
-	// tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
-	// if err != nil {
-		// 	fmt.Println(err)
-		// }
-		// defer tempFile.Close()
-		
-		// read all of the contents of our uploaded file into a
-		// byte array
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
 	}
-	
 	msg := model.Log{
 		State:      2,
 		LogMsg:     "File uploaded",
@@ -101,10 +91,24 @@ func UploadFile(c *gin.Context) {
 	
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
+
 	model.UpdateUsername(portAsInt, name)
 	fmt.Println(name)
 	fmt.Println(portAsInt)
 	model.CreateLogMsg(&msg)
+
+	submitter := backend.Submitter{
+		Keys: backend.NewKeys(),
+		UserID: portAsInt, //userID
+		SubmitterCommittedValue: &backend.CommitStruct{},
+		PaperCommittedValue: &backend.CommitStructPaper{},
+	}
+	fmt.Println(submitter.Keys.X)
+	paper := backend.Paper {
+		Id: portAsInt,
+	}
+	submitter.Submit(&paper)
+
 	c.Redirect(303, "http://localhost:2533/wait")
 
 
