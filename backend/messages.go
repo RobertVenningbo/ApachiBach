@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"math/big"
 	"crypto/ecdsa"
+	"math/big"
 )
 
 type SubmitMessage struct {
@@ -16,7 +16,6 @@ type CommitMsg struct {
 }
 
 //Review
-
 
 type ReviewCommitNonceStruct struct {
 	Commit *ecdsa.PublicKey
@@ -124,6 +123,14 @@ type Paper struct {
 	Id           int
 	Selected     bool
 	ReviewerList []Reviewer
+	Bytes		 []byte
+}
+
+type Paper2 struct {
+	Id           int
+	Selected     bool
+	ReviewerList []Reviewer
+	Bytes        []byte
 }
 
 type PaperBid struct {

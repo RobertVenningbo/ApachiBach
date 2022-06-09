@@ -2,14 +2,20 @@ package controller
 
 import (
 	"log"
+	"strconv"
+	"strings"
+	"swag/backend"
 	"swag/model"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
 )
+var reviewer backend.Reviewer
+var reviewerexists bool
 
 func PrepStageHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
+	
 	var logMsg model.Log
 	err := model.GetLastLogMsg(&logMsg)
 	if err != nil {
@@ -28,4 +34,27 @@ func PrepStageHandler(c *gin.Context) {
 		Proceed: proceed,
 	}
 	tpl.Execute(c.Writer, msg)
+
+	if reviewerexists {
+		return
+	}
+
+	url := strings.Split(c.Request.Host, ":")
+	portAsInt, _ := strconv.Atoi(url[1])
+	
+
+	keys := backend.NewKeys()
+	pubkeys := backend.EncodeToBytes(keys.PublicKey)
+	user := model.User{
+		Id: portAsInt,
+		Usertype: "reviewer",
+		PublicKeys: pubkeys,
+	}
+	reviewer = backend.Reviewer{
+		UserID: portAsInt,
+		Keys: keys,
+	}
+
+	model.CreateUser(&user)
+	reviewerexists = true
 }

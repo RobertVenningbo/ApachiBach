@@ -10,14 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+
 var (
 	paperListTest = []Paper{
-		{1, false, nil},
-		{2, false, nil},
+		{1, false, nil, nil},
+		{2, false, nil, nil},
 	}
 	p = Paper{
 		1,
 		false,
+		nil,
 		nil,
 	}
 	reviewer = Reviewer{

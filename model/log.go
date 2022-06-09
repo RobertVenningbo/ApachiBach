@@ -6,5 +6,6 @@ type Log struct {
 	LogMsg     string `json:"logmsg"`
 	FromUserID int    `json:"fromuserid"`
 	Value      []byte `json:"value"`
+	Signature  []byte `json:"signature"`
 }
 

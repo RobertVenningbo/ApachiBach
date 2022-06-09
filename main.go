@@ -5,7 +5,6 @@ import (
 	_ "log"
 	_ "net/http"
 	"os"
-	"strconv"
 	_ "swag/backend"
 	"swag/controller"
 	"swag/database"
@@ -38,13 +37,6 @@ func main() {
 	var ispctaken bool
 	serverport := os.Args[2]
 	if os.Args[1] == "submitter" {
-		id, _ := strconv.Atoi(serverport)
-		user := model.User{
-			Id: id,
-			Username: "jan",
-			Usertype: "submitter",
-		}
-		model.CreateUser(&user)
 		router.GET("/", controller.SubmissionHandler)
 		router.GET("/wait", controller.WaitHandler)
 		router.GET("/papergraded", controller.GradedPaperHandler)
@@ -60,7 +52,7 @@ func main() {
 			router.GET("/", controller.PCHomeHandler)
 			router.GET("/decision", controller.DecisionHandler)
 			router.GET("/sharereviews", controller.ShareReviewsHandler)
-			router.POST("/upload", controller.UploadFile)
+			router.GET("/distributepapers", controller.DistributePapersHandler)
 			router.Run(":" + serverport)
 		} else {
 			fmt.Println("PC is already running")

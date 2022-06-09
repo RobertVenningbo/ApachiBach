@@ -6,18 +6,24 @@ import (
 	"fmt"
 	"log"
 	ec "swag/ec"
+	"swag/model"
 )
 
 //step 4
 func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
-	//Find a way to retrieve a list of all Reviewers
 	for r := range reviewerSlice {
 		Kpcr := GenerateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
-			Trae.Put(msg, SignedAndEncryptedPaper)
-			log.Println(msg)
+			//Trae.Put(msg, SignedAndEncryptedPaper)
+			logmsg := model.Log{ 
+				State: 4,
+				LogMsg: msg,
+				Value: SignedAndEncryptedPaper[1],
+				Signature: SignedAndEncryptedPaper[0],
+			}
+			model.CreateLogMsg(&logmsg)
 		}
 	}
 }
@@ -81,7 +87,7 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	log.Println(msg + "logged.")
 }
 
-func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) {
+func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) { //Not used, maybe delete
 	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers
 		p := reviewerSlice[i].GetBiddedPaper()
@@ -100,6 +106,7 @@ func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid)
 }
 
 func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
+	InitLocalPCPaperList()
 	reviewersBidsTaken := []Reviewer{}
 	bidList := []*PaperBid{}
 	for i := range reviewerSlice { //loop to get list of all bidded papers

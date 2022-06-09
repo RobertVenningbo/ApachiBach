@@ -66,15 +66,18 @@ func TestAssignPapers(t *testing.T) {
 		1,
 		false,
 		nil,
+		nil,
 	}
 	p2 := Paper{
 		2,
 		false,
 		nil,
+		nil,
 	}
 	p3 := Paper{
 		3,
 		false,
+		nil,
 		nil,
 	}
 

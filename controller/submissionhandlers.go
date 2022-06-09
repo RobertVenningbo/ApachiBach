@@ -14,6 +14,7 @@ import (
 )
 
 var tpl = template.Must(template.ParseFiles("templates/submitter/submission.html"))
+var submitter backend.Submitter
 
 func SubmissionHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, nil)
@@ -92,24 +93,34 @@ func UploadFile(c *gin.Context) {
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
 
-	model.UpdateUsername(portAsInt, name)
-	fmt.Println(name)
-	fmt.Println(portAsInt)
+	keys := backend.NewKeys()
+	pubkeys := backend.EncodeToBytes(keys.PublicKey)
+	
+	user := model.User{
+		Id: portAsInt,
+		Username: name,
+		Usertype: "submitter",
+		PublicKeys: pubkeys,
+
+	}
+	model.CreateUser(&user)
 	model.CreateLogMsg(&msg)
 
-	submitter := backend.Submitter{
-		Keys: backend.NewKeys(),
+	submitter = backend.Submitter{
+		Keys: keys,
 		UserID: portAsInt, //userID
 		SubmitterCommittedValue: &backend.CommitStruct{},
 		PaperCommittedValue: &backend.CommitStructPaper{},
 	}
-	fmt.Println(submitter.Keys.X)
+
 	paper := backend.Paper {
 		Id: portAsInt,
+		Bytes: fileBytes,
 	}
+
 	submitter.Submit(&paper)
 
-	c.Redirect(303, "http://localhost:2533/wait")
+	c.Redirect(303, "/wait")
 
 
 }

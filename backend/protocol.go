@@ -12,15 +12,47 @@ import (
 	"log"
 	"math/big"
 	"strings"
+	"swag/model"
 )
 
 var (
 	Trae = NewTree(DefaultMinItems)
 	Pc   = PC{
-		NewKeys(),
+		nil,
 		nil,
 	}
 )
+
+func InitLocalPC() {
+	pc := model.User{}
+	err := model.GetPC(&pc)
+	if err != nil {
+		log.Fatalf("Couldn't retrieve PC")
+	}
+	var key ecdsa.PrivateKey
+	pkeys := DecodeToStruct(pc.PublicKeys).(ecdsa.PublicKey)
+	key = ecdsa.PrivateKey{
+		PublicKey: pkeys,
+		D: big.NewInt(0),
+	}
+	Pc.Keys = &key
+}
+
+func InitLocalPCPaperList() {
+	msgs := []model.Log{}
+	model.GetAllLogMsgs(&msgs)
+	for _, msg := range msgs {
+		if strings.Contains(msg.LogMsg, "SignedSubmitMsg") {
+			encodedSubmitMsg := msg.Value
+			submitMsg := DecodeToStruct(encodedSubmitMsg).(SubmitMessage)
+			decryptedKpcs := Decrypt(submitMsg.EncryptedKpcs, Pc.Keys.PublicKey.X.String())	
+			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
+			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
+			paper := paperAndRandomess.Paper
+			Pc.AllPapers = append(Pc.AllPapers, paper)
+		}
+	}
+}
 
 func GenerateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
 	publicPC := pc.Keys.PublicKey

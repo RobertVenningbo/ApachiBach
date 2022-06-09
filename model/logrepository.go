@@ -31,6 +31,14 @@ func GetLogMsgById(log *Log, id string) (err error) {
 	return nil
 }
 
+func GetLogMsgByMsg(log *Log, msg string) (err error) {
+	err = database.DB.Where("logmsg = ?", msg).First(log).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //get all logmsg
 func GetAllLogMsgs(log *[]Log) (err error) {
 	err = database.DB.Find(log).Error

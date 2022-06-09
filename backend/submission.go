@@ -7,9 +7,12 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"swag/model"
 )
-
 func (s *Submitter) Submit(p *Paper) {
+	InitLocalPC()
+
+	Trae = DatabaseToTree()
 	s.PaperCommittedValue.Paper = p
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
@@ -27,13 +30,21 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 	submitMsg := SubmitMessage{
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
-		Encrypt(EncodeToBytes(sharedKpcs), Pc.Keys.PublicKey.X.String()),
+		Encrypt([]byte(sharedKpcs), Pc.Keys.PublicKey.X.String()),
 	}
-
+ 
 	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
-	Trae.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 	log.Println("SignedSubmitMsg from" + fmt.Sprintf("%v", p.Id) + " - Encrypted Paper and Random Numbers logged")
+
+	logmsg := model.Log{ 
+		State: 1,
+		LogMsg: msg,
+		FromUserID: s.UserID,
+		Value: SignedSubmitMsg[1],
+		Signature: SignedSubmitMsg[0],
+	}
+	model.CreateLogMsg(&logmsg)
 
 	//submitter identity commit
 	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s))
@@ -56,23 +67,54 @@ func (s *Submitter) Submit(p *Paper) {
 
 	signedCommitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(commitMsg), "")
 	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
-	Trae.Put(msg, signedCommitMsg)
+
+	logmsg2 := model.Log{ 
+		State: 2,
+		LogMsg: msg,
+		FromUserID: s.UserID,
+		Value: signedCommitMsg[1],
+		Signature: signedCommitMsg[0],
+	}
+	model.CreateLogMsg(&logmsg2)
+
 	log.Println(msg + " logged") //Both commits signed and logged
 
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
-	Trae.Put(KsString, EncodeToBytes(&s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)	
+	logmsg3 := model.Log{ 
+		State: 2,
+		LogMsg: KsString,
+		FromUserID: s.UserID,
+		Value: EncodeToBytes(&s.Keys.PublicKey),
+	}
+	model.CreateLogMsg(&logmsg3)
+
 	PK := fmt.Sprintf("SubmitterPublicKey %v", s.UserID)
-	Trae.Put(PK, EncodeToBytes(&s.Keys.PublicKey)) //Submitters public key (Ks) is revealed to all parties (step 2 done)
+	logmsg4 := model.Log{ 
+		State: 2,
+		LogMsg: PK,
+		FromUserID: s.UserID,
+		Value: EncodeToBytes(&s.Keys.PublicKey),
+	}
+	model.CreateLogMsg(&logmsg4)
+	
 	log.Println(KsString + " logged.")
 
 	PCsignedPaperCommit := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(PaperSubmissionCommit), "")
-	Trae.Put("PCsignedPaperCommit"+fmt.Sprintf("%v", (p.Id)), PCsignedPaperCommit)
+	str := fmt.Sprintf("PCsignedPaperCommit%v",p.Id)
+	logmsg5 := model.Log{ 
+		State: 3,
+		LogMsg: str,
+		Value: PCsignedPaperCommit[1],
+		Signature: PCsignedPaperCommit[0],
+	}
+	model.CreateLogMsg(&logmsg5)
+
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	s.StorePrivateBigInt(ri, "ri")
 
-	Pc.AllPapers = append(Pc.AllPapers, p)
 }
+
 
 func (s *Submitter) StorePrivateBigInt(i *big.Int, txt string) {
 	str := fmt.Sprintf("Submitter %v privately stores a %s", s.UserID, txt)
@@ -84,6 +126,10 @@ func (s *Submitter) GetPrivateBigInt(txt string) *big.Int {
 	str := fmt.Sprintf("Submitter %v privately stores a %s", s.UserID, txt)
 	log.Println("GETTING:" + str)
 	item := Trae.Find(str).value.([][]byte)
+	if Trae.Find(str).value == nil {
+		CheckStringAgainstDB(str)
+		s.GetPrivateBigInt(str)
+	}
 	_, enc := SplitSignatureAndMsg(item)
 	encodedBigInt := Decrypt(enc, s.Keys.D.String())
 	decodedBigInt := DecodeToStruct(encodedBigInt).(*big.Int)
@@ -93,15 +139,23 @@ func (s *Submitter) GetPrivateBigInt(txt string) *big.Int {
 func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", pId)
 	item := Trae.Find(KsString)
+	if item.value == nil {
+		CheckStringAgainstDB(KsString)
+		pc.GetPaperSubmitterPK(pId)
+	}
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	PK := decodedPK.(ecdsa.PublicKey)
-
 	return PK
 }
 
 func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
 	PK := fmt.Sprintf("SubmitterPublicKey %v", sUserID)
 	item := Trae.Find(PK)
+	if item.value == nil {
+		CheckStringAgainstDB(PK)
+		pc.GetSubmitterPK(sUserID)
+	}
+	
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	REALPK := decodedPK.(ecdsa.PublicKey)
 
@@ -111,6 +165,11 @@ func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
 func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	msg := fmt.Sprintf("signedCommitMsg%v", id)
 	signedCommitMsg := Trae.Find(msg)
+	if signedCommitMsg.value == nil {
+		CheckStringAgainstDB(msg)
+		pc.GetPaperSubmissionCommit(id)
+	}
+	
 	bytes := signedCommitMsg.value.([][]byte)
 	_, commitMsg := SplitSignatureAndMsg(bytes)
 
@@ -121,9 +180,13 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	return decodedpaperCommit.(ecdsa.PublicKey)
 }
 
-func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
+func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not used for anything, maybe change submitter to userID
 	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
 	signedCommitMsg := Trae.Find(putStr)
+	if signedCommitMsg.value == nil {
+		CheckStringAgainstDB(putStr)
+		pc.GetPaperSubmissionSignature(submitter)
+	}
 	bytes := signedCommitMsg.value.([][]byte)
 	sig, _ := SplitSignatureAndMsg(bytes)
 	return sig
@@ -132,6 +195,10 @@ func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte {
 func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
 	item := Trae.Find(msg)
+	if item.value == nil {
+		CheckStringAgainstDB(msg)
+		pc.GetPaperAndRandomness(pId)
+	}
 	_, encodedSubmitMessage := SplitSignatureAndMsg(item.value.([][]byte))
 	decodedSubmitMessage := DecodeToStruct(encodedSubmitMessage)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
@@ -141,5 +208,10 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	decryptedPaperAndRandomness := Decrypt(submitMessage.PaperAndRandomness, kpcs)
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 	return PaperAndRandomness
-
 }
+
+
+
+
+
+
