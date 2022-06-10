@@ -40,7 +40,6 @@ func PrepStageHandler(c *gin.Context) {
 	if reviewerexists {
 		return
 	}
-	fmt.Println("tjek")
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
 
@@ -55,7 +54,6 @@ func PrepStageHandler(c *gin.Context) {
 		UserID: portAsInt,
 		Keys:   keys,
 	}
-
 	model.CreateUser(&user)
 	reviewerexists = true
 }
@@ -64,6 +62,7 @@ func PaperBidHandler(c *gin.Context) {
 	backend.InitLocalPC()
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	backend.InitLocalPCPaperList()
+	fmt.Println("Length PcAllPapers: ", len(backend.Pc.AllPapers))
 	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 	fmt.Println(len(papers))
 	tpl.Execute(c.Writer, papers)

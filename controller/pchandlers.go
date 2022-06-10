@@ -2,7 +2,6 @@ package controller
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"swag/backend"
 	"swag/model"
@@ -35,17 +34,17 @@ func PCHomeHandler(c *gin.Context) {
 }
 func DistributePapersHandler(c *gin.Context) {
 	PCDistributePapers()
-	fmt.Println("xd")
 	c.Redirect(303, "/")
 }
 
 func PCDistributePapers() {
 	users := []model.User{}
-	model.GetReviewers(users)
+	model.GetReviewers(&users)
 	var reviewerSlice []backend.Reviewer
 	for _, user := range users {
 		reviewerSlice = append(reviewerSlice, UserToReviewer(user))
 	}
+	backend.InitLocalPCPaperList()
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
 }
 

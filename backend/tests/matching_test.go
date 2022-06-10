@@ -134,6 +134,15 @@ func TestSupplyNizk(t *testing.T) {
 	assert.Equal(t, want, got, "Nizk failed")
 }
 
+func TestGetPapersReviewer(t *testing.T) {
+	Pc.Keys = NewKeys()
+	reviewer.Keys = NewKeys()
+	Pc.AllPapers = append(Pc.AllPapers, &p)
+	reviewerSlice := []Reviewer{reviewer}
+	Pc.DistributePapers(reviewerSlice, Pc.AllPapers)
+	reviewer.GetPapersReviewer(Pc.AllPapers)
+}
+
 func TestGetReviewSignedStruct(t *testing.T) {
 	Pc.AllPapers = append(Pc.AllPapers, &p)
 	rr := ec.GetRandomInt(Pc.Keys.D)

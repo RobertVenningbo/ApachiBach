@@ -11,15 +11,22 @@ import (
 
 //step 4
 func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
-	InitLocalPCPaperList()
 	for r := range reviewerSlice {
-		Kpcr := GenerateSharedSecret(pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
+		Kpcr := GenerateSharedSecret(&Pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
+		fmt.Println("PC key: " + Pc.Keys.PublicKey.X.String())
+		fmt.Println("Kpcr: " + Kpcr)
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
+			fmt.Println(msg)
+			Trae.Put(msg, SignedAndEncryptedPaper)
+			if Trae.Find(msg) != nil {
+				fmt.Println("added SAEP to tree")
+			}
 			logmsg := model.Log{
 				State:     4,
 				LogMsg:    msg,
+				FromUserID: 4000,
 				Value:     SignedAndEncryptedPaper[1],
 				Signature: SignedAndEncryptedPaper[0],
 			}
@@ -33,26 +40,29 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 //Expected to be called for every reviewer when reviewers want to see list of all papers on frontend.
 func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
+	fmt.Println("PC key: " + Pc.Keys.PublicKey.X.String())
 
+	fmt.Println("Kpcr : " + Kpcr)
 	pList := []*Paper{}
-	for i := 0; i < len(paperSlice); i++ {
-		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[i].Id, r.UserID)
+	for p := range paperSlice {
+		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, r.UserID)
+		fmt.Println("GetMsg: " + GetMsg)
 		EncryptedSignedBid := Trae.Find(GetMsg)
-		if Trae.Find(GetMsg).value.([][]byte) == nil {
-			CheckStringAgainstDB(GetMsg) // this also puts string into db
+		if Trae.Find(GetMsg) == nil {
+			fmt.Println("Trae.Find(GetMsg) is nil")
+			CheckStringAgainstDB(GetMsg)
 			r.GetPapersReviewer(Pc.AllPapers)
 		}
-		bytes := EncryptedSignedBid.value.([][]byte)
-		sig, enc := SplitSignatureAndMsg(bytes)
-		decrypted := Decrypt(enc, Kpcr)
-		hash, err := GetMessageHash(decrypted)
-		if err != nil {
-			log.Fatal(err)
-		}
-		isVerified := Verify(&Pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
-		if !isVerified {
-			log.Fatalf("Couldn't verify signature of paper: %v", (paperSlice[i].Id))
-		}
+		bytes := EncryptedSignedBid.value.([]byte)
+		decrypted := Decrypt(bytes, Kpcr)
+		// hash, err := GetMessageHash(decrypted)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// isVerified := Verify(&Pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
+		// if !isVerified {
+		// 	log.Fatalf("Couldn't verify signature of paper: %v", (paperSlice[p].Id))
+		// }
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
 		pList = append(pList, &paper)

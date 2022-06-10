@@ -133,7 +133,9 @@
             <h1>Waiting for papers to be submitted</h1>            
         </div>
         {{ if .Proceed}}
-            <button>Continue</button>
+        <form action="/paperbid">
+          <input type="submit" value="Place Bids">
+        </form>
         {{ else}}
         <div class="sk-circle">
             <div class="sk-circle1 sk-child"></div>

@@ -25,6 +25,7 @@ func CheckStringAgainstDB(str string) {
 	if err != nil {
 		log.Fatalf("String not found in Database")
 		return
-	} 
+	}
+	
 	Trae.Put(msg.LogMsg, msg.Value)
 }
