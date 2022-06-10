@@ -10,28 +10,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var pcexists bool
-
 func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
 	tpl.Execute(c.Writer, nil)
-	
-	if pcexists {
+	var DBuser model.User
+	model.GetPC(&DBuser)
+	user := model.User{}
+	if DBuser.Usertype == "pc" {
+		fmt.Println("PC already exist in DB.")
 		return
 	}
+
 	keys := backend.NewKeys()
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
 	backend.Pc.Keys = keys
-	user := model.User{
+	user = model.User{
 		Username:   "Mr. Program Committee",
 		Usertype:   "pc",
 		PublicKeys: pubkeys,
 	}
 	model.CreateUser(&user)
-	pcexists = true
-
 }
+
 func DistributePapersHandler(c *gin.Context) {
 	PCDistributePapers()
 	c.Redirect(303, "/")

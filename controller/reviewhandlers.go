@@ -62,8 +62,31 @@ func PaperBidHandler(c *gin.Context) {
 	backend.InitLocalPC()
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	backend.InitLocalPCPaperList()
-	fmt.Println("Length PcAllPapers: ", len(backend.Pc.AllPapers))
-	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
-	fmt.Println(len(papers))
+	//papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+
+	papers := []backend.Paper{
+		{
+			Id:           1,
+			Selected:     false,
+			ReviewerList: nil,
+			Bytes:        nil,
+			Title:        "Fed Titel1",
+		},
+		{
+			Id:           2,
+			Selected:     false,
+			ReviewerList: nil,
+			Bytes:        nil,
+			Title:        "Fed Titel2",
+		},
+		{
+			Id:           3,
+			Selected:     false,
+			ReviewerList: nil,
+			Bytes:        nil,
+			Title:        "Fed Titel3",
+		},
+	}
+
 	tpl.Execute(c.Writer, papers)
 }

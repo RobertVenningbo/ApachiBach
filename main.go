@@ -5,6 +5,7 @@ import (
 	_ "log"
 	_ "net/http"
 	"os"
+	"swag/backend"
 	_ "swag/backend"
 	"swag/controller"
 	"swag/database"
@@ -20,6 +21,7 @@ func main() {
 	h := controller.New(db)
 	db.AutoMigrate(&model.Log{})
 	db.AutoMigrate(&model.User{})
+	backend.InitGobs()
 	/*
 		Shared routes/end-points
 	*/
@@ -34,7 +36,6 @@ func main() {
 
 	router.GET("/log", controller.LogHandler)
 
-	var ispctaken bool
 	serverport := os.Args[2]
 	if os.Args[1] == "submitter" {
 		router.GET("/", controller.SubmissionHandler)
@@ -42,23 +43,16 @@ func main() {
 		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.POST("/upload", controller.UploadFile)
 		router.Run(":" + serverport)
-
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.PrepStageHandler)
 		router.GET("/paperbid", controller.PaperBidHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
-		if !ispctaken {
-			ispctaken = true //TODO: make this work
-			router.GET("/", controller.PCHomeHandler)
-			router.GET("/decision", controller.DecisionHandler)
-			router.GET("/sharereviews", controller.ShareReviewsHandler)
-			router.GET("/distributepapers", controller.DistributePapersHandler)
-			router.Run(":" + serverport)
-		} else {
-			fmt.Println("PC is already running")
-			os.Exit(1)
-		}
+		router.GET("/", controller.PCHomeHandler)
+		router.GET("/decision", controller.DecisionHandler)
+		router.GET("/sharereviews", controller.ShareReviewsHandler)
+		router.GET("/distributepapers", controller.DistributePapersHandler)
+		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")
 		os.Exit(1)

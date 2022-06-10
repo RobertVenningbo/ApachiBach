@@ -31,7 +31,6 @@ func InitLocalPC() {
 	}
 	var key ecdsa.PrivateKey
 	pkeys := DecodeToStruct(pc.PublicKeys).(ecdsa.PublicKey)
-	fmt.Println(pkeys.X.String())
 	key = ecdsa.PrivateKey{
 		PublicKey: pkeys,
 		D:         big.NewInt(0),
@@ -92,10 +91,7 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
 
-//TODO make init func for registering when starting server
-func EncodeToBytes(p interface{}) []byte {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
+func InitGobs(){
 	gob.Register(Paper{})
 	gob.Register(ReviewSignedStruct{})
 	gob.Register(CommitStruct{})
@@ -120,6 +116,12 @@ func EncodeToBytes(p interface{}) []byte {
 	gob.Register(RejectMessage{})
 	gob.Register(SendGradeStruct{})
 	gob.Register(ClaimMessage{})
+}
+
+//TODO make init func for registering when starting server
+func EncodeToBytes(p interface{}) []byte {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(&p)
 	if err != nil {
 		log.Fatal(err)
