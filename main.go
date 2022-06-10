@@ -45,6 +45,7 @@ func main() {
 
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.PrepStageHandler)
+		router.GET("/paperbid", controller.PaperBidHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		if !ispctaken {

@@ -67,18 +67,21 @@ func TestAssignPapers(t *testing.T) {
 		false,
 		nil,
 		nil,
+		"",
 	}
 	p2 := Paper{
 		2,
 		false,
 		nil,
 		nil,
+		"",
 	}
 	p3 := Paper{
 		3,
 		false,
 		nil,
 		nil,
+		"",
 	}
 
 	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2, &p3)

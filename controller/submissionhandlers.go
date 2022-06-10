@@ -67,8 +67,9 @@ func UploadFile(c *gin.Context) {
 	// FormFile returns the first file for the given key `myFile`
 	// it also returns the FileHeader so we can get the Filename,
 	// the Header and the size of the file
+
 	name := c.Request.FormValue("name")
-	//title := c.Request.FormValue("title") //TODO sende det her videre, så reviewerne kan se titlen af papiret når de skal bidde
+	title := c.Request.FormValue("title")
 	file, handler, err := c.Request.FormFile("myFile")
 	if err != nil {
 		fmt.Println("Error Retrieving the File")
@@ -83,44 +84,45 @@ func UploadFile(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	str := fmt.Sprintf("File uploaded, by %v", submitter.UserID)
 	msg := model.Log{
-		State:      2,
-		LogMsg:     "File uploaded",
-		FromUserID: 1,
+		State:      1,
+		LogMsg:     str,
+		FromUserID: submitter.UserID,
 		Value:      fileBytes,
 	}
-	
+
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
 
 	keys := backend.NewKeys()
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
-	
-	user := model.User{
-		Id: portAsInt,
-		Username: name,
-		Usertype: "submitter",
-		PublicKeys: pubkeys,
 
+	user := model.User{
+		Id:         portAsInt,
+		Username:   name,
+		Usertype:   "submitter",
+		PublicKeys: pubkeys,
 	}
 	model.CreateUser(&user)
 	model.CreateLogMsg(&msg)
 
 	submitter = backend.Submitter{
-		Keys: keys,
-		UserID: portAsInt, //userID
+		Keys:                    keys,
+		UserID:                  portAsInt, //userID
 		SubmitterCommittedValue: &backend.CommitStruct{},
-		PaperCommittedValue: &backend.CommitStructPaper{},
+		PaperCommittedValue:     &backend.CommitStructPaper{},
 	}
 
-	paper := backend.Paper {
-		Id: portAsInt,
+	paper := backend.Paper{
+		Id:    portAsInt,
 		Bytes: fileBytes,
+		Title: title,
 	}
 
 	submitter.Submit(&paper)
 
 	c.Redirect(303, "/wait")
-
 
 }

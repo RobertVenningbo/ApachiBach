@@ -17,12 +17,13 @@ func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
 	tpl.Execute(c.Writer, nil)
-
+	
 	if pcexists {
 		return
 	}
 	keys := backend.NewKeys()
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
+	backend.Pc.Keys = keys
 	user := model.User{
 		Username:   "Mr. Program Committee",
 		Usertype:   "pc",
@@ -46,7 +47,6 @@ func PCDistributePapers() {
 		reviewerSlice = append(reviewerSlice, UserToReviewer(user))
 	}
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
-
 }
 
 func UserToReviewer(user model.User) backend.Reviewer {

@@ -123,7 +123,8 @@ type Paper struct {
 	Id           int
 	Selected     bool
 	ReviewerList []Reviewer
-	Bytes		 []byte
+	Bytes        []byte
+	Title        string
 }
 
 type Paper2 struct {

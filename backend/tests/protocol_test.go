@@ -4,23 +4,24 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
+	. "swag/backend"
 	"swag/ec"
 	"testing"
-	. "swag/backend"
+
 	"github.com/stretchr/testify/assert"
 )
 
-
 var (
 	paperListTest = []Paper{
-		{1, false, nil, nil},
-		{2, false, nil, nil},
+		{1, false, nil, nil, ""},
+		{2, false, nil, nil, ""},
 	}
 	p = Paper{
 		1,
 		false,
 		nil,
 		nil,
+		"",
 	}
 	reviewer = Reviewer{
 		1,
@@ -43,13 +44,12 @@ var (
 		&CommitStructPaper{},
 	}
 	submitter = Submitter{
-		Keys: NewKeys(),
-		UserID: 1, //userID
+		Keys:                    NewKeys(),
+		UserID:                  1, //userID
 		SubmitterCommittedValue: &CommitStruct{},
-		PaperCommittedValue: &CommitStructPaper{},
-		Receiver: &Receiver{},
+		PaperCommittedValue:     &CommitStructPaper{},
+		Receiver:                &Receiver{},
 	}
-
 )
 
 func TestGenerateSharedSecret(t *testing.T) {
@@ -144,12 +144,6 @@ func TestEncryptAndDecrypt(t *testing.T) {
 
 	}
 
-}
-
-func TestDecodeToStruct(t *testing.T) {
-	EncodedStruct := EncodeToBytes(p)
-	DecodedStruct := DecodeToStruct1(EncodedStruct, Paper{})
-	assert.Equal(t, DecodedStruct, p, "Test failed")
 }
 
 func TestVerifyMethod(t *testing.T) {

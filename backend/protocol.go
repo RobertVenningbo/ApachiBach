@@ -31,9 +31,10 @@ func InitLocalPC() {
 	}
 	var key ecdsa.PrivateKey
 	pkeys := DecodeToStruct(pc.PublicKeys).(ecdsa.PublicKey)
+	fmt.Println(pkeys.X.String())
 	key = ecdsa.PrivateKey{
 		PublicKey: pkeys,
-		D: big.NewInt(0),
+		D:         big.NewInt(0),
 	}
 	Pc.Keys = &key
 }
@@ -45,11 +46,14 @@ func InitLocalPCPaperList() {
 		if strings.Contains(msg.LogMsg, "SignedSubmitMsg") {
 			encodedSubmitMsg := msg.Value
 			submitMsg := DecodeToStruct(encodedSubmitMsg).(SubmitMessage)
-			decryptedKpcs := Decrypt(submitMsg.EncryptedKpcs, Pc.Keys.PublicKey.X.String())	
+			fmt.Println(Pc.Keys.PublicKey.X.String())
+			fmt.Println(submitMsg.EncryptedKpcs)
+			decryptedKpcs := Decrypt(submitMsg.EncryptedKpcs, Pc.Keys.PublicKey.X.String())
 			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
 			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 			paper := paperAndRandomess.Paper
 			Pc.AllPapers = append(Pc.AllPapers, paper)
+			fmt.Printf("pc paper length: %v \n", len(Pc.AllPapers))
 		}
 	}
 }
@@ -134,68 +138,11 @@ func DecodeToStruct(s []byte) (x interface{}) { //Decodes encoded struct to stru
 	return i
 }
 
-func DecodeToStruct1(s []byte, x interface{}) interface{} { //Decodes encoded struct to struct https://gist.github.com/SteveBate/042960baa7a4795c3565
-	i := x
-	dec := gob.NewDecoder(bytes.NewReader(s))
-	err := dec.Decode(&i)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return i
-}
-
-func DecodeToPaper(s []byte) *Paper {
-	p := Paper{}
-	dec := gob.NewDecoder(bytes.NewReader(s))
-	err := dec.Decode(&p)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return &p
-}
-
-func Sign(priv *ecdsa.PrivateKey, plaintext interface{}) string { //TODO; current bug is that the hash within this function is not the same hash as when taking the hash of the returned plaintext
-	formatted := fmt.Sprintf("%v", plaintext)
-	bytes := []byte(formatted)
-	hash, _ := GetMessageHash(bytes)
-	//fmt.Printf("%s%v\n", "Hash from Sign func:", hash)
-	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
-	//fmt.Printf("%s%v \n", "Sig from sign func:", signature)
-	return fmt.Sprintf("%v%s%v", signature, "|", plaintext)
-}
-
 func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
 
 	//signBytes := EncodeToBytes(signature)
 
 	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
-}
-
-// CURRENTLY DEPRECATED, USE /SignsPossiblyEncrypts & SplitSignatureAndMsg/
-func SignzAndEncrypt(priv *ecdsa.PrivateKey, plaintext interface{}, passphrase string) string {
-
-	bytes := EncodeToBytes(plaintext)
-
-	hash, _ := GetMessageHash(bytes)
-	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
-
-	encrypted := Encrypt(bytes, passphrase)
-
-	if passphrase == "" {
-		return fmt.Sprintf("%v%s%v", signature, "|", bytes) // Check if "|" interfere with any binary?
-	} else {
-		return fmt.Sprintf("%v%s%v", signature, "|", encrypted) // Check if "|" interfere with any binary?
-	}
-	//return [213, 123, 12, 392...]|someEncryptedString
-}
-
-// CURRENTLY DEPRECATED, USE /SignsPossiblyEncrypts & SplitSignatureAndMsg/
-func SplitSignz(str string) (string, string) { //returns splitArr[0] = signature, splitArr[1] = encrypted
-	splitArr := strings.Split(str, "|")
-	if len(splitArr) > 2 {
-		log.Panic("panic len > 2")
-	}
-	return splitArr[0], splitArr[1]
 }
 
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message

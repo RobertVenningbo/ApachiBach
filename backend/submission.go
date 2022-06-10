@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"swag/model"
 )
+
 func (s *Submitter) Submit(p *Paper) {
 	InitLocalPC()
 
@@ -32,17 +33,17 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt(EncodeToBytes(PaperAndRandomness), sharedKpcs),
 		Encrypt([]byte(sharedKpcs), Pc.Keys.PublicKey.X.String()),
 	}
- 
+
 	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
 	log.Println("SignedSubmitMsg from" + fmt.Sprintf("%v", p.Id) + " - Encrypted Paper and Random Numbers logged")
 
-	logmsg := model.Log{ 
-		State: 1,
-		LogMsg: msg,
+	logmsg := model.Log{
+		State:      1,
+		LogMsg:     msg,
 		FromUserID: s.UserID,
-		Value: SignedSubmitMsg[1],
-		Signature: SignedSubmitMsg[0],
+		Value:      SignedSubmitMsg[1],
+		Signature:  SignedSubmitMsg[0],
 	}
 	model.CreateLogMsg(&logmsg)
 
@@ -68,53 +69,53 @@ func (s *Submitter) Submit(p *Paper) {
 	signedCommitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(commitMsg), "")
 	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
 
-	logmsg2 := model.Log{ 
-		State: 2,
-		LogMsg: msg,
+	logmsg2 := model.Log{
+		State:      2,
+		LogMsg:     msg,
 		FromUserID: s.UserID,
-		Value: signedCommitMsg[1],
-		Signature: signedCommitMsg[0],
+		Value:      signedCommitMsg[1],
+		Signature:  signedCommitMsg[0],
 	}
 	model.CreateLogMsg(&logmsg2)
 
 	log.Println(msg + " logged") //Both commits signed and logged
 
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
-	logmsg3 := model.Log{ 
-		State: 2,
-		LogMsg: KsString,
+	logmsg3 := model.Log{
+		State:      2,
+		LogMsg:     KsString,
 		FromUserID: s.UserID,
-		Value: EncodeToBytes(&s.Keys.PublicKey),
+		Value:      EncodeToBytes(&s.Keys.PublicKey),
 	}
 	model.CreateLogMsg(&logmsg3)
 
 	PK := fmt.Sprintf("SubmitterPublicKey %v", s.UserID)
-	logmsg4 := model.Log{ 
-		State: 2,
-		LogMsg: PK,
+	logmsg4 := model.Log{
+		State:      2,
+		LogMsg:     PK,
 		FromUserID: s.UserID,
-		Value: EncodeToBytes(&s.Keys.PublicKey),
+		Value:      EncodeToBytes(&s.Keys.PublicKey),
 	}
 	model.CreateLogMsg(&logmsg4)
-	
+
 	log.Println(KsString + " logged.")
 
 	PCsignedPaperCommit := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(PaperSubmissionCommit), "")
-	str := fmt.Sprintf("PCsignedPaperCommit%v",p.Id)
-	logmsg5 := model.Log{ 
-		State: 3,
-		LogMsg: str,
-		Value: PCsignedPaperCommit[1],
-		Signature: PCsignedPaperCommit[0],
+	str := fmt.Sprintf("PCsignedPaperCommit%v", p.Id)
+	logmsg5 := model.Log{
+		State:      3,
+		LogMsg:     str,
+		FromUserID: 4000,
+		Value:      PCsignedPaperCommit[1],
+		Signature:  PCsignedPaperCommit[0],
 	}
 	model.CreateLogMsg(&logmsg5)
-
+	fmt.Println(Pc.Keys.PublicKey.X.String())
+	fmt.Println(submitMsg.EncryptedKpcs)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	s.StorePrivateBigInt(ri, "ri")
-
 }
-
 
 func (s *Submitter) StorePrivateBigInt(i *big.Int, txt string) {
 	str := fmt.Sprintf("Submitter %v privately stores a %s", s.UserID, txt)
@@ -155,7 +156,7 @@ func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
 		CheckStringAgainstDB(PK)
 		pc.GetSubmitterPK(sUserID)
 	}
-	
+
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	REALPK := decodedPK.(ecdsa.PublicKey)
 
@@ -169,7 +170,7 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 		CheckStringAgainstDB(msg)
 		pc.GetPaperSubmissionCommit(id)
 	}
-	
+
 	bytes := signedCommitMsg.value.([][]byte)
 	_, commitMsg := SplitSignatureAndMsg(bytes)
 
@@ -209,9 +210,3 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 	return PaperAndRandomness
 }
-
-
-
-
-
-

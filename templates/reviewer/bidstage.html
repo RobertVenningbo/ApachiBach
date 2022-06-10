@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Reviewer</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+            .center{
+                margin: auto;
+                width: 50%;
+                border: 3px solid green;
+                padding: 10px;
+            }
+      </style>
+    </head>
+    <body>
+        <div style="text-align: center; margin-top: 50px;">
+            <h1>Bid on the papers you want to review</h1>
+            
+            <div class="center">
+                <form action="/someplace">
+                    {{ range . }}
+                    <input type="checkbox" id="{{ .Id }}" name="{{ .Title }}" value="{{ .Id }}">
+                    <label> {{ .Title }} </label><br>
+                    {{ end }}
+                    <input type="submit" value="Submit">
+                  </form>
+            </div>            
+        </div>
+
+    </body>
+</html>
