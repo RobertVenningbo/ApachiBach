@@ -9,22 +9,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
+var ispctaken bool
 func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
 	tpl.Execute(c.Writer, nil)
-	var DBuser model.User
-	model.GetPC(&DBuser)
-	user := model.User{}
-	if DBuser.Usertype == "pc" {
-		fmt.Println("PC already exist in DB.")
+	//var DBuser model.User
+	//model.GetPC(&DBuser)
+	if ispctaken {
 		return
 	}
-
+	user := model.User{}
+	ispctaken = true
 	keys := backend.NewKeys()
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
 	backend.Pc.Keys = keys
+
+	// if DBuser.Usertype == "pc" {
+	// 	fmt.Println("PC already exist in DB.")
+	// 	model.UpdatePCKeys(pubkeys)
+	// 	return
+	// }
+
 	user = model.User{
 		Username:   "Mr. Program Committee",
 		Usertype:   "pc",

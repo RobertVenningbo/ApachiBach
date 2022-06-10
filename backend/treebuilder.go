@@ -28,4 +28,5 @@ func CheckStringAgainstDB(str string) {
 	}
 	
 	Trae.Put(msg.LogMsg, msg.Value)
+
 }

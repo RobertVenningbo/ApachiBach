@@ -55,38 +55,48 @@ func PrepStageHandler(c *gin.Context) {
 		Keys:   keys,
 	}
 	model.CreateUser(&user)
+	backend.InitLocalPC()
 	reviewerexists = true
+	Kpcr := backend.GenerateSharedSecret(&backend.Pc, nil, &reviewer)
+	str := fmt.Sprintf("KPCR with PC and R%v", reviewer.UserID)
+	msg2 := model.Log{}
+	msg2 = model.Log{
+		State: 0,
+		LogMsg: str,
+		FromUserID: reviewer.UserID,
+		Value: backend.EncodeToBytes(Kpcr),
+	}
+	model.CreateLogMsg(&msg2)
 }
 
 func PaperBidHandler(c *gin.Context) {
-	backend.InitLocalPC()
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	backend.InitLocalPCPaperList()
-	//papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 
-	papers := []backend.Paper{
-		{
-			Id:           1,
-			Selected:     false,
-			ReviewerList: nil,
-			Bytes:        nil,
-			Title:        "Fed Titel1",
-		},
-		{
-			Id:           2,
-			Selected:     false,
-			ReviewerList: nil,
-			Bytes:        nil,
-			Title:        "Fed Titel2",
-		},
-		{
-			Id:           3,
-			Selected:     false,
-			ReviewerList: nil,
-			Bytes:        nil,
-			Title:        "Fed Titel3",
-		},
-	}
+	// papers := []backend.Paper{
+	// 	{
+	// 		Id:           1,
+	// 		Selected:     false,
+	// 		ReviewerList: nil,
+	// 		Bytes:        nil,
+	// 		Title:        "Fed Titel1",
+	// 	},
+	// 	{
+	// 		Id:           2,
+	// 		Selected:     false,
+	// 		ReviewerList: nil,
+	// 		Bytes:        nil,
+	// 		Title:        "Fed Titel2",
+	// 	},
+	// 	{
+	// 		Id:           3,
+	// 		Selected:     false,
+	// 		ReviewerList: nil,
+	// 		Bytes:        nil,
+	// 		Title:        "Fed Titel3",
+	// 	},
+	// }
 
 	tpl.Execute(c.Writer, papers)
 }

@@ -110,8 +110,6 @@ func (s *Submitter) Submit(p *Paper) {
 		Signature:  PCsignedPaperCommit[0],
 	}
 	model.CreateLogMsg(&logmsg5)
-	fmt.Println(Pc.Keys.PublicKey.X.String())
-	fmt.Println(submitMsg.EncryptedKpcs)
 	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	s.StorePrivateBigInt(ri, "ri")
@@ -129,7 +127,7 @@ func (s *Submitter) GetPrivateBigInt(txt string) *big.Int {
 	item := Trae.Find(str).value.([][]byte)
 	if Trae.Find(str).value == nil {
 		CheckStringAgainstDB(str)
-		s.GetPrivateBigInt(str)
+		item = Trae.Find(str).value.([][]byte)
 	}
 	_, enc := SplitSignatureAndMsg(item)
 	encodedBigInt := Decrypt(enc, s.Keys.D.String())
@@ -142,7 +140,7 @@ func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 	item := Trae.Find(KsString)
 	if item.value == nil {
 		CheckStringAgainstDB(KsString)
-		pc.GetPaperSubmitterPK(pId)
+		item = Trae.Find(KsString)
 	}
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	PK := decodedPK.(ecdsa.PublicKey)
@@ -154,7 +152,7 @@ func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
 	item := Trae.Find(PK)
 	if item.value == nil {
 		CheckStringAgainstDB(PK)
-		pc.GetSubmitterPK(sUserID)
+		item = Trae.Find(PK)
 	}
 
 	decodedPK := DecodeToStruct(item.value.([]byte))
@@ -168,7 +166,7 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	signedCommitMsg := Trae.Find(msg)
 	if signedCommitMsg.value == nil {
 		CheckStringAgainstDB(msg)
-		pc.GetPaperSubmissionCommit(id)
+		signedCommitMsg = Trae.Find(msg)
 	}
 
 	bytes := signedCommitMsg.value.([][]byte)
@@ -186,7 +184,7 @@ func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not u
 	signedCommitMsg := Trae.Find(putStr)
 	if signedCommitMsg.value == nil {
 		CheckStringAgainstDB(putStr)
-		pc.GetPaperSubmissionSignature(submitter)
+		signedCommitMsg = Trae.Find(putStr)
 	}
 	bytes := signedCommitMsg.value.([][]byte)
 	sig, _ := SplitSignatureAndMsg(bytes)
@@ -198,7 +196,7 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	item := Trae.Find(msg)
 	if item.value == nil {
 		CheckStringAgainstDB(msg)
-		pc.GetPaperAndRandomness(pId)
+		item = Trae.Find(msg)
 	}
 	_, encodedSubmitMessage := SplitSignatureAndMsg(item.value.([][]byte))
 	decodedSubmitMessage := DecodeToStruct(encodedSubmitMessage)

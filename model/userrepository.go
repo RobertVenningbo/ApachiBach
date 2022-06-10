@@ -12,6 +12,13 @@ func CreateUser(user *User) (err error) {
 	return nil
 }
 
+func UpdatePCKeys(keys []byte) (err error) {
+	err = database.DB.Model(User{}).Where("usertype = ?", "pc").Update("public_keys", keys).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func UpdateUsername(id int, username string) (err error) {
 	err = database.DB.Model(User{}).Where("id = ?", id).Update("username", username).Error

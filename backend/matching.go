@@ -12,17 +12,14 @@ import (
 //step 4
 func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 	for r := range reviewerSlice {
-		Kpcr := GenerateSharedSecret(&Pc, nil, &reviewerSlice[r]) //Shared key between R and PC (Kpcr) -
-		fmt.Println("PC key: " + Pc.Keys.PublicKey.X.String())
-		fmt.Println("Kpcr: " + Kpcr)
+		Kpcr := pc.GetKPCRFromLog(reviewerSlice[r].UserID) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
+			_, val := SplitSignatureAndMsg(SignedAndEncryptedPaper)
+			fmt.Sprintln(val)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
 			fmt.Println(msg)
 			Trae.Put(msg, SignedAndEncryptedPaper)
-			if Trae.Find(msg) != nil {
-				fmt.Println("added SAEP to tree")
-			}
 			logmsg := model.Log{
 				State:     4,
 				LogMsg:    msg,
@@ -40,29 +37,18 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 //Expected to be called for every reviewer when reviewers want to see list of all papers on frontend.
 func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
-	fmt.Println("PC key: " + Pc.Keys.PublicKey.X.String())
-
-	fmt.Println("Kpcr : " + Kpcr)
 	pList := []*Paper{}
 	for p := range paperSlice {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, r.UserID)
 		fmt.Println("GetMsg: " + GetMsg)
 		EncryptedSignedBid := Trae.Find(GetMsg)
-		if Trae.Find(GetMsg) == nil {
-			fmt.Println("Trae.Find(GetMsg) is nil")
+		if EncryptedSignedBid == nil {
 			CheckStringAgainstDB(GetMsg)
-			r.GetPapersReviewer(Pc.AllPapers)
+			EncryptedSignedBid = Trae.Find(GetMsg)
 		}
+		fmt.Println("ESB: ", EncryptedSignedBid, "xd")
 		bytes := EncryptedSignedBid.value.([]byte)
 		decrypted := Decrypt(bytes, Kpcr)
-		// hash, err := GetMessageHash(decrypted)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// isVerified := Verify(&Pc.Keys.PublicKey, sig, hash) //casually verifying, cuz we can :)
-		// if !isVerified {
-		// 	log.Fatalf("Couldn't verify signature of paper: %v", (paperSlice[p].Id))
-		// }
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
 		pList = append(pList, &paper)
@@ -285,4 +271,13 @@ func (pc *PC) SupplyNIZK(p *Paper) bool {
 		fmt.Println("The review commit and paper submission commit hides the same paper")
 	}
 	return works
+}
+
+func (pc *PC) GetKPCRFromLog(id int) string { //TODO: Maybe encrypt the KPCR when putting it on the log otherwise everyone can access it
+	str := fmt.Sprintf("KPCR with PC and R%v", id)
+	logmsg := model.Log{}
+	model.GetLogMsgByMsg(&logmsg, str)
+	EncodedKpcr := logmsg.Value
+	DecodedKpcr := DecodeToStruct(EncodedKpcr).(string)
+	return DecodedKpcr
 }
