@@ -2,6 +2,7 @@ package controller
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"swag/backend"
 	"swag/model"
@@ -14,8 +15,8 @@ func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
 	tpl.Execute(c.Writer, nil)
-	//var DBuser model.User
-	//model.GetPC(&DBuser)
+	var DBuser model.User
+	model.GetPC(&DBuser)
 	if ispctaken {
 		return
 	}
@@ -25,11 +26,11 @@ func PCHomeHandler(c *gin.Context) {
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
 	backend.Pc.Keys = keys
 
-	// if DBuser.Usertype == "pc" {
-	// 	fmt.Println("PC already exist in DB.")
-	// 	model.UpdatePCKeys(pubkeys)
-	// 	return
-	// }
+	if DBuser.Usertype == "pc" {
+		fmt.Println("PC already exist in DB.")
+		model.UpdatePCKeys(pubkeys)
+		return
+	}
 
 	user = model.User{
 		Username:   "Mr. Program Committee",

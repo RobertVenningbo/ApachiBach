@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"swag/backend"
@@ -19,11 +18,8 @@ func PrepStageHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 
 	var logMsg model.Log
-	err := model.GetLastLogMsg(&logMsg)
-	if err != nil {
-		log.Fatal("PrepStageHandler failed")
-		return
-	}
+	model.GetLastLogMsg(&logMsg)
+
 
 	proceed := false
 	if logMsg.State > 3 {

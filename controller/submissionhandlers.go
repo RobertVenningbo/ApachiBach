@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os"
 	"strconv"
 	"strings"
 
@@ -125,4 +127,28 @@ func UploadFile(c *gin.Context) {
 
 	c.Redirect(303, "/wait")
 
+}
+
+func DownloadFile(c *gin.Context) { //dunno if this should be here
+	var logstr string
+	var logmsg model.Log
+	model.GetLogMsgByMsg(&logmsg, logstr)
+
+	file, err := os.OpenFile(
+		"paper.pdf",
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	bytes := logmsg.Value
+
+	writeBytes, err := file.Write(bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Wrote %d bytes \n", writeBytes)
 }
