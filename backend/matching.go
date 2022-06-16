@@ -46,7 +46,6 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 			CheckStringAgainstDB(GetMsg)
 			EncryptedSignedBid = Trae.Find(GetMsg)
 		}
-		fmt.Println("ESB: ", EncryptedSignedBid, "xd")
 		bytes := EncryptedSignedBid.value.([]byte)
 		decrypted := Decrypt(bytes, Kpcr)
 		decoded := DecodeToStruct(decrypted)

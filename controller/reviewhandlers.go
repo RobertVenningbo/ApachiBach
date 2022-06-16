@@ -100,3 +100,40 @@ func PaperBidHandler(c *gin.Context) {
 
 	tpl.Execute(c.Writer, papers)
 }
+
+func contains(slice []string, item string) bool {
+    set := make(map[string]struct{}, len(slice))
+    for _, s := range slice {
+        set[s] = struct{}{}
+    }
+    _, ok := set[item]
+    return ok
+}
+
+func WaitForMatchingHandler(c *gin.Context) { 
+
+	c.Request.ParseForm()
+	fmt.Printf("%+v\n", c.Request.Form)
+	paperSelected := c.Request.Form["paperbid"]
+	log.Println(contains(paperSelected, "paper"))
+
+	var logMsg model.Log
+	model.GetLastLogMsg(&logMsg)
+
+	proceed := false
+	if logMsg.State > 5 {
+		proceed = true
+	}
+
+	type Message struct {
+		Proceed bool
+	}
+	msg := Message{
+		Proceed: proceed,
+	}
+
+
+	tpl.Execute(c.Writer, msg)
+
+
+}

@@ -18,15 +18,21 @@
             <h1>Bid on the papers you want to review</h1>
             <p>Submitted papers: </p>
             <div class="center">
+<<<<<<< Updated upstream
                 <form action="/somplace">
                     {{ range . }}
                     <input type="checkbox" id="{{ .Id }}" name="{{ .Title }}" value="{{ .Id }}">
+=======
+                <form enctype="multipart/form-data" action="/sendbid" method="POST">
+                    {{ range . }}
+                    <input type="checkbox" id="{{ .Id }}" name="paperbid" value="{{ .Id }}">
+                    <!-- <input type="submit" value="Download" formaction="/downloadpaper"> -->
+>>>>>>> Stashed changes
                     <label> {{ .Title }} </label><br>
                     {{ end }}
                     <input type="submit" value="Submit">
                   </form>
             </div>            
         </div>
-
     </body>
 </html>
