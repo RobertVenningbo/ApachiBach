@@ -61,10 +61,10 @@ func PrepStageHandler(c *gin.Context) {
 	str := fmt.Sprintf("KPCR with PC and R%v", reviewer.UserID)
 	msg2 := model.Log{}
 	msg2 = model.Log{
-		State: 0,
-		LogMsg: str,
+		State:      0,
+		LogMsg:     str,
 		FromUserID: reviewer.UserID,
-		Value: backend.EncodeToBytes(Kpcr),
+		Value:      backend.EncodeToBytes(Kpcr),
 	}
 	model.CreateLogMsg(&msg2)
 }
@@ -101,21 +101,11 @@ func PaperBidHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, papers)
 }
 
-func contains(slice []string, item string) bool {
-    set := make(map[string]struct{}, len(slice))
-    for _, s := range slice {
-        set[s] = struct{}{}
-    }
-    _, ok := set[item]
-    return ok
-}
-
-func WaitForMatchingHandler(c *gin.Context) { 
+func MakeBidHandler(c *gin.Context) {
 
 	c.Request.ParseForm()
-	fmt.Printf("%+v\n", c.Request.Form)
 	paperSelected := c.Request.Form["paperbid"]
-	log.Println(contains(paperSelected, "paper"))
+	fmt.Printf("%+v\n", paperSelected)
 
 	var logMsg model.Log
 	model.GetLastLogMsg(&logMsg)
@@ -132,8 +122,21 @@ func WaitForMatchingHandler(c *gin.Context) {
 		Proceed: proceed,
 	}
 
-
 	tpl.Execute(c.Writer, msg)
+}
 
+func MakeReviewHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
+	// get data
+	tpl.Execute(c.Writer, nil)
+}
 
+func DiscussingHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/discussing.html"))
+	/*
+		TODO:
+		- Hent relevante log beskeder
+		- Sørg for håndtering af grade input og kommentar input
+	*/
+	tpl.Execute(c.Writer, nil)
 }

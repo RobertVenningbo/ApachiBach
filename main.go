@@ -33,7 +33,7 @@ func main() {
 		v1.GET("/logmsg", h.GetMessages)
 		v1.GET("/logmsg/:id", h.GetMessage)
 	}
-	router.GET("/testing", controller.TestPlatform)
+	router.GET("/testing", controller.TestPlatform) //TODO OBS.
 	router.GET("/log", controller.LogHandler)
 
 	serverport := os.Args[2]
@@ -46,7 +46,9 @@ func main() {
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.PrepStageHandler)
 		router.GET("/paperbid", controller.PaperBidHandler)
-		router.POST("/sendbid", controller.WaitForMatchingHandler)
+		router.POST("/sendbid", controller.MakeBidHandler)
+		router.GET("/makereview", controller.MakeReviewHandler)
+		router.GET("/discussing", controller.DiscussingHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		router.GET("/", controller.PCHomeHandler)
