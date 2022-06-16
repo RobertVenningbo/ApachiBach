@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var papers []*backend.Paper
 var reviewer backend.Reviewer
 var reviewerexists bool
 
@@ -72,7 +73,7 @@ func PrepStageHandler(c *gin.Context) {
 func PaperBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	backend.InitLocalPCPaperList()
-	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 
 	// papers := []backend.Paper{
 	// 	{
@@ -104,14 +105,30 @@ func PaperBidHandler(c *gin.Context) {
 func MakeBidHandler(c *gin.Context) {
 
 	c.Request.ParseForm()
-	paperSelected := c.Request.Form["paperbid"]
-	fmt.Printf("%+v\n", paperSelected)
+	var PaperIdBids []string
+	for _, value := range c.Request.PostForm {
+		PaperIdBids = append(PaperIdBids, value...)
+	}
+
+	fmt.Printf("PaperIds %s \n", PaperIdBids)
+
+	for _, v := range papers {
+		for _, id := range PaperIdBids {
+			idInt, err := strconv.Atoi(id)
+			if err != nil {
+				log.Println("error converting id string to id int")
+			}
+			if idInt == v.Id {
+				reviewer.SignBidAndEncrypt(v)
+			}
+		}
+	}
 
 	var logMsg model.Log
 	model.GetLastLogMsg(&logMsg)
 
 	proceed := false
-	if logMsg.State > 5 {
+	if logMsg.State > 5 { //check if this lines up with when matching is expected to be done
 		proceed = true
 	}
 

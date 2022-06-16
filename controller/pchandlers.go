@@ -1,15 +1,15 @@
 package controller
 
 import (
-	"crypto/ecdsa"
-	"math/big"
 	"swag/backend"
 	"swag/model"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
 )
+
 var ispctaken bool
+
 func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
@@ -53,18 +53,6 @@ func PCDistributePapers() {
 	}
 	backend.InitLocalPCPaperList()
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
-}
-
-func UserToReviewer(user model.User) backend.Reviewer {
-	keys := backend.DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
-	return backend.Reviewer{
-		UserID: user.Id,
-		Keys: &ecdsa.PrivateKey{
-			PublicKey: keys,
-			D:         big.NewInt(0),
-		},
-		PaperCommittedValue: &backend.CommitStructPaper{},
-	}
 }
 
 func DecisionHandler(c *gin.Context) {

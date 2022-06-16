@@ -105,6 +105,7 @@ func UploadFile(c *gin.Context) {
 		Usertype:   "submitter",
 		PublicKeys: pubkeys,
 	}
+	
 	model.CreateUser(&user)
 	model.CreateLogMsg(&msg)
 

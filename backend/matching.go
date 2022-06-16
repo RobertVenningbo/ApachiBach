@@ -21,11 +21,11 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 			fmt.Println(msg)
 			Trae.Put(msg, SignedAndEncryptedPaper)
 			logmsg := model.Log{
-				State:     4,
-				LogMsg:    msg,
+				State:      4,
+				LogMsg:     msg,
 				FromUserID: 4000,
-				Value:     SignedAndEncryptedPaper[1],
-				Signature: SignedAndEncryptedPaper[0],
+				Value:      SignedAndEncryptedPaper[1],
+				Signature:  SignedAndEncryptedPaper[0],
 			}
 			model.CreateLogMsg(&logmsg)
 		}
@@ -41,12 +41,14 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	for p := range paperSlice {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, r.UserID)
 		fmt.Println("GetMsg: " + GetMsg)
-		EncryptedSignedBid := Trae.Find(GetMsg)
-		if EncryptedSignedBid == nil {
+		treeItem := Trae.Find(GetMsg)
+
+		if treeItem == nil {
 			CheckStringAgainstDB(GetMsg)
-			EncryptedSignedBid = Trae.Find(GetMsg)
+			treeItem = Trae.Find(GetMsg)
 		}
-		bytes := EncryptedSignedBid.value.([]byte)
+
+		bytes := treeItem.value.([]byte)
 		decrypted := Decrypt(bytes, Kpcr)
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
@@ -55,19 +57,43 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	return pList
 }
 
-func (r *Reviewer) GetBiddedPaper() *PaperBid {
+func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
 
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
 	EncryptedSignedBid := Trae.Find(msg)
+
+	if EncryptedSignedBid == nil {
+		CheckStringAgainstDB(msg)
+		EncryptedSignedBid = Trae.Find(msg)
+	}
+
 	bytes := EncryptedSignedBid.value.([][]byte)
 	_, enc := SplitSignatureAndMsg(bytes)
 	decrypted := Decrypt([]byte(enc), Kpcr)
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
-	fmt.Printf("%s %v \n", "reviewer: ", bid.Reviewer)
 	return &bid
 }
+
+// func (pc *PC) GetBiddedPaper() *PaperBid { TODOOO
+
+// 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
+// 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+// 	EncryptedSignedBid := Trae.Find(msg)
+
+// 	if EncryptedSignedBid == nil {
+// 		CheckStringAgainstDB(msg)
+// 		EncryptedSignedBid = Trae.Find(msg)
+// 	}
+
+// 	bytes := EncryptedSignedBid.value.([][]byte)
+// 	_, enc := SplitSignatureAndMsg(bytes)
+// 	decrypted := Decrypt([]byte(enc), Kpcr)
+// 	decoded := DecodeToStruct(decrypted)
+// 	bid := decoded.(PaperBid)
+// 	return &bid
+// }
 
 func (r *Reviewer) MakeBid(pap *Paper) *PaperBid {
 	return &PaperBid{
@@ -81,7 +107,18 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.MakeBid(p)
 	Kpcr := GenerateSharedSecret(&Pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
+	sig, msgvalue := SplitSignatureAndMsg(EncryptedSignedBid)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+
+	logMsg := model.Log{
+		State:      5, //check
+		LogMsg:     msg,
+		FromUserID: bid.Reviewer.UserID,
+		Value:      msgvalue,
+		Signature:  sig,
+	}
+
+	model.CreateLogMsg(&logMsg)
 	Trae.Put(msg, EncryptedSignedBid)
 	log.Println(msg + "logged.")
 }

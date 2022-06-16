@@ -1,7 +1,10 @@
 package controller
 
 import (
+	"crypto/ecdsa"
+	"math/big"
 	"net/http"
+	"swag/backend"
 	"swag/model"
 	"text/template"
 
@@ -12,10 +15,16 @@ func LogHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/log.html"))
 	var logs []model.Log
-	// do something with different the getting method.
+	var logsView []model.Log // has to do ugly copying as GetAllLogMsgs binds to logs struct. I.e. you can't mutate.
 	model.GetAllLogMsgs(&logs)
 
-	tpl.Execute(c.Writer, logs)
+	for i := range logs {
+		logsView = append(logsView, logs[i])
+		if len(logsView[i].Value) > 100 {
+			logsView[i].Value = []byte{69, 69, 69, 69}
+		}
+	}
+	tpl.Execute(c.Writer, &logsView)
 }
 
 func (h handler) CreateMessage(c *gin.Context) {
@@ -52,8 +61,20 @@ func (h handler) GetMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, msg)
 }
 
+func UserToReviewer(user model.User) backend.Reviewer {
+	keys := backend.DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
+	return backend.Reviewer{
+		UserID: user.Id,
+		Keys: &ecdsa.PrivateKey{
+			PublicKey: keys,
+			D:         big.NewInt(0),
+		},
+		PaperCommittedValue: &backend.CommitStructPaper{},
+	}
+}
+
 func TestPlatform(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
+	tpl = template.Must(template.ParseFiles("templates/reviewer/discussing.html"))
 
 	tpl.Execute(c.Writer, nil)
 }
