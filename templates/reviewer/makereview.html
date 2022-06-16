@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Reviewer</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+            .center{
+                margin: auto;
+                width: 50%;
+                padding: 10px;
+            }
+            .flexcolumn{
+                display: flex;
+                flex-direction: column;
+            }
+      </style>
+    </head>
+    <body style="background: lightgrey;">
+        <div style="text-align: center; margin-top: 100px;">
+            <h1>Make Review! 📖📚</h1>
+            <div class="center">
+                <div class="flexcolumn">
+                    <p>You have been assigned the paper:</p>
+                    <p>{{ .Title }} **placeholder**</p>
+                    <button style="width: 30%; margin: auto;">Download paper</button>
+                </div>
+            </div>
+            <div class="center" style="margin-top: 50px;">
+                <div class="flexcolumn">
+                    <h3>Write review ✍️:</h3>
+                    <form>
+                        <textarea style="resize: none;" id="textarea_id" name="textarea_name" rows="4" cols="50"></textarea>
+                        <br>
+                    <input type="submit" value="Submit">
+                </form>
+                </div>
+            </div>
+        </div>            
+    </body>
+</html>

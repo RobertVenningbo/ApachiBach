@@ -33,7 +33,7 @@ func main() {
 		v1.GET("/logmsg", h.GetMessages)
 		v1.GET("/logmsg/:id", h.GetMessage)
 	}
-
+	router.GET("/testing", controller.TestPlatform)
 	router.GET("/log", controller.LogHandler)
 
 	serverport := os.Args[2]

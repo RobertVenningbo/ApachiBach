@@ -82,6 +82,8 @@ func createMessage_notGIN(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(message)
 }
 
-func getMessage(w http.ResponseWriter, r *http.Request) {
+func TestPlatform(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/discussing.html"))
 
+	tpl.Execute(c.Writer, nil)
 }
