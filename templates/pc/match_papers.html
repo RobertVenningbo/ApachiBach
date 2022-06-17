@@ -11,10 +11,15 @@
     <body>
         <div style="text-align: center;">
           <p>Status: {{ .Status}}</p>
-          <button style="margin-bottom: 30px;">Get bids</button>
-          
-          <p>Received {{ .PaperBidCount }} bids</p>
-          <button>Match papers</button>
+          <form action="/getallbids" method="GET">
+            <button type="submit" style="margin-bottom: 30px;">Get bids</button>
+          </form>
+          {{ if .ShowBool }}
+          <p>{{ .PaperBidCount }} / {{ .UsersLength}} reviewers have made bids. </p>
+          {{ end }}
+          <form action="/sharereviews" method="GET">
+            <button type="submit">Match papers</button>
+          </form>
         </div>
     </body>
 </html>

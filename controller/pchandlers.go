@@ -44,11 +44,11 @@ func PCHomeHandler(c *gin.Context) {
 // 	c.Redirect(303, "/")
 // }
 func GetBidsHandler(c *gin.Context) {
-	
+
 	c.Redirect(303, "/")
 }
 
-func PCDistributePapers(c *gin.Context) {
+func BidWaitHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
 	users := []model.User{}
 	model.GetReviewers(&users)
@@ -60,6 +60,56 @@ func PCDistributePapers(c *gin.Context) {
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
 
 	tpl.Execute(c.Writer, nil)
+}
+
+
+func GetAllBidsHandler(c *gin.Context) { 
+	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
+	bidList := backend.Pc.GetAllBids()
+	var users []model.User
+	model.GetReviewers(&users)
+	
+	var unique []int
+	m := map[int]bool{}
+
+	for _, v := range bidList {
+		if !m[v.Reviewer.UserID] {
+			if v.Reviewer.UserID == -1 {
+				break
+			}
+			m[v.Reviewer.UserID] = true
+			unique = append(unique, v.Reviewer.UserID)
+		}
+	}
+
+	str := ""
+	showBool := false
+	
+	type AllBids struct {
+		PaperBidCount int
+		Status        string
+		ShowBool      bool
+		UsersLength	  int
+	}
+
+	if len(users) == len(unique) {
+		str = "All reviewers have made bids"
+		showBool = true
+
+	} else {
+		str = "Not all reviewers have made bids"
+		showBool = true
+	} 
+
+	blabla := AllBids{
+		PaperBidCount: len(unique),
+		Status:        str,
+		ShowBool:      showBool,
+		UsersLength:   len(users),
+	}
+
+	tpl.Execute(c.Writer, blabla)
+
 }
 
 func DecisionHandler(c *gin.Context) {
@@ -83,6 +133,9 @@ func DecisionHandler(c *gin.Context) {
 
 func ShareReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
+
+	bidList := backend.Pc.GetAllBids()
+	backend.Pc.AssignPaper(bidList)
 	type Reviewer struct {
 		User string
 	}

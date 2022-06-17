@@ -1,7 +1,7 @@
 package backend_test
 
 import (
-	"fmt"
+	_ "fmt"
 	. "swag/backend"
 	"testing"
 
@@ -60,28 +60,28 @@ func TestMakeGradeCommit(t *testing.T) {
 	assert.Equal(t, gradeCommit, gradeCommit2, "TestMakeGradeCommit Failed")
 }
 
-func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
-	Pc.AllPapers = append(Pc.AllPapers, &p)
-	submitter.Submit(&p)
-	reviewerSlice := []*Reviewer{&reviewer}
-	reviewerSlice1 := []Reviewer{reviewer}
-	reviewer.SignBidAndEncrypt(&p)
-	Pc.AssignPaper(reviewerSlice)
-	Pc.MatchPapers()
+// func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
+// 	Pc.AllPapers = append(Pc.AllPapers, &p)
+// 	submitter.Submit(&p)
+// 	reviewerSlice := []*Reviewer{&reviewer}
+// 	reviewerSlice1 := []Reviewer{reviewer}
+// 	reviewer.SignBidAndEncrypt(&p)
+// 	Pc.AssignPaper(reviewerSlice)
+// 	Pc.MatchPapers()
 
-	Pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
-	reviewer.PaperCommittedValue.Paper = &p
-	reviewer.GradePaper(7)
-	reviewer.SignReviewPaperCommit()
-	reviewer.SignCommitsAndNonce()
-	reviewer.SignAndEncryptGrade()
+// 	Pc.GenerateKeysForDiscussing(reviewerSlice1) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+// 	reviewer.PaperCommittedValue.Paper = &p
+// 	reviewer.GradePaper(7)
+// 	reviewer.SignReviewPaperCommit()
+// 	reviewer.SignCommitsAndNonce()
+// 	reviewer.SignAndEncryptGrade()
 
-	gradeReviewCommit := GradeReviewCommits{
-		reviewer.GetReviewCommitNonceStruct().Commit,
-		reviewer.MakeGradeCommit(),
-		reviewer.GetReviewCommitNonceStruct().Nonce,
-	}
+// 	gradeReviewCommit := GradeReviewCommits{
+// 		reviewer.GetReviewCommitNonceStruct().Commit,
+// 		reviewer.MakeGradeCommit(),
+// 		reviewer.GetReviewCommitNonceStruct().Nonce,
+// 	}
 
-	fmt.Printf("%#v\n", gradeReviewCommit)
+// 	fmt.Printf("%#v\n", gradeReviewCommit)
 
-}
+// }

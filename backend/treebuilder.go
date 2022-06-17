@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"log"
 	"swag/model"
 )
 
@@ -20,12 +19,12 @@ func DatabaseToTree() (*Tree) {
 
 func CheckStringAgainstDB(str string) {
 	var msg model.Log
-	err := model.GetLogMsgByMsg(&msg, str)
+	model.GetLogMsgByMsg(&msg, str)
 	
-	if err != nil {
-		log.Fatalf("String not found in Database")
-		return
-	}
+	// if err != nil {
+	// 	log.Printf("String not found in Database \n")
+	// 	return
+	// }
 	
 	Trae.Put(msg.LogMsg, msg.Value)
 

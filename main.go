@@ -54,7 +54,8 @@ func main() {
 		router.GET("/", controller.PCHomeHandler)
 		router.GET("/decision", controller.DecisionHandler)
 		router.GET("/sharereviews", controller.ShareReviewsHandler)
-		router.GET("/distributepapers", controller.PCDistributePapers)
+		router.GET("/bidwait", controller.BidWaitHandler)
+		router.GET("/getallbids", controller.GetAllBidsHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

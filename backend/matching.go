@@ -66,13 +66,31 @@ func (pc *PC) GetBiddedPaper(id int) *PaperBid {
 		CheckStringAgainstDB(msg)
 		EncryptedSignedBid = Trae.Find(msg)
 	}
-
-	bytes := EncryptedSignedBid.value.([][]byte)
-	_, enc := SplitSignatureAndMsg(bytes)
-	decrypted := Decrypt([]byte(enc), Kpcr)
+	if EncryptedSignedBid == nil {
+		return &PaperBid{
+			nil,
+			&Reviewer{ 
+				UserID: -1,
+				Keys: nil,
+				PaperCommittedValue: nil,
+			},
+		}
+	}
+	bytes := EncryptedSignedBid.value.([]byte)
+	decrypted := Decrypt(bytes, Kpcr)
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
 	return &bid
+}
+
+func (pc *PC) GetAllBids() []*PaperBid {
+	var users []model.User
+	model.GetReviewers(&users)
+	var bidList []*PaperBid
+	for _, u := range users {
+		bidList = append(bidList, pc.GetBiddedPaper(u.Id))
+	}
+	return bidList
 }
 
 
@@ -123,33 +141,29 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	log.Println(msg + "logged.")
 }
 
-func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) { //Not used, maybe delete
-	bidList := []*PaperBid{}
-	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].GetBiddedPaper()
-		bidList = append(bidList, p)
-	}
+// func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) { //Not used, maybe delete
+// 	bidList := []*PaperBid{}
+// 	for i := range reviewerSlice { //loop to get list of all bidded papers
+// 		p := reviewerSlice[i].GetBiddedPaper()
+// 		bidList = append(bidList, p)
+// 	}
 
-	for _, p := range pc.AllPapers {
-		for _, b := range bidList {
-			if p.Id == b.Paper.Id {
-				p = b.Paper
+// 	for _, p := range pc.AllPapers {
+// 		for _, b := range bidList {
+// 			if p.Id == b.Paper.Id {
+// 				p = b.Paper
 
-			}
-		}
-	}
-	return pc.AllPapers, bidList
-}
+// 			}
+// 		}
+// 	}
+// 	return pc.AllPapers, bidList
+// }
 
 
-func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
+func (pc *PC) AssignPaper(bidList[]*PaperBid) {
+
 	reviewersBidsTaken := []Reviewer{}
-	bidList := []*PaperBid{} 
-	for _, v := range reviewerSlice { //loop to get list of all bidded papers
-		p := Pc.GetBiddedPaper(v.UserID)
-		//p := reviewerSlice[i].GetBiddedPaper()
-		bidList = append(bidList, p)
-	}
+
 	for _, bid := range bidList {
 		for _, p := range pc.AllPapers {
 			if p.Id == bid.Paper.Id {
@@ -196,7 +210,8 @@ func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
 			}
 		}
 	}
-	pc.SetReviewersPaper(reviewerSlice)
+	
+	//pc.SetReviewersPaper(reviewerSlice)
 }
 
 // This method is a little messy however it is not expected to be called on a lot of entities.

@@ -51,51 +51,51 @@ func TestGetBiddedPaper(t *testing.T) {
 	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed")
 }
 
-func TestAssignPapers(t *testing.T) {
-	reviewer3 := Reviewer{
-		3,
-		NewKeys(),
-		nil,
-	}
-	reviewer4 := Reviewer{
-		4,
-		NewKeys(),
-		nil,
-	}
-	p1 := Paper{
-		1,
-		false,
-		nil,
-		nil,
-		"",
-	}
-	p2 := Paper{
-		2,
-		false,
-		nil,
-		nil,
-		"",
-	}
-	p3 := Paper{
-		3,
-		false,
-		nil,
-		nil,
-		"",
-	}
+// func TestAssignPapers(t *testing.T) {
+// 	reviewer3 := Reviewer{
+// 		3,
+// 		NewKeys(),
+// 		nil,
+// 	}
+// 	reviewer4 := Reviewer{
+// 		4,
+// 		NewKeys(),
+// 		nil,
+// 	}
+// 	p1 := Paper{
+// 		1,
+// 		false,
+// 		nil,
+// 		nil,
+// 		"",
+// 	}
+// 	p2 := Paper{
+// 		2,
+// 		false,
+// 		nil,
+// 		nil,
+// 		"",
+// 	}
+// 	p3 := Paper{
+// 		3,
+// 		false,
+// 		nil,
+// 		nil,
+// 		"",
+// 	}
 
-	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2, &p3)
-	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
+// 	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2, &p3)
+// 	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
 
-	reviewer.SignBidAndEncrypt(&p1)
-	reviewer2.SignBidAndEncrypt(&p1)
-	reviewer3.SignBidAndEncrypt(&p1)
-	reviewer4.SignBidAndEncrypt(&p1)
+// 	reviewer.SignBidAndEncrypt(&p1)
+// 	reviewer2.SignBidAndEncrypt(&p1)
+// 	reviewer3.SignBidAndEncrypt(&p1)
+// 	reviewer4.SignBidAndEncrypt(&p1)
 
-	Pc.AssignPaper(reviewerSlice)
+// 	Pc.AssignPaper(reviewerSlice)
 
-	//TODO insert assert
-}
+// 	//TODO insert assert
+// }
 
 func TestSupplyNizk(t *testing.T) {
 	keys := NewKeys()
@@ -180,10 +180,10 @@ func TestPCGetBiddedPaper(t *testing.T) {
 
 }
 
-func TestMatchPapers(t *testing.T) {
-	submitter.Submit(&p)
-	reviewerSlice := []*Reviewer{&reviewer}
-	reviewer.SignBidAndEncrypt(&p)
-	Pc.AssignPaper(reviewerSlice)
-	Pc.MatchPapers()
-}
+// func TestMatchPapers(t *testing.T) {
+// 	submitter.Submit(&p)
+// 	reviewerSlice := []*Reviewer{&reviewer}
+// 	reviewer.SignBidAndEncrypt(&p)
+// 	Pc.AssignPaper(reviewerSlice)
+// 	Pc.MatchPapers()
+// }

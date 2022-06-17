@@ -1,7 +1,10 @@
 package model
 
 import (
+	"errors"
 	"swag/database"
+	"log"
+	"gorm.io/gorm"
 )
 
 //create a logmsg
@@ -13,7 +16,6 @@ func CreateLogMsg(log *Log) (err error) {
 	return nil
 }
 
-
 //get logmsg by id
 func GetLogMsgById(log *Log, id string) (err error) {
 	err = database.DB.Where("id = ?", id).First(log).Error
@@ -23,12 +25,18 @@ func GetLogMsgById(log *Log, id string) (err error) {
 	return nil
 }
 
-func GetLogMsgByMsg(log *Log, msg string) (err error) {
-	err = database.DB.Where("log_msg = ?", msg).First(log).Error
-	if err != nil {
-		return err
+// dbRresult := userHandler.db.Where("email = ?", email).First(&user)
+// if errors.Is(dbRresult.Error, gorm.ErrRecordNotFound) {
+//     // handle record not found
+// }
+
+func GetLogMsgByMsg(logmsg *Log, msg string) {
+	result := database.DB.Where("log_msg = ?", msg).First(logmsg)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetLogMsgByMsg")
+		return
 	}
-	return nil
+
 }
 
 //get all logmsg
