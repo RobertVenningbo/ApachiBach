@@ -18,34 +18,14 @@
             <h1>Bid on the papers you want to review</h1>
             <p>Submitted papers: </p>
             <div class="center">
-                {{ if .Something }}
-                    <p>
-                        Bids received...
-                    </p>
-                {{ end }}
-                {{ if .Continiue }}
-                    <a href="/makereview">
-                        <button>Fortsæt</button>  
-                    </a>
-                {{ end }}
-
                 <form action="/sendbid" method="POST">
                     {{ range . }}
                     <input type="checkbox" id="{{ .Id }}" name="paperbid" value="{{ .Id }}">
                     <!-- <input type="submit" value="Download" formaction="/downloadpaper"> -->
                     <label> {{ .Title }} </label><br>
                     {{ end }}
-                    <input type="submit" value="Submit">
-                  </form>
-
-                <form action="/sendbid" method="POST">
-                    {{ range . }}
-                    <input type="checkbox" id="{{ .Id }}" name="paperbid" value="{{ .Id }}">
-                    <!-- <input type="submit" value="Download" formaction="/downloadpaper"> -->
-                    <label> {{ .Title }} </label><br>
-                    {{ end }}
-                    <input type="submit" value="Submit">
-                  </form>
+                    <input type="submit" value="Send bid(s)">
+                </form>
             </div>            
         </div>
     </body>

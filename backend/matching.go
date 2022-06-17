@@ -257,7 +257,7 @@ func (pc *PC) MatchPapers() {
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 		logmsg := model.Log{
-			State: 6,
+			State: 7,
 			LogMsg: msg,
 			FromUserID: 4000,
 			Value: signature[1],

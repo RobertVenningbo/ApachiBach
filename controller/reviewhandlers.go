@@ -121,7 +121,25 @@ func MakeBidHandler(c *gin.Context) {
 		}
 	}
 
-	tpl.Execute(c.Writer, nil)
+	var papersMatched bool
+
+	type Bools struct {
+		BidsSent      bool
+		PapersMatched bool
+	}
+
+	var logmsg model.Log
+	model.GetLastLogMsg(&logmsg)
+	papersMatched = logmsg.State > 6
+	
+
+	bools := Bools{
+		BidsSent: true,
+		PapersMatched: papersMatched,
+	}
+
+
+	tpl.Execute(c.Writer, bools)
 }
 
 func MakeReviewHandler(c *gin.Context) {
