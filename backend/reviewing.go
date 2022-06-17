@@ -19,8 +19,8 @@ func (r *Reviewer) FinishReview(review string) { //step 8
 
 	signAndEnc := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewStruct), Kpcr)
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
-	log.Printf(str)
 	Trae.Put(str, signAndEnc)
+
 }
 
 func (r *Reviewer) SignReviewPaperCommit() { //step 9

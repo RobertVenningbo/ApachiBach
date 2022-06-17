@@ -102,14 +102,12 @@ func PaperBidHandler(c *gin.Context) {
 }
 
 func MakeBidHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
+	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	c.Request.ParseForm()
 	var PaperIdBids []string
 	for _, value := range c.Request.PostForm {
 		PaperIdBids = append(PaperIdBids, value...)
 	}
-
-	fmt.Printf("PaperIds %s \n", PaperIdBids)
 
 	for _, v := range papers {
 		for _, id := range PaperIdBids {
@@ -123,22 +121,7 @@ func MakeBidHandler(c *gin.Context) {
 		}
 	}
 
-	var logMsg model.Log
-	model.GetLastLogMsg(&logMsg)
-
-	proceed := false
-	if logMsg.State > 5 { //check if this lines up with when matching is expected to be done
-		proceed = true
-	}
-
-	type Message struct {
-		Proceed bool
-	}
-	msg := Message{
-		Proceed: proceed,
-	}
-
-	tpl.Execute(c.Writer, msg)
+	tpl.Execute(c.Writer, nil)
 }
 
 func MakeReviewHandler(c *gin.Context) {
