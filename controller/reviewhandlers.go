@@ -60,9 +60,8 @@ func PrepStageHandler(c *gin.Context) {
 	reviewerexists = true
 	Kpcr := backend.GenerateSharedSecret(&backend.Pc, nil, &reviewer)
 	str := fmt.Sprintf("KPCR with PC and R%v", reviewer.UserID)
-	msg2 := model.Log{}
-	msg2 = model.Log{
-		State:      0,
+	msg2 := model.Log{
+		State:      99,
 		LogMsg:     str,
 		FromUserID: reviewer.UserID,
 		Value:      backend.EncodeToBytes(Kpcr),
@@ -103,7 +102,7 @@ func PaperBidHandler(c *gin.Context) {
 }
 
 func MakeBidHandler(c *gin.Context) {
-
+	var tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
 	c.Request.ParseForm()
 	var PaperIdBids []string
 	for _, value := range c.Request.PostForm {

@@ -39,12 +39,17 @@ func PCHomeHandler(c *gin.Context) {
 	model.CreateUser(&user)
 }
 
-func DistributePapersHandler(c *gin.Context) {
-	PCDistributePapers()
+// func DistributePapersHandler(c *gin.Context) {
+// 	PCDistributePapers()
+// 	c.Redirect(303, "/")
+// }
+func GetBidsHandler(c *gin.Context) {
+	
 	c.Redirect(303, "/")
 }
 
-func PCDistributePapers() {
+func PCDistributePapers(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
 	users := []model.User{}
 	model.GetReviewers(&users)
 	var reviewerSlice []backend.Reviewer
@@ -53,6 +58,8 @@ func PCDistributePapers() {
 	}
 	backend.InitLocalPCPaperList()
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
+
+	tpl.Execute(c.Writer, nil)
 }
 
 func DecisionHandler(c *gin.Context) {

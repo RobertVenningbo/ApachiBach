@@ -57,10 +57,9 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	return pList
 }
 
-func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
-
-	Kpcr := GenerateSharedSecret(&Pc, nil, r)
-	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+func (pc *PC) GetBiddedPaper(id int) *PaperBid { 
+	Kpcr := pc.GetKPCRFromLog(id)
+	msg := fmt.Sprintf("EncryptedSignedBids %v", id)
 	EncryptedSignedBid := Trae.Find(msg)
 
 	if EncryptedSignedBid == nil {
@@ -76,24 +75,25 @@ func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
 	return &bid
 }
 
-// func (pc *PC) GetBiddedPaper() *PaperBid { TODOOO
 
-// 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
-// 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
-// 	EncryptedSignedBid := Trae.Find(msg)
+func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
+	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+	EncryptedSignedBid := Trae.Find(msg)
 
-// 	if EncryptedSignedBid == nil {
-// 		CheckStringAgainstDB(msg)
-// 		EncryptedSignedBid = Trae.Find(msg)
-// 	}
+	if EncryptedSignedBid == nil {
+		CheckStringAgainstDB(msg)
+		EncryptedSignedBid = Trae.Find(msg)
+	}
 
-// 	bytes := EncryptedSignedBid.value.([][]byte)
-// 	_, enc := SplitSignatureAndMsg(bytes)
-// 	decrypted := Decrypt([]byte(enc), Kpcr)
-// 	decoded := DecodeToStruct(decrypted)
-// 	bid := decoded.(PaperBid)
-// 	return &bid
-// }
+	bytes := EncryptedSignedBid.value.([][]byte)
+	_, enc := SplitSignatureAndMsg(bytes)
+	decrypted := Decrypt([]byte(enc), Kpcr)
+	decoded := DecodeToStruct(decrypted)
+	bid := decoded.(PaperBid)
+	fmt.Println(bid.Paper.Id) //only for testing
+	return &bid
+}
 
 func (r *Reviewer) MakeBid(pap *Paper) *PaperBid {
 	return &PaperBid{
@@ -141,11 +141,13 @@ func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid)
 	return pc.AllPapers, bidList
 }
 
+
 func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
 	reviewersBidsTaken := []Reviewer{}
-	bidList := []*PaperBid{}
-	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].GetBiddedPaper()
+	bidList := []*PaperBid{} 
+	for _, v := range reviewerSlice { //loop to get list of all bidded papers
+		p := Pc.GetBiddedPaper(v.UserID)
+		//p := reviewerSlice[i].GetBiddedPaper()
 		bidList = append(bidList, p)
 	}
 	for _, bid := range bidList {

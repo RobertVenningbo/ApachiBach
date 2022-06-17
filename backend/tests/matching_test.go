@@ -29,20 +29,20 @@ func TestDistributeAndGetPapersForReviewers(t *testing.T) {
 
 func TestGetBiddedPaper(t *testing.T) {
 	commitStructPaper := &CommitStructPaper{
-		nil,
-		nil,
-		nil,
-		&Paper{},
+		CommittedValue: nil,
+		R: nil,
+		Val: nil,
+		Paper: &Paper{},
 	}
 	reviewerScope := &Reviewer{
-		123123,
-		NewKeys(),
-		commitStructPaper,
+		UserID: 123123,
+		Keys: NewKeys(),
+		PaperCommittedValue: commitStructPaper,
 	}
 
 	reviewerScope.SignBidAndEncrypt(&p)
 
-	paperBid := reviewerScope.GetBiddedPaper()
+	paperBid := Pc.GetBiddedPaper(reviewerScope.UserID)
 
 	fmt.Printf("%s %v \n", "reviewer1: ", reviewerScope)
 	fmt.Printf("%s %v \n", "reviewer2: ", paperBid.Reviewer)
@@ -167,6 +167,16 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	r_struct := Pc.GetReviewSignedStruct(p.Id)
 
 	assert.Equal(t, reviewStruct, r_struct, "TestGetReviewStruct Failed")
+
+}
+
+func TestPCGetBiddedPaper(t *testing.T) {
+	bid := &PaperBid{}
+	submitter.Submit(&p)
+	reviewer.MakeBid(&p)
+	reviewer.SignBidAndEncrypt(&p)
+	bid = Pc.GetBiddedPaper(reviewer.UserID)
+	fmt.Println(bid.Paper.Id)
 
 }
 
