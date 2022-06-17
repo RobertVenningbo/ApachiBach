@@ -233,7 +233,8 @@ func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
 }
 func (pc *PC) MatchPapers() {
 	for _, p := range pc.AllPapers {
-		PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
+		fmt.Println("in match papers")
+		PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
 
@@ -241,14 +242,11 @@ func (pc *PC) MatchPapers() {
 		for _, r := range p.ReviewerList {
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
-
 		rr := pc.GetPaperAndRandomness(p.Id).Rr
-
 		commit, err := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
 		if err != nil {
 			log.Panic("matchPaperz error")
 		}
-
 		reviewStruct := ReviewSignedStruct{
 			commit,
 			reviewerKeyList,
@@ -258,7 +256,15 @@ func (pc *PC) MatchPapers() {
 		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-		Trae.Put(msg, signature)
+		logmsg := model.Log{
+			State: 6,
+			LogMsg: msg,
+			FromUserID: 4000,
+			Value: signature[1],
+			Signature: signature[0],
+		}
+		model.CreateLogMsg(&logmsg)
+		Trae.Put(msg, signature[1])
 
 		nizkBool := pc.SupplyNIZK(p)
 		if !nizkBool {
@@ -271,8 +277,12 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
 	item := Trae.Find(msg)
-	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
-	decodedStruct := DecodeToStruct(encodedStruct)
+	if item == nil {
+		CheckStringAgainstDB(msg)
+		item = Trae.Find(msg)
+	}
+	bytes := item.value.([]byte)
+	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
 	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
 
@@ -283,8 +293,12 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
 	item := Trae.Find(msg)
-	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
-	decodedStruct := DecodeToStruct(encodedStruct)
+	if item.value == nil {
+		CheckStringAgainstDB(msg)
+		item = Trae.Find(msg)
+	}
+	bytes := item.value.([]byte)
+	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
 	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
 
@@ -292,21 +306,19 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 }
 
 func (pc *PC) SupplyNIZK(p *Paper) bool {
+	fmt.Println("0")
 	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
+	fmt.Println("0.5")
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
 	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers
-
 	nonce := reviewSignedStruct.Nonce
 	rs := pc.GetPaperAndRandomness(p.Id).Rs //Rs generated in submit
 	rr := pc.GetPaperAndRandomness(p.Id).Rr //Rr generated in submit
 
-	PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
-
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	submitterPK := pc.GetPaperSubmitterPK(p.Id)
-
 	proof := NewEqProofP256(PaperBigInt, rs, rr, nonce, &submitterPK, &pc.Keys.PublicKey)
-
 	C1 := &Commitment{
 		paperSubmissionCommit.X,
 		paperSubmissionCommit.Y,

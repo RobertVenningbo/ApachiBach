@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -136,6 +137,9 @@ func ShareReviewsHandler(c *gin.Context) {
 
 	bidList := backend.Pc.GetAllBids()
 	backend.Pc.AssignPaper(bidList)
+	fmt.Println("Assign papers done")
+	backend.Pc.MatchPapers()
+	fmt.Println("MatchPapers done")
 	type Reviewer struct {
 		User string
 	}
