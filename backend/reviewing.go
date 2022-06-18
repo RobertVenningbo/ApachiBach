@@ -136,7 +136,6 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 				}
 				ReviewStructList = append(ReviewStructList, reviewStruct)
 				revKpAndRg = pc.GetKpAndRgPC(pId)
-
 			}
 		}
 	}

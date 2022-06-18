@@ -137,26 +137,26 @@ func ShareReviewsHandler(c *gin.Context) {
 	backend.Pc.AssignPaper(bidList)
 	backend.Pc.MatchPapers()
 	backend.Pc.DeliverAssignedPaper()
-	type Reviewer struct {
-		User string
-	}
+
 	type Message struct {
 		Title     string
-		Reviewers []Reviewer
+		ReviewerIds []int
 	}
-	reviewers := []Reviewer{
-		{"reviewer1"},
-		{"reviewer2"},
+
+	messages := []Message{}
+
+	for _, p := range backend.Pc.AllPapers {
+		ids := []int{}
+		for _, r := range p.ReviewerList {
+			ids = append(ids, r.UserID)
+		}
+		message := Message{
+			p.Title,
+			ids,
+		}
+		messages = append(messages, message)
 	}
-	msg := []Message{
-		{
-			Title:     "Title1",
-			Reviewers: reviewers,
-		},
-		{
-			Title:     "Title2",
-			Reviewers: reviewers,
-		},
-	}
-	tpl.Execute(c.Writer, &msg)
+
+	
+	tpl.Execute(c.Writer, &messages)
 }
