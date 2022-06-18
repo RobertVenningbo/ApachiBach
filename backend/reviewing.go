@@ -81,10 +81,16 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 			kp,
 			rg,
 		}
-
 		reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(GroupKeyAndRg), Kpcr)
-
 		str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
+		logmsg := model.Log{
+			State: 10,
+			LogMsg: str,
+			FromUserID: 4000,
+			Value: reviewKpAndRg[1],
+			Signature: reviewKpAndRg[0],
+		}
+		model.CreateLogMsg(&logmsg)
 		Trae.Put(str, reviewKpAndRg)
 		tempStruct = GroupKeyAndRg
 		strPC = fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", r.PaperCommittedValue.Paper.Id)
@@ -92,15 +98,28 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 
 	reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(tempStruct), pc.Keys.D.String())
 
+	logmsg := model.Log{
+		State: 10,
+		LogMsg: strPC,
+		FromUserID: 4000,
+		Value: reviewKpAndRg[1],
+		Signature: reviewKpAndRg[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(strPC, reviewKpAndRg)
 }
 
 func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 	strPC := fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", pId)
 
-	reviewKpAndRg := Trae.Find(strPC).value
-	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
-	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, pc.Keys.D.String())
+	reviewKpAndRg := Trae.Find(strPC)
+	if reviewKpAndRg == nil {
+		CheckStringAgainstDB(strPC)
+		reviewKpAndRg = Trae.Find(strPC)
+	}
+
+	bytes := reviewKpAndRg.value.([]byte)
+	encodedReviewKpAndRg := Decrypt(bytes, pc.Keys.D.String())
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
 
 	return decodedReviewKpAndRg
@@ -168,9 +187,13 @@ func (r *Reviewer) GetReviewCommitNonceStruct() ReviewCommitNonceStruct {
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
 	log.Printf("Reviewer: %v gets ReviewCommitNonce \n", r.UserID)
 	TreeItem := Trae.Find(str)
-	_, encodedTheStruct := SplitSignatureAndMsg(TreeItem.value.([][]byte))
+	if TreeItem == nil {
+		CheckStringAgainstDB(str)
+		TreeItem = Trae.Find(str)
+	}
+	bytes := TreeItem.value.([]byte)
 
-	theStruct := DecodeToStruct(encodedTheStruct).(ReviewCommitNonceStruct)
+	theStruct := DecodeToStruct(bytes).(ReviewCommitNonceStruct)
 
 	return theStruct
 }
@@ -179,9 +202,14 @@ func (r *Reviewer) GetCollectedReviews() []ReviewStruct {
 	kpAndRg := r.GetReviewKpAndRg()
 	getStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", r.PaperCommittedValue.Paper.Id)
 
-	treeItem := Trae.Find(getStr).value
-	_, encryptedReviewStructList := SplitSignatureAndMsg(treeItem.([][]byte))
-	encodedReviewStructList := Decrypt(encryptedReviewStructList, kpAndRg.GroupKey.D.String())
+	treeItem := Trae.Find(getStr)
+	if treeItem == nil {
+		CheckStringAgainstDB(getStr)
+		treeItem = Trae.Find(getStr)
+	}
+
+	bytes := treeItem.value.([]byte)
+	encodedReviewStructList := Decrypt(bytes, kpAndRg.GroupKey.D.String())
 	decodedReviewStructList := DecodeToStruct(encodedReviewStructList).([]ReviewStruct)
 
 	return decodedReviewStructList
