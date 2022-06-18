@@ -6,7 +6,20 @@ import (
 	_ "fmt"
 	"log"
 	ec "swag/ec"
+	"swag/model"
 )
+
+func (r *Reviewer) GetAssignedPaperFromPCLog() *Paper {
+	str := fmt.Sprintf("DeliveredPaperForR%v", r.UserID)
+	Kpcr := GenerateSharedSecret(&Pc, nil, r)
+	var logmsg model.Log
+	model.GetLogMsgByMsg(&logmsg, str)
+	encodedPaper := Decrypt(logmsg.Value, Kpcr)
+	decodedPaper := DecodeToStruct(encodedPaper).(Paper)
+
+	return &decodedPaper
+
+}
 
 func (r *Reviewer) FinishReview(review string) { //step 8
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
@@ -19,6 +32,15 @@ func (r *Reviewer) FinishReview(review string) { //step 8
 
 	signAndEnc := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewStruct), Kpcr)
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
+
+	logmsg := model.Log{
+		State: 8,
+		LogMsg: str,
+		FromUserID: r.UserID,
+		Value: signAndEnc[1],
+		Signature: signAndEnc[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signAndEnc)
 
 }
@@ -36,7 +58,14 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 	rCommitSignature := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewCommitNonce), "")
 
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
-	log.Println(str)
+	logmsg := model.Log{
+		State: 9,
+		LogMsg: str,
+		FromUserID: r.UserID,
+		Value: rCommitSignature[1],
+		Signature: rCommitSignature[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, rCommitSignature)
 }
 
@@ -47,17 +76,15 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 	strPC := ""
 	tempStruct := ReviewKpAndRg{}
 	for _, r := range reviewers {
-		Kpcr := GenerateSharedSecret(pc, nil, &r)
+		Kpcr := pc.GetKPCRFromLog(r.UserID)
 		GroupKeyAndRg := ReviewKpAndRg{
 			kp,
 			rg,
 		}
 
 		reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(GroupKeyAndRg), Kpcr)
-		fmt.Printf("%#v \n", GroupKeyAndRg)
 
 		str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
-		log.Printf("\n%s", str)
 		Trae.Put(str, reviewKpAndRg)
 		tempStruct = GroupKeyAndRg
 		strPC = fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", r.PaperCommittedValue.Paper.Id)
@@ -65,7 +92,6 @@ func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
 
 	reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(tempStruct), pc.Keys.D.String())
 
-	log.Printf("\n%s", strPC)
 	Trae.Put(strPC, reviewKpAndRg)
 }
 
@@ -96,8 +122,6 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 			}
 		}
 	}
-	log.Println("PC collects reviews from log")
-	log.Println("PC retrieves Kp")
 
 	Kp := revKpAndRg.GroupKey
 
@@ -109,11 +133,14 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 
 func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
-	log.Printf("Getting cosigned Kp group key by reviewer: %v\n", r.UserID)
-	reviewKpAndRg := Trae.Find(str).value
-	_, encryptedReviewKpAndRg := SplitSignatureAndMsg(reviewKpAndRg.([][]byte))
+	reviewKpAndRg := Trae.Find(str)
+	if reviewKpAndRg == nil {
+		CheckStringAgainstDB(str)
+		reviewKpAndRg = Trae.Find(str)
+	}
+	bytes := reviewKpAndRg.value.([]byte)
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
-	encodedReviewKpAndRg := Decrypt(encryptedReviewKpAndRg, Kpcr)
+	encodedReviewKpAndRg := Decrypt(bytes, Kpcr)
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
 
 	return decodedReviewKpAndRg

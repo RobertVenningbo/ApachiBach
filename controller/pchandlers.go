@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -63,13 +62,12 @@ func BidWaitHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, nil)
 }
 
-
-func GetAllBidsHandler(c *gin.Context) { 
+func GetAllBidsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
 	bidList := backend.Pc.GetAllBids()
 	var users []model.User
 	model.GetReviewers(&users)
-	
+
 	var unique []int
 	m := map[int]bool{}
 
@@ -85,12 +83,12 @@ func GetAllBidsHandler(c *gin.Context) {
 
 	str := ""
 	showBool := false
-	
+
 	type AllBids struct {
 		PaperBidCount int
 		Status        string
 		ShowBool      bool
-		UsersLength	  int
+		UsersLength   int
 	}
 
 	if len(users) == len(unique) {
@@ -100,7 +98,7 @@ func GetAllBidsHandler(c *gin.Context) {
 	} else {
 		str = "Not all reviewers have made bids"
 		showBool = true
-	} 
+	}
 
 	blabla := AllBids{
 		PaperBidCount: len(unique),
@@ -137,9 +135,8 @@ func ShareReviewsHandler(c *gin.Context) {
 
 	bidList := backend.Pc.GetAllBids()
 	backend.Pc.AssignPaper(bidList)
-	fmt.Println("Assign papers done")
 	backend.Pc.MatchPapers()
-	fmt.Println("MatchPapers done")
+	backend.Pc.DeliverAssignedPaper()
 	type Reviewer struct {
 		User string
 	}

@@ -22,14 +22,14 @@
             <div class="center">
                 <div class="flexcolumn">
                     <p>You have been assigned the paper:</p>
-                    <p>{{ .Title }} **placeholder**</p>
+                    <p>{{ .Title }}</p>
                     <button style="width: 30%; margin: auto; border-radius: 4px; border-color: grey;">Download paper</button>
                 </div>
             </div>
             <div class="center" style="margin-top: 50px;">
                 <div class="flexcolumn">
                     <h3>Write review ✍️:</h3>
-                    <form>
+                    <form action="/finishedreview" method="POST">
                         <textarea style="resize: none; border-radius: 4px; border-color: grey;" id="textarea_id" name="textarea_name" rows="4" cols="50"></textarea>
                         <br>
                     <input style="border-radius: 4px; border-color: grey;" type="submit" value="Submit">

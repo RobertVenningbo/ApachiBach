@@ -159,8 +159,26 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 // 	return pc.AllPapers, bidList
 // }
 
+func (pc *PC) DeliverAssignedPaper() { //Unfortunately, reviewers get access to the entire paper reviewerlist this way
+	for _, p := range pc.AllPapers {
+		for _, r := range p.ReviewerList {
+			str := fmt.Sprintf("DeliveredPaperForR%v", r.UserID)
+			Kpcr := pc.GetKPCRFromLog(r.UserID)
+			EncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(p), Kpcr)
+			logmsg := model.Log{
+				State: 7,
+				LogMsg: str,
+				FromUserID: 4000,
+				Value: EncryptedPaper[1],
+				Signature: EncryptedPaper[0],
+			}
+			model.CreateLogMsg(&logmsg)
+		}
+	}
+}
 
 func (pc *PC) AssignPaper(bidList[]*PaperBid) {
+	
 
 	reviewersBidsTaken := []Reviewer{}
 
@@ -293,7 +311,7 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
 	item := Trae.Find(msg)
-	if item.value == nil {
+	if item == nil {
 		CheckStringAgainstDB(msg)
 		item = Trae.Find(msg)
 	}
@@ -306,10 +324,8 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 }
 
 func (pc *PC) SupplyNIZK(p *Paper) bool {
-	fmt.Println("0")
 	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
-	fmt.Println("0.5")
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
 	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers
 	nonce := reviewSignedStruct.Nonce

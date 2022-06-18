@@ -129,14 +129,17 @@
       </style>
     </head>
     <body>
-        <div style="text-align: center;">
-            <h1>Waiting for papers to be submitted</h1>            
-        </div>
-        {{ if .Proceed}}
-        <form action="/paperbid">
-          <input type="submit" value="Place Bids">
+      {{ if .Proceed}}
+      <div style="text-align: center;">
+          <h1>{{ .Status }}</h1>            
+      </div>
+        <form action="{{ .WhereTo }}">
+          <input type="submit" value="Continue">
         </form>
         {{ else}}
+        <div style="text-align: center;">
+          <h1>Waiting for action from the program committee. Please refresh in 2 minutes.</h1>            
+       </div>
         <div class="sk-circle">
             <div class="sk-circle1 sk-child"></div>
             <div class="sk-circle2 sk-child"></div>

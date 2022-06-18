@@ -13,6 +13,7 @@ import (
 )
 
 var papers []*backend.Paper
+var paper *backend.Paper
 var reviewer backend.Reviewer
 var reviewerexists bool
 
@@ -25,16 +26,31 @@ func PrepStageHandler(c *gin.Context) {
 		log.Fatal("PrepStageHandler failed")
 		return
 	}
-
-	proceed := false
-	if logMsg.State > 3 {
-		proceed = true
-	}
+	proceedToMatch := false
+	proceedToBid := false
 	type Message struct {
 		Proceed bool
+		Status  string
+		WhereTo string
 	}
-	msg := Message{
-		Proceed: proceed,
+	var msg Message
+	if logMsg.State == 4  {
+		proceedToBid = true
+		msg = Message{
+			Proceed: proceedToBid,
+			Status: "Continue to bid on papers.",
+			WhereTo: "/paperbid",
+
+		}
+	}
+	if logMsg.State > 6 {
+		proceedToBid = false
+		proceedToMatch = true
+		msg = Message {
+			Proceed: proceedToMatch,
+			Status: "You have been assigned a paper, please continue.",
+			WhereTo: "/makereview",
+		}
 	}
 	tpl.Execute(c.Writer, msg)
 
@@ -54,6 +70,7 @@ func PrepStageHandler(c *gin.Context) {
 	reviewer = backend.Reviewer{
 		UserID: portAsInt,
 		Keys:   keys,
+		PaperCommittedValue: &backend.CommitStructPaper{},
 	}
 	model.CreateUser(&user)
 	backend.InitLocalPC()
@@ -61,7 +78,7 @@ func PrepStageHandler(c *gin.Context) {
 	Kpcr := backend.GenerateSharedSecret(&backend.Pc, nil, &reviewer)
 	str := fmt.Sprintf("KPCR with PC and R%v", reviewer.UserID)
 	msg2 := model.Log{
-		State:      99,
+		State:      3, //This needs to be something else
 		LogMsg:     str,
 		FromUserID: reviewer.UserID,
 		Value:      backend.EncodeToBytes(Kpcr),
@@ -69,35 +86,11 @@ func PrepStageHandler(c *gin.Context) {
 	model.CreateLogMsg(&msg2)
 }
 
-func PaperBidHandler(c *gin.Context) {
+func PaperBidHandler(c *gin.Context) { //TODO: Implement a way to refresh without adding the same paper to the paper list
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
+
 	backend.InitLocalPCPaperList()
 	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
-
-	// papers := []backend.Paper{
-	// 	{
-	// 		Id:           1,
-	// 		Selected:     false,
-	// 		ReviewerList: nil,
-	// 		Bytes:        nil,
-	// 		Title:        "Fed Titel1",
-	// 	},
-	// 	{
-	// 		Id:           2,
-	// 		Selected:     false,
-	// 		ReviewerList: nil,
-	// 		Bytes:        nil,
-	// 		Title:        "Fed Titel2",
-	// 	},
-	// 	{
-	// 		Id:           3,
-	// 		Selected:     false,
-	// 		ReviewerList: nil,
-	// 		Bytes:        nil,
-	// 		Title:        "Fed Titel3",
-	// 	},
-	// }
-
 	tpl.Execute(c.Writer, papers)
 }
 
@@ -131,21 +124,70 @@ func MakeBidHandler(c *gin.Context) {
 	var logmsg model.Log
 	model.GetLastLogMsg(&logmsg)
 	papersMatched = logmsg.State > 6
-	
 
 	bools := Bools{
-		BidsSent: true,
+		BidsSent:      true,
 		PapersMatched: papersMatched,
 	}
-
-
+	c.Redirect(303, "/")
 	tpl.Execute(c.Writer, bools)
 }
 
 func MakeReviewHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
-	// get data
-	tpl.Execute(c.Writer, nil)
+
+	paper = reviewer.GetAssignedPaperFromPCLog()
+	fmt.Println(paper.Id)
+	reviewer.PaperCommittedValue.Paper = paper
+
+	tpl.Execute(c.Writer, paper)
+}
+
+func FinishedReviewHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
+
+	review := c.Request.FormValue("textarea_name")
+	reviewer.FinishReview(review)
+	reviewer.SignReviewPaperCommit()
+	fmt.Println(review)
+
+	logmsg := model.Log{}
+	model.GetLastLogMsg(&logmsg)
+	
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+	msg := Message{
+		Proceed: logmsg.State == 12, //change later
+		Status:	 "All reviews are now finished. Please continue to discussing.",
+		WhereTo: "/discussing",
+	}
+
+	tpl.Execute(c.Writer, msg)
+
+}
+
+func GetFinishedReviewHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
+
+	logmsg := model.Log{}
+	model.GetLastLogMsg(&logmsg)
+	
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+	msg := Message{
+		Proceed: logmsg.State == 12, //change later
+		Status:	 "All reviews are now finished. Please continue to discussing.",
+		WhereTo: "/discussing",
+	}
+
+	tpl.Execute(c.Writer, msg)
+
 }
 
 func DiscussingHandler(c *gin.Context) {

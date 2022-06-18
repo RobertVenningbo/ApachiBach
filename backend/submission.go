@@ -191,24 +191,17 @@ func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not u
 
 func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
-	fmt.Println("100")
 	item := Trae.Find(msg)
 	if item == nil {
 		CheckStringAgainstDB(msg)
 		item = Trae.Find(msg)
 	}
 	bytes := item.value.([]byte)
-	fmt.Println("101")
 	decodedSubmitMessage := DecodeToStruct(bytes)
-	fmt.Println("102")
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
-	fmt.Println("103")
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
-	fmt.Println("104")
 
 	decryptedPaperAndRandomness := Decrypt(submitMessage.PaperAndRandomness, string(kpcs))
-	fmt.Println("106")
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
-	fmt.Println("107")
 	return PaperAndRandomness
 }

@@ -48,6 +48,8 @@ func main() {
 		router.GET("/paperbid", controller.PaperBidHandler)
 		router.POST("/sendbid", controller.MakeBidHandler)
 		router.GET("/makereview", controller.MakeReviewHandler)
+		router.POST("/finishedreview", controller.FinishedReviewHandler)
+		router.GET("/finishedreview", controller.GetFinishedReviewHandler)
 		router.GET("/discussing", controller.DiscussingHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
