@@ -15,6 +15,10 @@ type CommitMsg struct {
 	PaperCommit   []byte
 }
 
+type ValueSignature struct {
+	Value     []byte
+	Signature []byte
+}
 //Review
 
 type ReviewCommitNonceStruct struct {

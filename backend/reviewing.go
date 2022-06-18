@@ -3,7 +3,6 @@ package backend
 import (
 	_ "errors"
 	"fmt"
-	_ "fmt"
 	"log"
 	ec "swag/ec"
 	"swag/model"
@@ -34,11 +33,11 @@ func (r *Reviewer) FinishReview(review string) { //step 8
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
 
 	logmsg := model.Log{
-		State: 8,
-		LogMsg: str,
+		State:      8,
+		LogMsg:     str,
 		FromUserID: r.UserID,
-		Value: signAndEnc[1],
-		Signature: signAndEnc[0],
+		Value:      signAndEnc[1],
+		Signature:  signAndEnc[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signAndEnc)
@@ -59,11 +58,11 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
 	logmsg := model.Log{
-		State: 9,
-		LogMsg: str,
+		State:      9,
+		LogMsg:     str,
 		FromUserID: r.UserID,
-		Value: rCommitSignature[1],
-		Signature: rCommitSignature[0],
+		Value:      rCommitSignature[1],
+		Signature:  rCommitSignature[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, rCommitSignature)
@@ -127,7 +126,19 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 
 	listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
 	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", pId)
-	log.Println(putStr)
+
+	logmsg := model.Log{
+		State:      11,
+		LogMsg:     putStr,
+		FromUserID: 4000,
+		Value:      listSignature[1],
+		Signature:  listSignature[0],
+	}
+
+	err := model.CreateLogMsg(&logmsg)
+	if err != nil {
+		log.Println("error in (pc).CollectReviews")
+	}
 	Trae.Put(putStr, listSignature)
 }
 
@@ -148,16 +159,23 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 
 func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", reviewer.UserID)
-	signedReviewStruct := (Trae.Find(str)).value
-	sig, encryptedReviewStruct := SplitSignatureAndMsg(signedReviewStruct.([][]byte))
-	Kpcr := GenerateSharedSecret(pc, nil, &reviewer)
-	encodedReviewStruct := Decrypt(encryptedReviewStruct, Kpcr)
-	decodedReviewStruct := DecodeToStruct(encodedReviewStruct).(ReviewStruct)
-	hash, _ := GetMessageHash(encodedReviewStruct)
+	signedReviewStruct := Trae.Find(str)
 
-	isLegit := Verify(&reviewer.Keys.PublicKey, sig, hash)
+	if signedReviewStruct == nil {
+		CheckStringAgainstDBStruct(str)
+		signedReviewStruct = Trae.Find(str)
+	}
+
+	reviewStructBytes := signedReviewStruct.value.([]byte)
+	valueSignature := DecodeToStruct(reviewStructBytes).(ValueSignature)
+	Kpcr := pc.GetKPCRFromLog(reviewer.UserID)
+	encodedReviewStructValue := Decrypt(valueSignature.Value, Kpcr)
+	decodedReviewStruct := DecodeToStruct(encodedReviewStructValue).(ReviewStruct)
+	hash, _ := GetMessageHash(encodedReviewStructValue)
+
+	isLegit := Verify(&reviewer.Keys.PublicKey, valueSignature.Signature, hash)
 	if decodedReviewStruct.Review == "" || !isLegit {
-		err := fmt.Errorf("Error in GetReviewStruct, Review is empty or verification failed")
+		err := fmt.Errorf("error in GetReviewStruct, Review is empty or verification failed")
 		return ReviewStruct{}, err
 	}
 	return decodedReviewStruct, nil

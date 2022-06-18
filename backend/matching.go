@@ -141,24 +141,6 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	log.Println(msg + "logged.")
 }
 
-// func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) { //Not used, maybe delete
-// 	bidList := []*PaperBid{}
-// 	for i := range reviewerSlice { //loop to get list of all bidded papers
-// 		p := reviewerSlice[i].GetBiddedPaper()
-// 		bidList = append(bidList, p)
-// 	}
-
-// 	for _, p := range pc.AllPapers {
-// 		for _, b := range bidList {
-// 			if p.Id == b.Paper.Id {
-// 				p = b.Paper
-
-// 			}
-// 		}
-// 	}
-// 	return pc.AllPapers, bidList
-// }
-
 func (pc *PC) DeliverAssignedPaper() { //Unfortunately, reviewers get access to the entire paper reviewerlist this way
 	for _, p := range pc.AllPapers {
 		for _, r := range p.ReviewerList {
@@ -232,23 +214,6 @@ func (pc *PC) AssignPaper(bidList[]*PaperBid) {
 	//pc.SetReviewersPaper(reviewerSlice)
 }
 
-// This method is a little messy however it is not expected to be called on a lot of entities.
-// **Finds every assigned reviewer for every paper and makes it bidirectional, such that a reviewer also has a reference to a paper**
-// **Basically a fast reversal of assignPaper in terms of being bidirectional**
-func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
-	for _, p := range pc.AllPapers {
-		for _, r := range p.ReviewerList {
-			for _, r1 := range reviewerList {
-				if r.UserID == r1.UserID {
-					if r1.PaperCommittedValue == nil {
-						r1.PaperCommittedValue = &CommitStructPaper{}
-					}
-					r1.PaperCommittedValue.Paper = p
-				}
-			}
-		}
-	}
-}
 func (pc *PC) MatchPapers() {
 	for _, p := range pc.AllPapers {
 		fmt.Println("in match papers")
