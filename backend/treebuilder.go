@@ -38,5 +38,5 @@ func CheckStringAgainstDBStruct(str string) {
 		Signature: msg.Signature,
 	}
 
-	Trae.Put(msg.LogMsg, EncodeToBytes(msglog))
+	Trae.Put(msg.LogMsg, msglog)
 }

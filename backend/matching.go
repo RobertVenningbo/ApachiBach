@@ -57,7 +57,7 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	return pList
 }
 
-func (pc *PC) GetBiddedPaper(id int) *PaperBid { 
+func (pc *PC) GetBiddedPaper(id int) *PaperBid {
 	Kpcr := pc.GetKPCRFromLog(id)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", id)
 	EncryptedSignedBid := Trae.Find(msg)
@@ -69,9 +69,9 @@ func (pc *PC) GetBiddedPaper(id int) *PaperBid {
 	if EncryptedSignedBid == nil {
 		return &PaperBid{
 			nil,
-			&Reviewer{ 
-				UserID: -1,
-				Keys: nil,
+			&Reviewer{
+				UserID:              -1,
+				Keys:                nil,
 				PaperCommittedValue: nil,
 			},
 		}
@@ -92,7 +92,6 @@ func (pc *PC) GetAllBids() []*PaperBid {
 	}
 	return bidList
 }
-
 
 func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
@@ -148,20 +147,18 @@ func (pc *PC) DeliverAssignedPaper() { //Unfortunately, reviewers get access to 
 			Kpcr := pc.GetKPCRFromLog(r.UserID)
 			EncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(p), Kpcr)
 			logmsg := model.Log{
-				State: 7,
-				LogMsg: str,
+				State:      7,
+				LogMsg:     str,
 				FromUserID: 4000,
-				Value: EncryptedPaper[1],
-				Signature: EncryptedPaper[0],
+				Value:      EncryptedPaper[1],
+				Signature:  EncryptedPaper[0],
 			}
 			model.CreateLogMsg(&logmsg)
 		}
 	}
 }
 
-func (pc *PC) AssignPaper(bidList[]*PaperBid) {
-	
-
+func (pc *PC) AssignPaper(bidList []*PaperBid) {
 	reviewersBidsTaken := []Reviewer{}
 
 	for _, bid := range bidList {
@@ -210,7 +207,7 @@ func (pc *PC) AssignPaper(bidList[]*PaperBid) {
 			}
 		}
 	}
-	
+
 	//pc.SetReviewersPaper(reviewerSlice)
 }
 
@@ -240,11 +237,11 @@ func (pc *PC) MatchPapers() {
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
 		logmsg := model.Log{
-			State: 7,
-			LogMsg: msg,
+			State:      7,
+			LogMsg:     msg,
 			FromUserID: 4000,
-			Value: signature[1],
-			Signature: signature[0],
+			Value:      signature[1],
+			Signature:  signature[0],
 		}
 		model.CreateLogMsg(&logmsg)
 		Trae.Put(msg, signature[1])

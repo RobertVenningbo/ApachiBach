@@ -2,8 +2,9 @@ package model
 
 import (
 	"errors"
-	"swag/database"
 	"log"
+	"swag/database"
+
 	"gorm.io/gorm"
 )
 
@@ -34,7 +35,6 @@ func GetLogMsgByMsg(logmsg *Log, msg string) {
 	result := database.DB.Where("log_msg = ?", msg).First(logmsg)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		log.Println("Error in GetLogMsgByMsg")
-		return
 	}
 
 }

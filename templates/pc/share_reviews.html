@@ -10,7 +10,7 @@
     </head>
     <body>
         <div style="text-align: center;">
-          <div style="border-color: cyan;"> <!-- debugging border-color-->
+          <div> <!-- debugging border-color-->
             <blockquote>
                 <table >
     
@@ -20,29 +20,41 @@
                     <tr>
                         <th>Paper Title</th>
                         <th>Reviewers</th>
-                        <th>Share Reviews</th>
                     </tr>
                     </thead>
                
                     <!-- Table body -->
         
                     <tbody>
-                    {{ range . }}
+                    {{ range .Msgs }}
                     <tr>
                         <td>{{ .Title }}</td>
-                        <td><p>{{ .ReviewerIds }}</p></td> 
-                        <td>
-                            <button>Share reviews</button>
-                        </td>
+                        <td>{{ .ReviewerIds }}</p></td> 
                     </tr>
                     {{ end }}
                     </tbody>
                 </table>
             </blockquote>   
+
           </div>
         </div>
-        <button>
-            Proceed to decision
-        </button>
+        <a href="/decision">
+           <button>
+               Proceed to decision
+           </button>
+        </a>
+        <form action="javascript:var rslt=confirm('Confirm all reviewers have made reviews.');if(rslt){window.location.replace('/collectreviews')}else{}" method="POST"> 
+            <button type="submit"> 
+                Share all reviews with other reviewers of same paper 
+            </button>
+        </form>
+        <a href="/checkreviews">
+            <button>
+                Check reviews
+            </button>
+         </a>
+         <div>
+            {{ .Reviews }}
+         </div>
     </body>
 </html>

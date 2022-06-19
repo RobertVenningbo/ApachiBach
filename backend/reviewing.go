@@ -30,7 +30,7 @@ func (r *Reviewer) FinishReview(review string) { //step 8
 	}
 
 	signAndEnc := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(reviewStruct), Kpcr)
-	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", r.UserID)
+	str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
 
 	logmsg := model.Log{
 		State:      8,
@@ -68,44 +68,50 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 	Trae.Put(str, rCommitSignature)
 }
 
-func (pc *PC) GenerateKeysForDiscussing(reviewers []Reviewer) { //step 10
-	kp := NewKeys() //generating new group key
-
-	rg := ec.GetRandomInt(pc.Keys.D) //generating new grade randomness rg for later commits.
-	strPC := ""
+func (pc *PC) GenerateKeysForDiscussing() { //step 10
 	tempStruct := ReviewKpAndRg{}
-	for _, r := range reviewers {
-		Kpcr := pc.GetKPCRFromLog(r.UserID)
-		GroupKeyAndRg := ReviewKpAndRg{
-			kp,
-			rg,
+	for _, p := range pc.AllPapers {
+		kp := NewKeys() //generating new group key
+
+		rg := ec.GetRandomInt(pc.Keys.D) //generating new grade randomness rg for later commits.
+		strPC := ""
+		for _, r := range p.ReviewerList {
+			Kpcr := pc.GetKPCRFromLog(r.UserID)
+
+			GroupKeyAndRg := ReviewKpAndRg{
+				kp,
+				rg,
+			}
+
+			reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(GroupKeyAndRg), Kpcr)
+			str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
+
+			logmsg := model.Log{
+				State:      10,
+				LogMsg:     str,
+				FromUserID: 4000,
+				Value:      reviewKpAndRg[1],
+				Signature:  reviewKpAndRg[0],
+			}
+			model.CreateLogMsg(&logmsg)
+			Trae.Put(str, reviewKpAndRg[1])
+
+			tempStruct = GroupKeyAndRg
 		}
-		reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(GroupKeyAndRg), Kpcr)
-		str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
+		strPC = fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", p.Id)
+		reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(tempStruct), pc.Keys.D.String())
+
 		logmsg := model.Log{
-			State: 10,
-			LogMsg: str,
+			State:      10,
+			LogMsg:     strPC,
 			FromUserID: 4000,
-			Value: reviewKpAndRg[1],
-			Signature: reviewKpAndRg[0],
+			Value:      reviewKpAndRg[1],
+			Signature:  reviewKpAndRg[0],
 		}
 		model.CreateLogMsg(&logmsg)
-		Trae.Put(str, reviewKpAndRg)
-		tempStruct = GroupKeyAndRg
-		strPC = fmt.Sprintf("Encrypted KpAndRg for PC, for Paper%v", r.PaperCommittedValue.Paper.Id)
+		Trae.Put(strPC, reviewKpAndRg[1])
 	}
 
-	reviewKpAndRg := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(tempStruct), pc.Keys.D.String())
-
-	logmsg := model.Log{
-		State: 10,
-		LogMsg: strPC,
-		FromUserID: 4000,
-		Value: reviewKpAndRg[1],
-		Signature: reviewKpAndRg[0],
-	}
-	model.CreateLogMsg(&logmsg)
-	Trae.Put(strPC, reviewKpAndRg)
 }
 
 func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
@@ -124,7 +130,7 @@ func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 	return decodedReviewKpAndRg
 }
 
-func (pc *PC) CollectReviews(pId int) { //step 11
+func (pc *PC) CollectReviews1(pId int) { //step 11
 	ReviewStructList := []ReviewStruct{}
 	revKpAndRg := ReviewKpAndRg{}
 	for _, p := range pc.AllPapers {
@@ -160,6 +166,51 @@ func (pc *PC) CollectReviews(pId int) { //step 11
 	Trae.Put(putStr, listSignature)
 }
 
+func (pc *PC) CollectReviews() { //step 11
+	fmt.Println(1)
+	ReviewStructList := []ReviewStruct{}
+	fmt.Println(2)
+	revKpAndRg := ReviewKpAndRg{}
+	fmt.Println(3)
+	for _, p := range pc.AllPapers {
+		fmt.Println(4)
+		ReviewStructList = []ReviewStruct{}
+		fmt.Println(5)
+		revKpAndRg = pc.GetKpAndRgPC(p.Id)
+		fmt.Println(6)
+		Kp := revKpAndRg.GroupKey
+		fmt.Println(7)
+		for _, r := range p.ReviewerList {
+			fmt.Println(8)
+			reviewStruct, err := pc.GetReviewStruct(r)
+			fmt.Println(9)
+			if err != nil {
+				log.Println(err)
+			}
+			fmt.Printf("%#v \n", reviewStruct)
+			ReviewStructList = append(ReviewStructList, reviewStruct)
+		}
+		fmt.Println(10)
+		listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
+		fmt.Println(11)
+		putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", p.Id)
+
+		logmsg := model.Log{
+			State:      11,
+			LogMsg:     putStr,
+			FromUserID: 4000,
+			Value:      listSignature[1],
+			Signature:  listSignature[0],
+		}
+		fmt.Println(12)
+		err := model.CreateLogMsg(&logmsg)
+		if err != nil {
+			log.Println("error in (pc).CollectReviews")
+		}
+		Trae.Put(putStr, listSignature)
+	}
+}
+
 func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
 	reviewKpAndRg := Trae.Find(str)
@@ -176,7 +227,7 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 }
 
 func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
-	str := fmt.Sprintf("Reviewer, %v, finish review on paper\n", reviewer.UserID)
+	str := fmt.Sprintf("Reviewer, %v, finish review on paper", reviewer.UserID)
 	signedReviewStruct := Trae.Find(str)
 
 	if signedReviewStruct == nil {

@@ -19,6 +19,17 @@ type ValueSignature struct {
 	Value     []byte
 	Signature []byte
 }
+
+type Message struct {
+	Title       string
+	ReviewerIds []int
+}
+
+type ShareReviewsMessage struct {
+	Reviews string
+	Msgs    []Message
+}
+
 //Review
 
 type ReviewCommitNonceStruct struct {

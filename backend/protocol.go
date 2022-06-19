@@ -65,7 +65,7 @@ func GenerateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 		privateS := submitter.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
-		} else {
+	} else {
 
 		privateR := reviewer.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
@@ -93,7 +93,7 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
 
-func InitGobs(){
+func InitGobs() {
 	gob.Register(Paper{})
 	gob.Register(ReviewSignedStruct{})
 	gob.Register(CommitStruct{})
@@ -118,9 +118,11 @@ func InitGobs(){
 	gob.Register(RejectMessage{})
 	gob.Register(SendGradeStruct{})
 	gob.Register(ClaimMessage{})
+	gob.Register(ValueSignature{})
+	gob.Register(Message{})
+	gob.Register(ShareReviewsMessage{})
 }
 
-//TODO make init func for registering when starting server
 func EncodeToBytes(p interface{}) []byte {
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)

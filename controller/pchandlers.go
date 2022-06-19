@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -14,8 +15,8 @@ func PCHomeHandler(c *gin.Context) {
 
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
 	tpl.Execute(c.Writer, nil)
-	//var DBuser model.User
-	//model.GetPC(&DBuser)
+	var DBuser model.User
+	model.GetPC(&DBuser)
 	if ispctaken {
 		return
 	}
@@ -25,11 +26,11 @@ func PCHomeHandler(c *gin.Context) {
 	pubkeys := backend.EncodeToBytes(keys.PublicKey)
 	backend.Pc.Keys = keys
 
-	// if DBuser.Usertype == "pc" {
-	// 	fmt.Println("PC already exist in DB.")
-	// 	model.UpdatePCKeys(pubkeys)
-	// 	return
-	// }
+	if DBuser.Usertype == "pc" {
+		fmt.Println("PC already exist in DB.")
+		model.UpdatePCKeys(pubkeys)
+		return
+	}
 
 	user = model.User{
 		Username:   "Mr. Program Committee",
@@ -37,15 +38,6 @@ func PCHomeHandler(c *gin.Context) {
 		PublicKeys: pubkeys,
 	}
 	model.CreateUser(&user)
-}
-
-// func DistributePapersHandler(c *gin.Context) {
-// 	PCDistributePapers()
-// 	c.Redirect(303, "/")
-// }
-func GetBidsHandler(c *gin.Context) {
-
-	c.Redirect(303, "/")
 }
 
 func BidWaitHandler(c *gin.Context) {
@@ -138,25 +130,61 @@ func ShareReviewsHandler(c *gin.Context) {
 	backend.Pc.MatchPapers()
 	backend.Pc.DeliverAssignedPaper()
 
-	type Message struct {
-		Title     string
-		ReviewerIds []int
-	}
+	messages := PaperRowHelper()
 
-	messages := []Message{}
+	tpl.Execute(c.Writer, &messages)
+}
+
+func ShareReviewsButtonHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
+	backend.Pc.GenerateKeysForDiscussing() // This created all Kp for each reviewerlist, i.e. each paper.
+	fmt.Println("generatekeys succes")
+
+	backend.Pc.CollectReviews()
+	fmt.Println("collectreviews succes")
+
+	messages := PaperRowHelper()
+
+	tpl.Execute(c.Writer, &messages)
+}
+
+func PaperRowHelper() backend.ShareReviewsMessage {
+	messages := []backend.Message{}
 
 	for _, p := range backend.Pc.AllPapers {
 		ids := []int{}
 		for _, r := range p.ReviewerList {
 			ids = append(ids, r.UserID)
 		}
-		message := Message{
-			p.Title,
-			ids,
+		message := backend.Message{
+			Title:       p.Title,
+			ReviewerIds: ids,
 		}
 		messages = append(messages, message)
 	}
+	return backend.ShareReviewsMessage{
+		Reviews: "",
+		Msgs:    messages,
+	}
+}
 
-	
-	tpl.Execute(c.Writer, &messages)
+func CheckReviewsHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
+	msgs := PaperRowHelper()
+	var users []model.User
+	model.GetReviewers(&users)
+	size := len(users)
+	counter := 0
+	for _, p := range backend.Pc.AllPapers {
+		for _, r := range p.ReviewerList {
+			str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
+			backend.CheckStringAgainstDB(str)
+			item := backend.Trae.Find(str)
+			if item != nil {
+				counter++
+			}
+		}
+	}
+	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
+	tpl.Execute(c.Writer, msgs)
 }

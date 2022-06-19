@@ -58,6 +58,8 @@ func main() {
 		router.GET("/sharereviews", controller.ShareReviewsHandler)
 		router.GET("/bidwait", controller.BidWaitHandler)
 		router.GET("/getallbids", controller.GetAllBidsHandler)
+		router.GET("/collectreviews", controller.ShareReviewsButtonHandler)
+		router.GET("/checkreviews", controller.CheckReviewsHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")
