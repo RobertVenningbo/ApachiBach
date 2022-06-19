@@ -130,42 +130,6 @@ func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 	return decodedReviewKpAndRg
 }
 
-func (pc *PC) CollectReviews1(pId int) { //step 11
-	ReviewStructList := []ReviewStruct{}
-	revKpAndRg := ReviewKpAndRg{}
-	for _, p := range pc.AllPapers {
-		if pId == p.Id {
-			for _, r := range p.ReviewerList {
-				reviewStruct, err := pc.GetReviewStruct(r)
-				if err != nil {
-					log.Panic(err)
-				}
-				ReviewStructList = append(ReviewStructList, reviewStruct)
-				revKpAndRg = pc.GetKpAndRgPC(pId)
-			}
-		}
-	}
-
-	Kp := revKpAndRg.GroupKey
-
-	listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
-	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", pId)
-
-	logmsg := model.Log{
-		State:      11,
-		LogMsg:     putStr,
-		FromUserID: 4000,
-		Value:      listSignature[1],
-		Signature:  listSignature[0],
-	}
-
-	err := model.CreateLogMsg(&logmsg)
-	if err != nil {
-		log.Println("error in (pc).CollectReviews")
-	}
-	Trae.Put(putStr, listSignature)
-}
-
 func (pc *PC) CollectReviews() { //step 11
 	fmt.Println(1)
 	ReviewStructList := []ReviewStruct{}
