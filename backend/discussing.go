@@ -11,9 +11,22 @@ import (
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
+<<<<<<< Updated upstream
 	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, []byte(input), Kp.D.String())
 	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
 	log.Println(logStr)
+=======
+	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(input), Kp.D.String())
+	logStr := fmt.Sprintf("Sending msg to the log by reviewer: %v", r.UserID)
+	logmsg := model.Log{
+		State: 12,
+		LogMsg: logStr,
+		FromUserID: r.UserID,
+		Value: encryptedSignedMsg[1],
+		Signature: encryptedSignedMsg[0],
+	}
+	model.CreateLogMsg(&logmsg)
+>>>>>>> Stashed changes
 	Trae.Put(logStr, encryptedSignedMsg)
 
 	logmsg := model.Log{
@@ -60,6 +73,15 @@ func (r *Reviewer) GradePaper(grade int) {
 	Kp := KpAndRg.GroupKey
 	encryptedSignedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
 	msg := fmt.Sprintf("Reviewer%v graded a paper", r.UserID)
+	logmsg := model.Log{
+		State: 12, //unsure of state
+		LogMsg: msg,
+		FromUserID: r.UserID,
+		Value: encryptedSignedGradeStruct[1],
+		Signature: encryptedSignedGradeStruct[0],
+	}
+	model.CreateLogMsg(&logmsg)
+
 	Trae.Put(msg, encryptedSignedGradeStruct)
 	log.Println(msg)
 
@@ -67,11 +89,16 @@ func (r *Reviewer) GradePaper(grade int) {
 
 func (r *Reviewer) GetGradeForReviewer(rId int) IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
-	gradeStruct := Trae.Find(msg).value
+	gradeStruct := Trae.Find(msg)
+	if gradeStruct == nil {
+		CheckStringAgainstDB(msg)
+		gradeStruct = Trae.Find(msg)
+	}
+
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	_, encryptedGradeStruct := SplitSignatureAndMsg(gradeStruct.([][]byte))
-	encodedGradeStruct := Decrypt(encryptedGradeStruct, Kp.D.String())
+	bytes := gradeStruct.value.([]byte)
+	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
 	return decodedGradeStruct
 }
@@ -107,14 +134,23 @@ func CalculateNearestGrade(avg float64) int {
 func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
 	str := fmt.Sprintf("GradeCommit for P%v has been made", r.PaperCommittedValue.Paper.Id)
 	found := Trae.Find(str)
-	if found == nil {
+	if found == nil { //Unsure about checking against DB here, double check this when it's to be used
 		KpAndRg := r.GetReviewKpAndRg()
 		Rg := KpAndRg.Rg
 		grade := AgreeOnGrade(r.PaperCommittedValue.Paper)
 		GradeBigInt := MsgToBigInt(EncodeToBytes(grade))
 		GradeCommit, _ := r.GetCommitMessageReviewGrade(GradeBigInt, Rg)
+
+		logmsg := model.Log{
+			State: 13, //unsure about state
+			LogMsg: str,
+			FromUserID: r.UserID,
+			Value: EncodeToBytes(grade),
+			Signature: nil, //nothing signed
+		}
+		model.CreateLogMsg(&logmsg)
+
 		Trae.Put(str, EncodeToBytes(GradeCommit))
-		log.Println(str)
 		return GradeCommit
 	} else {
 		EncodedGradeCommit := found.value.([]byte)
@@ -134,11 +170,17 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 		GradeCommit,
 		Nonce,
 	}
-	fmt.Printf("%#v\n", gradeReviewCommits)
 	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
 	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
+	logmsg := model.Log{
+		State: 13,
+		LogMsg: str,
+		FromUserID: r.UserID,
+		Value: signedGradeReviewCommits[1],
+		Signature: signedGradeReviewCommits[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signedGradeReviewCommits)
-	log.Println(str)
 
 }
 
@@ -148,6 +190,14 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	Kp := KpAndRg.GroupKey
 	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(grade), Kp.D.String()) //Notice Kp.(ecdsa.PrivateKey).D.String() seems super fishy, plz work.
 	submitStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
+
+	logmsg := model.Log{
+		State: 14,
+		LogMsg: submitStr,
+		FromUserID: r.UserID,
+		Value: signedGrade[1],
+		Signature: signedGrade[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(submitStr, signedGrade)
-	log.Println(submitStr)
 }

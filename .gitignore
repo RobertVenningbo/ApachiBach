@@ -25,3 +25,4 @@
 hs_err_pid*
 back-end/__debug_bin
 database/database.go
+database/database.go
