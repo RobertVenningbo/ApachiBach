@@ -163,7 +163,7 @@ func (pc *PC) CollectReviews() { //step 11
 	}
 }
 
-func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
+func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg { //Perhaps add verification of Pc signature.
 	str := fmt.Sprintf("PC signed and encrypted ReviewKpAndRg for revId%v", r.UserID)
 	reviewKpAndRg := Trae.Find(str)
 	if reviewKpAndRg == nil {

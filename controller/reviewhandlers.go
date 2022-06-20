@@ -34,21 +34,20 @@ func PrepStageHandler(c *gin.Context) {
 		WhereTo string
 	}
 	var msg Message
-	if logMsg.State == 4  {
+	if logMsg.State == 4 {
 		proceedToBid = true
 		msg = Message{
 			Proceed: proceedToBid,
-			Status: "Continue to bid on papers.",
+			Status:  "Continue to bid on papers.",
 			WhereTo: "/paperbid",
-
 		}
 	}
 	if logMsg.State > 6 {
 		proceedToBid = false
 		proceedToMatch = true
-		msg = Message {
+		msg = Message{
 			Proceed: proceedToMatch,
-			Status: "You have been assigned a paper, please continue.",
+			Status:  "You have been assigned a paper, please continue.",
 			WhereTo: "/makereview",
 		}
 	}
@@ -68,8 +67,8 @@ func PrepStageHandler(c *gin.Context) {
 		PublicKeys: pubkeys,
 	}
 	reviewer = backend.Reviewer{
-		UserID: portAsInt,
-		Keys:   keys,
+		UserID:              portAsInt,
+		Keys:                keys,
 		PaperCommittedValue: &backend.CommitStructPaper{},
 	}
 	model.CreateUser(&user)
@@ -114,8 +113,6 @@ func MakeBidHandler(c *gin.Context) {
 		}
 	}
 
-	var papersMatched bool
-
 	type Bools struct {
 		BidsSent      bool
 		PapersMatched bool
@@ -123,13 +120,12 @@ func MakeBidHandler(c *gin.Context) {
 
 	var logmsg model.Log
 	model.GetLastLogMsg(&logmsg)
-	papersMatched = logmsg.State > 6
 
 	bools := Bools{
 		BidsSent:      true,
-		PapersMatched: papersMatched,
+		PapersMatched: logmsg.State > 6, //if the current state is gt 6 we assume papers have been matched.
 	}
-	c.Redirect(303, "/")
+	c.Redirect(303, "/") //fix this pls
 	tpl.Execute(c.Writer, bools)
 }
 
@@ -153,20 +149,19 @@ func FinishedReviewHandler(c *gin.Context) {
 
 	logmsg := model.Log{}
 	model.GetLastLogMsg(&logmsg)
-	
+
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 12, //change later
-		Status:	 "All reviews are now finished. Please continue to discussing.",
+		Proceed: logmsg.State == 11, //change later
+		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
 
 	tpl.Execute(c.Writer, msg)
-
 }
 
 func GetFinishedReviewHandler(c *gin.Context) {
@@ -174,28 +169,34 @@ func GetFinishedReviewHandler(c *gin.Context) {
 
 	logmsg := model.Log{}
 	model.GetLastLogMsg(&logmsg)
-	
+
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 12, //change later
-		Status:	 "All reviews are now finished. Please continue to discussing.",
+		Proceed: logmsg.State == 11, //change later
+		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
 
 	tpl.Execute(c.Writer, msg)
-
 }
 
 func DiscussingHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/discussing.html"))
-	/*
-		TODO:
-		- Hent relevante log beskeder
-		- Sørg for håndtering af grade input og kommentar input
-	*/
-	tpl.Execute(c.Writer, nil)
+	data := reviewer.GetSecretMsgsFromReviewers() //retrieves messages for same paper as the reviewer itself and decrypts with Kp etc etc
+	tpl.Execute(c.Writer, data)
+}
+
+func PostMessageDiscussingHandler(c *gin.Context) {
+	discussingMessage := c.Request.FormValue("textarea_name")
+	str := fmt.Sprintf("Reviewer %v: %s", reviewer.UserID, discussingMessage)
+	reviewer.SendSecretMsgToReviewers(str)
+	c.Redirect(303, "/discussing") //cheesy way of refreshing gui
+}
+
+func PostGradeDiscussingHandler(c *gin.Context) {
+
 }

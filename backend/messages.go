@@ -74,6 +74,11 @@ type GradeReviewCommits struct {
 	Nonce             *big.Int
 }
 
+type DiscussingViewData struct {
+	Title string
+	Msgs  []string
+}
+
 //Decision
 
 type SendGradeStruct struct {

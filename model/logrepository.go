@@ -26,11 +26,6 @@ func GetLogMsgById(log *Log, id string) (err error) {
 	return nil
 }
 
-// dbRresult := userHandler.db.Where("email = ?", email).First(&user)
-// if errors.Is(dbRresult.Error, gorm.ErrRecordNotFound) {
-//     // handle record not found
-// }
-
 func GetLogMsgByMsg(logmsg *Log, msg string) {
 	result := database.DB.Where("log_msg = ?", msg).First(logmsg)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -46,6 +41,14 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 		return err
 	}
 	return nil
+}
+
+//get all logmsg
+func GetAllLogMsgsByMsg(logmsg *[]Log, msg string) {
+	err := database.DB.Where("log_msg = ?", msg).Find(logmsg).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetLogMsgByMsg")
+	}
 }
 
 func GetLastLogMsg(log *Log) (err error) {

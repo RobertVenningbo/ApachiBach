@@ -170,15 +170,13 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 					}
 					p.Selected = true
 					p.ReviewerList = append(p.ReviewerList, *bid.Reviewer)
-					break
 				} else {
 					reviewersBidsTaken = append(reviewersBidsTaken, *bid.Reviewer)
-					break
 				}
 			}
 		}
 	}
-	for i, r := range reviewersBidsTaken {
+	for _, r := range reviewersBidsTaken {
 		x := false
 		if r.PaperCommittedValue == nil {
 			r.PaperCommittedValue = &CommitStructPaper{}
@@ -187,18 +185,17 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 			if !p.Selected {
 				x = true
 				p.Selected = true
-				reviewer := &r
-				p.ReviewerList = append(p.ReviewerList, *reviewer)
+				p.ReviewerList = append(p.ReviewerList, r)
 				break
 			}
 		}
 		if x {
-			reviewersBidsTaken[i].UserID = -1
+			r.UserID = -1
 			x = false
 		}
 	}
 	for _, r := range reviewersBidsTaken {
-		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != -1) {
+		if (r.UserID != -1) {
 			r.PaperCommittedValue = &CommitStructPaper{}
 			for _, p := range pc.AllPapers {
 				p.Selected = true
@@ -207,14 +204,12 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 			}
 		}
 	}
-
-	//pc.SetReviewersPaper(reviewerSlice)
 }
 
 func (pc *PC) MatchPapers() {
 	for _, p := range pc.AllPapers {
 		fmt.Println("in match papers")
-		PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
+		PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id)) //notice what we are creating our commitment from, maybe this ok.
 
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
 

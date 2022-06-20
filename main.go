@@ -51,6 +51,7 @@ func main() {
 		router.POST("/finishedreview", controller.FinishedReviewHandler)
 		router.GET("/finishedreview", controller.GetFinishedReviewHandler)
 		router.GET("/discussing", controller.DiscussingHandler)
+		router.POST("/discussing", controller.PostMessageDiscussingHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		router.GET("/", controller.PCHomeHandler)

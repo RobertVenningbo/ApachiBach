@@ -5,15 +5,48 @@ import (
 	"fmt"
 	"log"
 	Math "math"
+	"swag/model"
 )
 
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(input), Kp.D.String())
-	logStr := fmt.Sprintf("Sending msg to the log by reviewer: %v", r.UserID)
+	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, []byte(input), Kp.D.String())
+	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
 	log.Println(logStr)
 	Trae.Put(logStr, encryptedSignedMsg)
+
+	logmsg := model.Log{
+		State:      12,
+		LogMsg:     logStr,
+		FromUserID: r.UserID,
+		Value:      encryptedSignedMsg[1],
+		Signature:  encryptedSignedMsg[0],
+	}
+	model.CreateLogMsg(&logmsg)
+}
+
+func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
+	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
+	var messages []string
+	var logmsgs []model.Log
+	model.GetAllLogMsgsByMsg(&logmsgs, logStr)
+	var logsmsgsnotbinded []model.Log
+
+	logsmsgsnotbinded = append(logsmsgsnotbinded, logmsgs...)
+	if len(logsmsgsnotbinded) > 0 {
+		reviewkpandrg := r.GetReviewKpAndRg()
+		Kp := reviewkpandrg.GroupKey
+		for _, v := range logsmsgsnotbinded {
+			bytes := Decrypt(v.Value, Kp.D.String())
+			messages = append(messages, string(bytes))
+		}
+	}
+	data := DiscussingViewData{
+		Title: r.PaperCommittedValue.Paper.Title,
+		Msgs:  messages,
+	}
+	return data
 }
 
 func (r *Reviewer) GradePaper(grade int) {
