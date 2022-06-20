@@ -2,7 +2,7 @@ package backend
 
 import (
 	"fmt"
-	"swag/model"
+	"log"
 )
 
 func (s *Submitter) ClaimPaper() { //step 19
@@ -16,14 +16,7 @@ func (s *Submitter) ClaimPaper() { //step 19
 	}
 	str := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
 	signature := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(msg), "")
-	logmsg := model.Log{
-		State: 19,
-		LogMsg: str,
-		FromUserID: s.UserID,
-		Value: signature[1],
-		Signature: signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
+	log.Println(str)
 	Trae.Put(str, signature)
 }
 
@@ -42,14 +35,7 @@ func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 	signature := SignsPossiblyEncrypts(pc.Keys, claimBytes, "")
 
 	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
-	logmsg := model.Log{
-		State: 20,
-		LogMsg: putStr,
-		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
+	log.Println(putStr)
 	Trae.Put(putStr, signature)
 }
 
@@ -73,19 +59,10 @@ func GetClaimMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature 
 
 	getStr := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
 	item := Trae.Find(getStr)
-	if item == nil {
-		CheckStringAgainstDB(getStr)
-		item = Trae.Find(getStr)
-	}
 
-	claimMsgBytes := item.value.([]byte)
-
-	var sigmsg model.Log 
-	model.GetLogMsgByMsg(&sigmsg, getStr)
-	sig := sigmsg.Signature
-	
-	
-	claimMsg := DecodeToStruct(claimMsgBytes).(ClaimMessage)
+	claimMsgBytes := item.value.([][]byte)
+	sig, encoded := SplitSignatureAndMsg(claimMsgBytes)
+	claimMsg := DecodeToStruct(encoded).(ClaimMessage)
 
 	return sig, claimMsg
 }

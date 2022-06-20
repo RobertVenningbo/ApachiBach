@@ -5,8 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"swag/model"
-
 	"github.com/0xdecaf/zkrp/ccs08"
 )
 
@@ -18,17 +16,11 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 		reviews,
 		grade,
 	}
-	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
-	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
 
-	logmsg := model.Log{
-		State: 15,
-		LogMsg: str,
-		FromUserID: 4000,
-		Value: EncMsgStruct[1],
-		Signature: EncMsgStruct[0],
-	}
-	model.CreateLogMsg(&logmsg)
+	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
+
+	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
+	log.Println(str)
 	Trae.Put(str, EncMsgStruct)
 }
 
@@ -50,16 +42,9 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(rejectMsg), "")
 
-	str := fmt.Sprintf("PC rejects Paper: %v", pId)
-	logmsg := model.Log{
-		State: 16,
-		LogMsg: str,
-		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, signature)
+	logMsg := fmt.Sprintf("PC rejects Paper: %v", pId)
+	log.Println(logMsg)
+	Trae.Put(logMsg, signature)
 
 	return rejectMsg
 }
@@ -77,27 +62,15 @@ func (pc *PC) CompileGrades() { //step 17
 
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
 	str := fmt.Sprint("PC compiles grades")
-	logmsg := model.Log{
-		State: 17,
-		LogMsg: str,
-		FromUserID: 4000,
-		Value: signStr[1],
-		Signature: signStr[0],
-	}
-	model.CreateLogMsg(&logmsg)
+	log.Println(str)
 	Trae.Put(str, signStr)
 }
 
 func (pc *PC) GetCompiledGrades() []int64 {
 	getStr := fmt.Sprintf("PC compiles grades")
-	item := Trae.Find(getStr)
-	if item == nil {
-		CheckStringAgainstDB(getStr)
-		item = Trae.Find(getStr)
-	}
-
-	bytes := item.value.([]byte)
-	DecodedGrades := DecodeToStruct(bytes).([]int)
+	item := Trae.Find(getStr).value.([][]byte)
+	_, EncodedGrades := SplitSignatureAndMsg(item)
+	DecodedGrades := DecodeToStruct(EncodedGrades).([]int)
 
 	var i64 []int64
 	for _, v := range DecodedGrades {
@@ -118,16 +91,8 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
 	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
-	logmsg := model.Log{
-		State: 18,
-		LogMsg: str,
-		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
+	log.Println(str)
 	Trae.Put(str, signature)
-
 
 	/*NIZK*/
 	params, errSetup := ccs08.SetupSet(grades)
@@ -169,14 +134,13 @@ func (pc *PC) GetGrade(pId int) int {
 		}
 	}
 	GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", holder)
-	item := Trae.Find(GetStr)
-	if item == nil {
-		CheckStringAgainstDB(GetStr)
-		item = Trae.Find(GetStr)
-	}
-	bytes := item.value.([]byte)
-	encodedGrade := Decrypt(bytes, Kp.D.String())
+	item := Trae.Find(GetStr).value.([][]byte)
+
+	_, enc := SplitSignatureAndMsg(item)
+
+	encodedGrade := Decrypt(enc, Kp.D.String())
 	decodedGrade := DecodeToStruct(encodedGrade).(int)
+	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
 
 	return decodedGrade
 }
@@ -200,13 +164,9 @@ func (s *Submitter) RetrieveGrades() SendGradeStruct {
 
 	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
 	log.Println(getStr)
-	item := Trae.Find(getStr)
-	if item == nil {
-		CheckStringAgainstDB(getStr)
-		item = Trae.Find(getStr)
-	}
-	bytes := item.value.([]byte)
-	encoded := Decrypt(bytes, Kpcs)
+	item := Trae.Find(getStr).value.([][]byte)
+	_, enc := SplitSignatureAndMsg(item)
+	encoded := Decrypt(enc, Kpcs)
 	decoded := DecodeToStruct(encoded).(SendGradeStruct)
 
 	return decoded

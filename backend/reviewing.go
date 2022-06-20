@@ -180,31 +180,17 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg { //Perhaps add verification
 
 func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper", reviewer.UserID)
-<<<<<<< Updated upstream
 
 	CheckStringAgainstDBStruct(str)
 	signedReviewStruct := Trae.Find(str)
 
 	reviewStructBytes := signedReviewStruct.value.(ValueSignature)
-=======
-	signedReviewStruct := Trae.Find(str)
-	if signedReviewStruct == nil {
-		CheckStringAgainstDBStruct(str)
-		signedReviewStruct = Trae.Find(str)
-	}
-	reviewStructBytes := signedReviewStruct.value.([]byte)
-	valueSignature := DecodeToStruct(reviewStructBytes).(ValueSignature)
->>>>>>> Stashed changes
 	Kpcr := pc.GetKPCRFromLog(reviewer.UserID)
 	encodedReviewStructValue := Decrypt(reviewStructBytes.Value, Kpcr)
 	decodedReviewStruct := DecodeToStruct(encodedReviewStructValue).(ReviewStruct)
 	hash, _ := GetMessageHash(encodedReviewStructValue)
-<<<<<<< Updated upstream
 
 	isLegit := Verify(&reviewer.Keys.PublicKey, reviewStructBytes.Signature, hash)
-=======
-	isLegit := Verify(&reviewer.Keys.PublicKey, valueSignature.Signature, hash)
->>>>>>> Stashed changes
 	if decodedReviewStruct.Review == "" || !isLegit {
 		err := fmt.Errorf("error in GetReviewStruct, Review is empty or verification failed")
 		return ReviewStruct{}, err

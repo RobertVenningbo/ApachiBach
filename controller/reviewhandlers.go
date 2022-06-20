@@ -3,8 +3,6 @@ package controller
 import (
 	"fmt"
 	"log"
-	"os"
-	"os/user"
 	"strconv"
 	"strings"
 	"swag/backend"
@@ -87,46 +85,11 @@ func PrepStageHandler(c *gin.Context) {
 	model.CreateLogMsg(&msg2)
 }
 
-
 func PaperBidHandler(c *gin.Context) { //TODO: Implement a way to refresh without adding the same paper to the paper list
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
 	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
-	tpl.Execute(c.Writer, papers)
-}
-
-func WriteToFileHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
-	c.Request.ParseForm()
-	var PaperIds []string
-	for _, v := range c.Request.Form {
-		PaperIds = append(PaperIds, v...)
-	}
-	for _, p := range papers {
-		for _, id := range PaperIds {
-			idInt, err := strconv.Atoi(id)
-			if err != nil {
-				log.Println("error converting id string to id int")
-			}
-			if idInt == p.Id {
-				paperbytes := p.Bytes
-				if err != nil {
-					panic(err)
-				}
-				currentuser, err := user.Current()
-				if err != nil {
-					panic(err)
-				  }
-				downloads := currentuser.HomeDir + "/Downloads/"
-				fmt.Println(downloads) //del once it all works
-				err = os.WriteFile(downloads + p.Title + ".pdf", paperbytes, 0644)
-				if err != nil {
-					log.Println("error writing file")
-				}
-			}
-		}
-	}
 	tpl.Execute(c.Writer, papers)
 }
 
