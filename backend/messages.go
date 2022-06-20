@@ -75,8 +75,9 @@ type GradeReviewCommits struct {
 }
 
 type DiscussingViewData struct {
-	Title string
-	Msgs  []string
+	Title   string
+	Msgs    []string
+	Reviews []ReviewStruct
 }
 
 //Decision

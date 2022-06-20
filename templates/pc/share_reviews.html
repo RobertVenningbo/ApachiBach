@@ -8,23 +8,23 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
-    <body>
-        <div style="text-align: center;">
-          <div> <!-- debugging border-color-->
+    <body style="background: lightgray;">
+        <div style="text-align: center; margin: auto; width: 50%;">
+          <div>
             <blockquote>
-                <table >
-    
+                <table style="margin: 0 auto;">
+                
                     <!-- Table header -->
-        
+                
                     <thead>
                     <tr>
                         <th>Paper Title</th>
                         <th>Reviewers</th>
                     </tr>
                     </thead>
-               
+                
                     <!-- Table body -->
-        
+                
                     <tbody>
                     {{ range .Msgs }}
                     <tr>
@@ -35,13 +35,11 @@
                     </tbody>
                 </table>
             </blockquote>   
-
-          </div>
         </div>
         <a href="/decision">
-           <button>
-               Proceed to decision
-           </button>
+            <button>
+                Proceed to decision
+            </button>
         </a>
         <form action="javascript:var rslt=confirm('Confirm all reviewers have made reviews.');if(rslt){window.location.replace('/collectreviews')}else{}" method="POST"> 
             <button type="submit"> 
@@ -52,9 +50,10 @@
             <button>
                 Check reviews
             </button>
-         </a>
-         <div>
+            </a>
+            <div>
             {{ .Reviews }}
-         </div>
+            </div>
+        </div>
     </body>
 </html>

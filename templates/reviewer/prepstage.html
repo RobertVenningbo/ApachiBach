@@ -128,14 +128,15 @@
           }
       </style>
     </head>
-    <body>
+    <body style="background: lightgrey;">
+      <div style="margin-top: 100px;">
       {{ if .Proceed}}
       <div style="text-align: center;">
           <h1>{{ .Status }}</h1>            
-      </div>
-        <form action="{{ .WhereTo }}">
-          <input type="submit" value="Continue">
-        </form>
+          <form action="{{ .WhereTo }}">
+            <input type="submit" value="Continue">
+          </form>
+        </div>
         {{ else}}
         <div style="text-align: center;">
           <h1>Waiting for action from the program committee. Please refresh in 2 minutes.</h1>            
@@ -155,5 +156,6 @@
             <div class="sk-circle12 sk-child"></div>
           </div>
         {{ end }}
+      </div>
     </body>
 </html>

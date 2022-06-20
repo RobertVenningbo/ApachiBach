@@ -138,10 +138,7 @@ func ShareReviewsHandler(c *gin.Context) {
 func ShareReviewsButtonHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
 	backend.Pc.GenerateKeysForDiscussing() // This creates all Kp for each reviewerlist, i.e. each paper.
-	fmt.Println("generatekeys succes")
-
 	backend.Pc.CollectReviews()
-	fmt.Println("collectreviews succes")
 
 	messages := PaperRowHelper()
 

@@ -42,10 +42,13 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 			messages = append(messages, string(bytes))
 		}
 	}
+	reviewStruct := r.GetCollectedReviews()
 	data := DiscussingViewData{
 		Title: r.PaperCommittedValue.Paper.Title,
 		Msgs:  messages,
+		Reviews: reviewStruct,
 	}
+
 	return data
 }
 
