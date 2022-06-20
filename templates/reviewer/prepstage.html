@@ -5,6 +5,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
+    
         .sk-circle {
             margin: 100px auto;
             width: 40px;
@@ -133,9 +134,11 @@
       <div style="text-align: center;">
           <h1>{{ .Status }}</h1>            
       </div>
+      <div style="text-align:center">
         <form action="{{ .WhereTo }}">
           <input type="submit" value="Continue">
         </form>
+      </div>
         {{ else}}
         <div style="text-align: center;">
           <h1>Waiting for action from the program committee. Please refresh in 2 minutes.</h1>            
