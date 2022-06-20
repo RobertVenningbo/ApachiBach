@@ -131,32 +131,20 @@ func (pc *PC) GetKpAndRgPC(pId int) ReviewKpAndRg {
 }
 
 func (pc *PC) CollectReviews() { //step 11
-	fmt.Println(1)
-	ReviewStructList := []ReviewStruct{}
-	fmt.Println(2)
 	revKpAndRg := ReviewKpAndRg{}
-	fmt.Println(3)
 	for _, p := range pc.AllPapers {
-		fmt.Println(4)
-		ReviewStructList = []ReviewStruct{}
-		fmt.Println(5)
+		ReviewStructList := []ReviewStruct{}
 		revKpAndRg = pc.GetKpAndRgPC(p.Id)
-		fmt.Println(6)
 		Kp := revKpAndRg.GroupKey
-		fmt.Println(7)
 		for _, r := range p.ReviewerList {
-			fmt.Println(8)
 			reviewStruct, err := pc.GetReviewStruct(r)
-			fmt.Println(9)
 			if err != nil {
 				log.Println(err)
 			}
 			fmt.Printf("%#v \n", reviewStruct)
 			ReviewStructList = append(ReviewStructList, reviewStruct)
 		}
-		fmt.Println(10)
 		listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())
-		fmt.Println(11)
 		putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", p.Id)
 
 		logmsg := model.Log{
@@ -192,24 +180,22 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg {
 
 func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 	str := fmt.Sprintf("Reviewer, %v, finish review on paper", reviewer.UserID)
+
+	CheckStringAgainstDBStruct(str)
 	signedReviewStruct := Trae.Find(str)
 
-	if signedReviewStruct == nil {
-		CheckStringAgainstDBStruct(str)
-		signedReviewStruct = Trae.Find(str)
-	}
-
-	reviewStructBytes := signedReviewStruct.value.([]byte)
-	valueSignature := DecodeToStruct(reviewStructBytes).(ValueSignature)
+	reviewStructBytes := signedReviewStruct.value.(ValueSignature)
 	Kpcr := pc.GetKPCRFromLog(reviewer.UserID)
-	encodedReviewStructValue := Decrypt(valueSignature.Value, Kpcr)
+	encodedReviewStructValue := Decrypt(reviewStructBytes.Value, Kpcr)
 	decodedReviewStruct := DecodeToStruct(encodedReviewStructValue).(ReviewStruct)
 	hash, _ := GetMessageHash(encodedReviewStructValue)
 
-	isLegit := Verify(&reviewer.Keys.PublicKey, valueSignature.Signature, hash)
+	isLegit := Verify(&reviewer.Keys.PublicKey, reviewStructBytes.Signature, hash)
 	if decodedReviewStruct.Review == "" || !isLegit {
 		err := fmt.Errorf("error in GetReviewStruct, Review is empty or verification failed")
 		return ReviewStruct{}, err
+	} else {
+		fmt.Printf("PC verifies reviewer: %v's review.\n", reviewer.UserID)
 	}
 	return decodedReviewStruct, nil
 }

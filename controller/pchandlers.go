@@ -92,14 +92,14 @@ func GetAllBidsHandler(c *gin.Context) {
 		showBool = true
 	}
 
-	blabla := AllBids{
+	data := AllBids{
 		PaperBidCount: len(unique),
 		Status:        str,
 		ShowBool:      showBool,
 		UsersLength:   len(users),
 	}
 
-	tpl.Execute(c.Writer, blabla)
+	tpl.Execute(c.Writer, data)
 
 }
 
@@ -137,7 +137,7 @@ func ShareReviewsHandler(c *gin.Context) {
 
 func ShareReviewsButtonHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
-	backend.Pc.GenerateKeysForDiscussing() // This created all Kp for each reviewerlist, i.e. each paper.
+	backend.Pc.GenerateKeysForDiscussing() // This creates all Kp for each reviewerlist, i.e. each paper.
 	fmt.Println("generatekeys succes")
 
 	backend.Pc.CollectReviews()

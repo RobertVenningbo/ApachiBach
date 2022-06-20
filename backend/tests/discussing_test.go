@@ -19,8 +19,9 @@ func TestCalculateNearestGrade(t *testing.T) {
 
 func TestGradePaperAndGetGrade(t *testing.T) {
 	reviewer.PaperCommittedValue.Paper = &p
-	reviewerSlice := []Reviewer{reviewer}
-	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.AllPapers[0] = &p
+	Pc.AllPapers[0].ReviewerList = append(Pc.AllPapers[0].ReviewerList, reviewer)
+	Pc.GenerateKeysForDiscussing() //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 	want := 7
 	reviewer.GradePaper(want)
 
@@ -35,9 +36,10 @@ func TestAgreeOnGrade(t *testing.T) {
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer3.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewerSlice := []Reviewer{reviewer, reviewer2, reviewer3}
-	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.AllPapers[0] = &p
+	Pc.AllPapers[0].ReviewerList = append(Pc.AllPapers[0].ReviewerList, reviewerSlice...)
+	Pc.GenerateKeysForDiscussing() //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 
-	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewer, reviewer2, reviewer3)
 
 	reviewer.GradePaper(4)
 	reviewer2.GradePaper(7)
@@ -53,7 +55,10 @@ func TestMakeGradeCommit(t *testing.T) {
 	reviewer.PaperCommittedValue.Paper = &p
 	reviewer2.PaperCommittedValue.Paper = &p
 	reviewerSlice := []Reviewer{reviewer, reviewer2}
-	Pc.GenerateKeysForDiscussing(reviewerSlice) //Calling this to fill log with necessary data, has been tested in reviewing_test.go
+	Pc.AllPapers[0] = &p
+	paperListTest[0].ReviewerList= append(paperListTest[0].ReviewerList, reviewerSlice...)
+
+	Pc.GenerateKeysForDiscussing() 
 	gradeCommit := reviewer.MakeGradeCommit()
 	gradeCommit2 := reviewer2.MakeGradeCommit()
 
