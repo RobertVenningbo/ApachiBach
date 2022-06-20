@@ -47,6 +47,7 @@ func main() {
 		router.GET("/", controller.PrepStageHandler)
 		router.GET("/paperbid", controller.PaperBidHandler)
 		router.POST("/sendbid", controller.MakeBidHandler)
+		router.GET("/downloadpaper", controller.WriteToFileHandler)
 		router.GET("/makereview", controller.MakeReviewHandler)
 		router.POST("/finishedreview", controller.FinishedReviewHandler)
 		router.GET("/finishedreview", controller.GetFinishedReviewHandler)

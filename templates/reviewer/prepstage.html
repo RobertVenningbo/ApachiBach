@@ -5,6 +5,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
+    
         .sk-circle {
             margin: 100px auto;
             width: 40px;
@@ -129,18 +130,14 @@
       </style>
     </head>
     <body style="background: lightgrey;">
-      <div style="margin-top: 100px;">
+      <div style="text-align: center; margin-top: 100px;">
       {{ if .Proceed}}
-      <div style="text-align: center;">
           <h1>{{ .Status }}</h1>            
           <form action="{{ .WhereTo }}">
             <input type="submit" value="Continue">
           </form>
-        </div>
         {{ else}}
-        <div style="text-align: center;">
           <h1>Waiting for action from the program committee. Please refresh in 2 minutes.</h1>            
-       </div>
         <div class="sk-circle">
             <div class="sk-circle1 sk-child"></div>
             <div class="sk-circle2 sk-child"></div>
