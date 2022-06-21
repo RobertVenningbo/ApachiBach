@@ -65,7 +65,7 @@ func (r *Reviewer) SignReviewPaperCommit() { //step 9
 		Signature:  rCommitSignature[0],
 	}
 	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, rCommitSignature)
+	Trae.Put(str, rCommitSignature[1])
 }
 
 func (pc *PC) GenerateKeysForDiscussing() { //step 10
@@ -203,7 +203,6 @@ func (pc *PC) GetReviewStruct(reviewer Reviewer) (ReviewStruct, error) {
 func (r *Reviewer) GetReviewCommitNonceStruct() ReviewCommitNonceStruct {
 
 	str := fmt.Sprintf("Reviewer %v signs paper review commit \n", r.UserID)
-	log.Printf("Reviewer: %v gets ReviewCommitNonce \n", r.UserID)
 	TreeItem := Trae.Find(str)
 	if TreeItem == nil {
 		CheckStringAgainstDB(str)

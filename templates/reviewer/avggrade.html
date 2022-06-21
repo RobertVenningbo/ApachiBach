@@ -8,25 +8,20 @@
             .center{
                 margin: auto;
                 width: 50%;
-                border: 3px solid green;
                 padding: 10px;
             }
       </style>
     </head>
     <body style="background: lightgrey">
         <div style="text-align: center; margin-top: 50px;">
-            <h1>Bid on the papers you want to review</h1>
-            <p>Submitted papers: </p>
+            <h1>{{ .Title }}</h1>
+            <p>An average grade has been calculated for the collected grades</p>
             <div class="center">
-                <form action="/sendbid" method="POST">
-                    {{ range . }}
-                    <input type="checkbox" id="{{ .Id }}" name="paperbid" value="{{ .Id }}">
-                    <!-- <input type="submit" value="Download" formaction="/downloadpaper"> -->
-                    <label> {{ .Title }} </label><br>
-                    {{ end }}
-                    <input type="submit" value="Submit">
-                  </form>
-            </div>            
+                <p>Grade: {{ .Grade }}</p>
+            </div> 
+            <form action="/confirmgrade" method="POST">
+                <input style="margin-top: 8px;" class="smoothborder" type="submit" value="Confirm grade">
+            </form>           
         </div>
     </body>
 </html>

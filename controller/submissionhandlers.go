@@ -85,13 +85,7 @@ func UploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-	str := fmt.Sprintf("File uploaded, by %v", submitter.UserID)
-	msg := model.Log{
-		State:      1,
-		LogMsg:     str,
-		FromUserID: submitter.UserID,
-		Value:      fileBytes,
-	}
+
 
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
@@ -107,7 +101,6 @@ func UploadFile(c *gin.Context) {
 	}
 	
 	model.CreateUser(&user)
-	model.CreateLogMsg(&msg)
 
 	submitter = backend.Submitter{
 		Keys:                    keys,

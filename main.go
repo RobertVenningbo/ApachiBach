@@ -53,6 +53,10 @@ func main() {
 		router.GET("/finishedreview", controller.GetFinishedReviewHandler)
 		router.GET("/discussing", controller.DiscussingHandler)
 		router.POST("/discussing", controller.PostMessageDiscussingHandler)
+		router.POST("/submitgrade", controller.PostGradeDiscussingHandler)
+		router.GET("/submitgrade", controller.GetGradeDiscussingHandler)
+		router.GET("/signgradecommit", controller.GetAgreedGradeHandler)
+		router.POST("/confirmgrade", controller.SignGradeHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		router.GET("/", controller.PCHomeHandler)

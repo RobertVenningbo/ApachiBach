@@ -234,6 +234,104 @@ func PostMessageDiscussingHandler(c *gin.Context) {
 	c.Redirect(303, "/discussing") //cheesy way of refreshing gui
 }
 
+func GetGradeDiscussingHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
+
+	logmsg := model.Log{}
+	model.GetLastLogMsg(&logmsg)
+
+	if logmsg.State == 13 {
+		paper = reviewer.GetAssignedPaperFromPCLog()
+		backend.AgreeOnGrade(paper)
+	}
+
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+	msg := Message{
+		Proceed: logmsg.State == 13, 
+		Status:  "All reviews are now finished. Please continue to discussing.",
+		WhereTo: "signgradecommit",
+	}
+
+	tpl.Execute(c.Writer, msg)
+}
+
 func PostGradeDiscussingHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
+
+	c.Request.ParseForm()
+	individualgrade := c.Request.FormValue("grade_name")
+	gradeAsInt, err := strconv.Atoi(individualgrade)
+	if err != nil {
+		log.Println("Error converting grade to int")
+	}
+	reviewer.GradePaper(gradeAsInt)
+
+	logmsg := model.Log{}
+	model.GetLastLogMsg(&logmsg)
+
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+
+	for _, r := range paper.ReviewerList {
+		if r.GetGradeForReviewer(r.UserID) == nil {
+			logmsg := model.Log{
+				State: 12,
+				LogMsg: "Not all grades have been submitted",
+				FromUserID: r.UserID,
+			}
+			model.CreateLogMsg(&logmsg)
+		}
+		logmsg := model.Log{
+			State: 13,
+			LogMsg: "All grades have been submitted",
+			FromUserID: r.UserID,
+		}
+
+		model.CreateLogMsg(&logmsg)
+	}
+
+	msg := Message{
+		Proceed: logmsg.State == 13, //change later
+		Status:  "All grades have been submitted. Please continue.",
+		WhereTo: "/signgradecommit",
+	}
+
+	tpl.Execute(c.Writer, msg)
 
 }
+
+func GetAgreedGradeHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html"))
+
+	paper = reviewer.GetAssignedPaperFromPCLog()
+	grade := backend.AgreeOnGrade(paper)
+
+	type Msg struct {
+		Title string
+		Grade int
+	}
+	msg := Msg{
+		Title: paper.Title,
+		Grade: grade,
+	}
+
+	tpl.Execute(c.Writer, msg)
+
+}
+
+func SignGradeHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //Where does the reviewer go after this?
+	
+	reviewer.SignCommitsAndNonce()
+	reviewer.SignAndEncryptGrade()
+
+	tpl.Execute(c.Writer, nil)
+}
+
