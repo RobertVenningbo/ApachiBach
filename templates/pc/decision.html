@@ -8,18 +8,43 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
+    <style>
+        .center{
+            margin: auto;
+            width: 50%;
+            padding: 10px;
+    }
+        .paper {
+            border: 2px solid black;
+            margin: auto;
+            width: 30%;
+        }
+
+    </style>
     <body style="background: lightgray;">
         <h2>Decision</h2>
         <div style="text-align: center;">
             <p>Graded papers:</p> 
             {{range .}}
-            <div style="display: flex; justify-content: center; flex-direction: column">
-                <p>{{.Title}}</p> 
-                <p>{{.Grade}}</p> 
-                <button>Accept</button>
-                <button>Reject</button>
+            <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
+             <form method="POST">
+                 <p>Paper title: {{.Title}}</p> 
+                 <p name="paperid" hidden="true"> {{ .ID }}</p>
+                 <p>Grade: {{.Grade}}</p> 
+             </form>   
+                <div class="center">
+                    <form action="javascript:var rslt=confirm('Are you sure you want to accept this paper?.');if(rslt){window.location.replace('/acceptpaper')}else{}" method="POST">
+                        <button type="submit">Accept</button>
+                    </form>
+                    <form action="javascript:var rslt=confirm('Are you sure you want to reject this paper?.');if(rslt){window.location.replace('/rejectpaper')}else{}" method="POST">
+                        <button type="submit">Reject</button>
+                    </form>
+                </div>   
             </div>
             {{end}}
+            <form action="/compilegrades">
+                <button type="submit">Compile grades (step 17)</button>
+            </form>
         </div>
     </body>
 </html>

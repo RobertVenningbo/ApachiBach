@@ -66,7 +66,6 @@ func GenerateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) stri
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateS.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())
 	} else {
-
 		privateR := reviewer.Keys
 		shared, _ := publicPC.Curve.ScalarMult(publicPC.X, publicPC.Y, privateR.D.Bytes())
 		sharedHash = sha256.Sum256(shared.Bytes())

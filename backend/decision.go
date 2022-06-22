@@ -10,6 +10,43 @@ import (
 	"github.com/0xdecaf/zkrp/ccs08"
 )
 
+func (pc *PC) GetKPCSFromLog(pId int) []byte {
+	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
+	item := Trae.Find(msg)
+	if item == nil {
+		CheckStringAgainstDB(msg)
+		item = Trae.Find(msg)
+	}
+	bytes := item.value.([]byte)
+	decodedSubmitMessage := DecodeToStruct(bytes)
+	submitMessage := decodedSubmitMessage.(SubmitMessage)
+	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
+	return kpcs
+}
+
+func (pc *PC) SendGrades2(pId int) { //Step 15 new
+	grade := pc.GetGrade(pId)
+	reviews := pc.GetReviewsOnly(pId)
+	Kpcs := pc.GetKPCSFromLog(pId)
+
+	msgStruct := SendGradeStruct{
+		reviews,
+		grade,
+	}
+
+	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), string(Kpcs))
+	str := fmt.Sprintf("PC sends grade and reviews to submitter who submitted paper , %v", pId)
+	logmsg := model.Log{
+		State: 15,
+		LogMsg: str,
+		FromUserID: 4000,
+		Value: EncMsgStruct[1],
+		Signature: EncMsgStruct[0],
+	}
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(str, EncMsgStruct)
+}
+
 func (pc *PC) SendGrades(subm *Submitter) { //step 15
 	grade := pc.GetGrade(subm.PaperCommittedValue.Paper.Id)
 	reviews := pc.GetReviewsOnly(subm.PaperCommittedValue.Paper.Id)

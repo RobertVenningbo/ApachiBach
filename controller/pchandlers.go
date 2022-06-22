@@ -2,6 +2,8 @@ package controller
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -10,6 +12,7 @@ import (
 )
 
 var ispctaken bool
+//var AcceptedPapers []backend.Paper
 
 func PCHomeHandler(c *gin.Context) {
 
@@ -103,25 +106,6 @@ func GetAllBidsHandler(c *gin.Context) {
 
 }
 
-func DecisionHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
-
-	type Paper struct {
-		Title string
-		Grade int
-	}
-	var paper []Paper
-	paper = append(paper, Paper{
-		Title: "test1",
-		Grade: 4,
-	},
-		Paper{
-			Title: "test2",
-			Grade: 7})
-
-	tpl.Execute(c.Writer, &paper)
-}
-
 func ShareReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
 
@@ -184,4 +168,61 @@ func CheckReviewsHandler(c *gin.Context) {
 	}
 	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
 	tpl.Execute(c.Writer, msgs)
+}
+
+func DecisionHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
+	type Paper struct {
+		Title string
+		Grade int
+		ID    int
+	}
+	var papers []Paper
+
+	for _, p := range backend.Pc.AllPapers {
+		grade := backend.Pc.GetGrade(p.Id)
+		msg := Paper{
+			Title: p.Title,
+			Grade: grade,
+			ID:    p.Id,
+		}
+		papers = append(papers, msg)
+	}
+	tpl.Execute(c.Writer, &papers)
+}
+
+func AcceptPaperHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
+
+	c.Request.ParseForm() 
+	var PaperIds []string
+	for _, value := range c.Request.PostForm { //This doesn't work yet
+		fmt.Println("1")
+		PaperIds = append(PaperIds, value...)
+	}
+	fmt.Printf("len: %v", len(PaperIds))
+	fmt.Println("2")
+	for _, p := range backend.Pc.AllPapers {
+		fmt.Println("3")
+		for _, id := range PaperIds {
+			fmt.Println("4")
+			idInt, err := strconv.Atoi(id)
+			if err != nil {
+				log.Println("error converting id string to id int")
+			}
+			if idInt == p.Id {
+				fmt.Println("5")
+				backend.Pc.SendGrades2(idInt)
+				fmt.Println("6")
+				backend.Pc.AcceptPaper(idInt)
+				fmt.Println("7")
+				backend.Pc.CompileGrades()
+				fmt.Println("8")
+			}
+		}
+	}
+
+
+	tpl.Execute(c.Writer, nil)
+
 }

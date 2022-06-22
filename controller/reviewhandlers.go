@@ -252,7 +252,7 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 	}
 	msg := Message{
 		Proceed: logmsg.State == 13, 
-		Status:  "All reviews are now finished. Please continue to discussing.",
+		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "signgradecommit",
 	}
 
