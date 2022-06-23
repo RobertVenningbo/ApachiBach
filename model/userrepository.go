@@ -52,3 +52,12 @@ func GetReviewers(user *[]User) (err error){
 	}
 	return nil
 }
+
+func GetSubmitters(user *[]User) (err error){
+	err = database.DB.Where("usertype = ?", "submitter").Find(user).Error
+	//err = database.DB.Where("usertype = ?", "reviewer").Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

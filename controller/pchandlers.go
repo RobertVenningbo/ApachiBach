@@ -216,3 +216,7 @@ func RejectPaperHandler(c *gin.Context) {
 
 	c.Redirect(303, "/decision")
 }
+
+func ConfirmOwnershipHandler(c *gin.Context) {
+
+}

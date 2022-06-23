@@ -5,6 +5,25 @@ import (
 	"swag/model"
 )
 
+func (s *Submitter) GetPaperAfterReview() {
+	type struct RetrievedPapers{
+		
+	}
+	str := fmt.Sprintf("PC reveals accepted paper: %v", s.PaperCommittedValue.Paper.Id)
+	item := Trae.Find(str)
+	if item == nil {
+		CheckStringAgainstDB(str)
+		item = Trae.Find(str)
+	}
+	if item.value.([]byte) == nil {
+		
+	}
+	bytes := item.value.([]byte)
+	decodedPaperMsg := DecodeToStruct(bytes).(RevealPaper)
+
+
+}
+
 func (s *Submitter) ClaimPaper() { //step 19
 	paper := s.PaperCommittedValue.Paper
 	ri := s.SubmitterCommittedValue.Val
@@ -43,11 +62,11 @@ func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 
 	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
 	logmsg := model.Log{
-		State:      20,
-		LogMsg:     putStr,
+		State: 20,
+		LogMsg: putStr,
 		FromUserID: 4000,
-		Value:      signature[1],
-		Signature:  signature[0],
+		Value: signature[1],
+		Signature: signature[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(putStr, signature)
@@ -80,10 +99,11 @@ func GetClaimMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature 
 
 	claimMsgBytes := item.value.([]byte)
 
-	var sigmsg model.Log
+	var sigmsg model.Log 
 	model.GetLogMsgByMsg(&sigmsg, getStr)
 	sig := sigmsg.Signature
-
+	
+	
 	claimMsg := DecodeToStruct(claimMsgBytes).(ClaimMessage)
 
 	return sig, claimMsg

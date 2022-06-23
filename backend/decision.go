@@ -265,10 +265,10 @@ func (pc *PC) GetReviewsOnly(pId int) []string {
 }
 
 //This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
-func (s *Submitter) RetrieveGrades() SendGradeStruct {
+func (s *Submitter) RetrieveGrade() SendGradeStruct {
 	Kpcs := GenerateSharedSecret(&Pc, s, nil)
 
-	getStr := fmt.Sprintf("PC sends grade and reviews to submitter, %v", s.UserID)
+	getStr := fmt.Sprintf("PC sends grade and reviews to submitter who submitted paper , %v", s.PaperCommittedValue.Paper.Id)
 	log.Println(getStr)
 	item := Trae.Find(getStr)
 	if item == nil {

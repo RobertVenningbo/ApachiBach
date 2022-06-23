@@ -73,6 +73,20 @@ func UserToReviewer(user model.User) backend.Reviewer {
 	}
 }
 
+func UserToSubmitter(user model.User) backend.Submitter {
+	keys := backend.DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
+	return backend.Submitter{
+		UserID: user.Id,
+		Keys: &ecdsa.PrivateKey{
+			PublicKey: keys,
+			D:         big.NewInt(0),
+		},
+		SubmitterCommittedValue: &backend.CommitStruct{},
+		PaperCommittedValue: &backend.CommitStructPaper{},
+		Receiver: &backend.Receiver{},
+	}
+}
+
 func TestPlatform(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
 
