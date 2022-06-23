@@ -26,35 +26,35 @@ func (pc *PC) GetKPCSFromLog(pId int) []byte {
 }
 
 func (pc *PC) SendGrades2(pId int) { //Step 15 new
-	grade := pc.GetGrade(pId)
+	GradeAndPaper := pc.GetGradeAndPaper(pId)
 	reviews := pc.GetReviewsOnly(pId)
 	Kpcs := pc.GetKPCSFromLog(pId)
 
 	msgStruct := SendGradeStruct{
 		reviews,
-		grade,
+		int(GradeAndPaper.Grade),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), string(Kpcs))
 	str := fmt.Sprintf("PC sends grade and reviews to submitter who submitted paper , %v", pId)
 	logmsg := model.Log{
-		State: 15,
-		LogMsg: str,
+		State:      15,
+		LogMsg:     str,
 		FromUserID: 4000,
-		Value: EncMsgStruct[1],
-		Signature: EncMsgStruct[0],
+		Value:      EncMsgStruct[1],
+		Signature:  EncMsgStruct[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, EncMsgStruct)
 }
 
 func (pc *PC) SendGrades(subm *Submitter) { //step 15
-	grade := pc.GetGrade(subm.PaperCommittedValue.Paper.Id)
+	GradeAndPaper := pc.GetGradeAndPaper(subm.PaperCommittedValue.Paper.Id)
 	reviews := pc.GetReviewsOnly(subm.PaperCommittedValue.Paper.Id)
 	Kpcs := GenerateSharedSecret(pc, subm, nil)
 	msgStruct := SendGradeStruct{
 		reviews,
-		grade,
+		int(GradeAndPaper.Grade),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
@@ -75,7 +75,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 /*PC DECLINES PAPER PATH*/
 
 func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
-	Grade := pc.GetGrade(pId)
+	GradeAndPaper := pc.GetGradeAndPaper(pId)
 
 	KpAndRg := pc.GetKpAndRgPC(pId)
 	Rg := KpAndRg.Rg
@@ -84,7 +84,7 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 	rejectMsg := RejectMessage{
 		ReviewCommit,
-		Grade,
+		int(GradeAndPaper.Grade),
 		Rg,
 	}
 
@@ -106,13 +106,13 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 /*PC ACCEPTS PAPER PATH*/
 
-var AcceptedPapers []Paper //Global
+var AcceptedPapers []GradeAndPaper //Global
 
 func (pc *PC) CompileGrades() { //step 17
 	grades := []int{}
 	for _, p := range AcceptedPapers {
-		grade := pc.GetGrade(p.Id)
-		grades = append(grades, grade)
+		GradeAndPaper := pc.GetGradeAndPaper(p.Papir.Id)
+		grades = append(grades, int(GradeAndPaper.Grade))
 	}
 
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
@@ -125,7 +125,7 @@ func (pc *PC) CompileGrades() { //step 17
 		Signature:  signStr[0],
 	}
 	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, signStr)
+	Trae.Put(str, signStr[1])
 }
 
 func (pc *PC) GetCompiledGrades() []int64 {
@@ -166,7 +166,7 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
 		Signature:  signature[0],
 	}
 	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, signature)
+	Trae.Put(str, signature[1])
 
 	/*NIZK*/
 	params, errSetup := ccs08.SetupSet(grades)
@@ -174,8 +174,8 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
 		log.Panicln(errSetup)
 	}
 	var i64 int64
-	IntGrade := pc.GetGrade(pId)
-	i64 = int64(IntGrade)
+	IntGrade := pc.GetGradeAndPaper(pId)
+	i64 = int64(IntGrade.Grade)
 	//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
 	r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
 	proof_out, _ := ccs08.ProveSet(i64, r, params)
@@ -188,11 +188,60 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
 	return revealPaperMsg
 }
 
+func (pc *PC) RevealAllAcceptedPapers() {
+
+	RandomizedGradesStruct := pc.RandomizeGradesForProof()
+	grades := []int64{}
+	for _, v := range RandomizedGradesStruct {
+		grades = append(grades, v.GradeAfter)
+	}
+	params, errSetup := ccs08.SetupSet(grades)
+	for _, v := range AcceptedPapers {
+		p := pc.GetPaperAndRandomness(v.Papir.Id)
+
+		revealPaperMsg := RevealPaper{
+			*p.Paper,
+			p.Rs,
+		}
+
+		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
+		str := fmt.Sprintf("PC reveals accepted paper: %v", p.Paper.Id)
+		logmsg := model.Log{
+			State:      18,
+			LogMsg:     str,
+			FromUserID: 4000,
+			Value:      signature[1],
+			Signature:  signature[0],
+		}
+		model.CreateLogMsg(&logmsg)
+		Trae.Put(str, signature)
+
+		/*NIZK*/
+		if errSetup != nil {
+			log.Panicln(errSetup)
+		}
+		IntGrade := pc.GetGradeAndPaper(v.Papir.Id)
+		//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
+		r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
+		proof_out, _ := ccs08.ProveSet(IntGrade.Grade, r, params)
+		result, _ := ccs08.VerifySet(&proof_out, &params)
+		if !result {
+			log.Panicf("Assert failure: expected true, actual: %v", result)
+		} else {
+			log.Println("PC proves that grade is in set of compiled grades.")
+		}
+	}
+}
+
+func PostMembershipProofToLog(proof ccs08.proofSet, ){
+
+}
+
 func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
 	somethinglist := []RandomizeGradesForProofStruct{}
 	grades := pc.GetCompiledGrades()
 	for _, g := range grades {
-		x := random.Int63n(1844674407370955161)  //some random large number to generate, 1 bits smaller than int64 cap.
+		x := random.Int63n(1844674407370955161) //some random large number to generate, 1 bits smaller than int64 cap.
 		msg := RandomizeGradesForProofStruct{
 			R:           x,
 			GradeBefore: g,
@@ -202,8 +251,6 @@ func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
 	}
 	return somethinglist
 }
-
-
 
 /*HELPER METHODS*/
 
@@ -215,7 +262,7 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	}
 }
 
-func (pc *PC) GetGrade(pId int) int {
+func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
 	KpAndRg := pc.GetKpAndRgPC(pId)
 	holder := 0
 	Kp := KpAndRg.GroupKey
@@ -231,11 +278,11 @@ func (pc *PC) GetGrade(pId int) int {
 		item = Trae.Find(GetStr)
 	}
 	bytes := item.value.([]byte)
-	encodedGrade := Decrypt(bytes, Kp.D.String())
-	decodedGrade := DecodeToStruct(encodedGrade).(int)
+	encodedGradeAndPaper := Decrypt(bytes, Kp.D.String())
+	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(GradeAndPaper)
 	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
 
-	return decodedGrade
+	return decodedGradeAndPaper
 }
 
 func (pc *PC) GetReviewsOnly(pId int) []string {

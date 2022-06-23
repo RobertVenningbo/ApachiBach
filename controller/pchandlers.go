@@ -180,10 +180,10 @@ func DecisionHandler(c *gin.Context) {
 	var papers []Paper
 
 	for _, p := range backend.Pc.AllPapers {
-		grade := backend.Pc.GetGrade(p.Id)
+		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
 		msg := Paper{
 			Title: p.Title,
-			Grade: grade,
+			Grade: int(GradeAndPaper.Grade),
 			ID:    p.Id,
 		}
 		papers = append(papers, msg)
