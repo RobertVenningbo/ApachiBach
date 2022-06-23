@@ -53,6 +53,10 @@ func main() {
 		router.GET("/finishedreview", controller.GetFinishedReviewHandler)
 		router.GET("/discussing", controller.DiscussingHandler)
 		router.POST("/discussing", controller.PostMessageDiscussingHandler)
+		router.POST("/submitgrade", controller.PostGradeDiscussingHandler)
+		router.GET("/submitgrade", controller.GetGradeDiscussingHandler)
+		router.GET("/signgradecommit", controller.GetAgreedGradeHandler)
+		router.POST("/confirmgrade", controller.SignGradeHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "pc" {
 		router.GET("/", controller.PCHomeHandler)
@@ -62,6 +66,7 @@ func main() {
 		router.GET("/getallbids", controller.GetAllBidsHandler)
 		router.GET("/collectreviews", controller.ShareReviewsButtonHandler)
 		router.GET("/checkreviews", controller.CheckReviewsHandler)
+		router.GET("/acceptpaper", controller.AcceptPaperHandler) //dunno if get or post
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

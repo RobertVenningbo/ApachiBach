@@ -71,30 +71,50 @@ func (r *Reviewer) GradePaper(grade int) {
 		Signature: encryptedSignedGradeStruct[0],
 	}
 	model.CreateLogMsg(&logmsg)
-	Trae.Put(msg, encryptedSignedGradeStruct)
+	Trae.Put(msg, encryptedSignedGradeStruct[1])
 
 }
 
-func (r *Reviewer) GetGradeForReviewer(rId int) IndividualGrade {
+
+func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
 	gradeStruct := Trae.Find(msg)
 	if gradeStruct == nil {
 		CheckStringAgainstDB(msg)
 		gradeStruct = Trae.Find(msg)
+		return nil
 	}
+
 	bytes := gradeStruct.value.([]byte)
+
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
 	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
-	return decodedGradeStruct
+	return &decodedGradeStruct
 }
 
 func AgreeOnGrade(paper *Paper) int {
+	var gradeStruct *IndividualGrade
 	result := 0
 	length := len(paper.ReviewerList)
 	for _, r := range paper.ReviewerList {
-		gradeStruct := r.GetGradeForReviewer(r.UserID)
+		gradeStruct = r.GetGradeForReviewer(r.UserID)
+		if gradeStruct == nil {
+			logmsg := model.Log{
+				State: 12,
+				LogMsg: "Not all grades have been submitted",
+				FromUserID: r.UserID,
+			}
+			model.CreateLogMsg(&logmsg)
+			return result
+		}
+		logmsg := model.Log{
+			State: 13,
+			LogMsg: "All grades have been submitted",
+			FromUserID: r.UserID,
+		}
+		model.CreateLogMsg(&logmsg)
 		result += gradeStruct.Grade
 	}
 	avg := float64(result) / float64(length)
@@ -160,7 +180,7 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
 	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
 	logmsg := model.Log{
-		State: 13,
+		State: 13, //Maybe change the state to 14
 		LogMsg: str,
 		FromUserID: r.UserID,
 		Value: signedGradeReviewCommits[1],
