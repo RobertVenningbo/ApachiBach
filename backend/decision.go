@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	random "math/rand"
 	"swag/model"
 
 	"github.com/0xdecaf/zkrp/ccs08"
@@ -61,11 +62,11 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
 
 	logmsg := model.Log{
-		State: 15,
-		LogMsg: str,
+		State:      15,
+		LogMsg:     str,
 		FromUserID: 4000,
-		Value: EncMsgStruct[1],
-		Signature: EncMsgStruct[0],
+		Value:      EncMsgStruct[1],
+		Signature:  EncMsgStruct[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, EncMsgStruct)
@@ -91,11 +92,11 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 	str := fmt.Sprintf("PC rejects Paper: %v", pId)
 	logmsg := model.Log{
-		State: 16,
-		LogMsg: str,
+		State:      16,
+		LogMsg:     str,
 		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
+		Value:      signature[1],
+		Signature:  signature[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signature)
@@ -117,11 +118,11 @@ func (pc *PC) CompileGrades() { //step 17
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
 	str := fmt.Sprint("PC compiles grades")
 	logmsg := model.Log{
-		State: 17,
-		LogMsg: str,
+		State:      17,
+		LogMsg:     str,
 		FromUserID: 4000,
-		Value: signStr[1],
-		Signature: signStr[0],
+		Value:      signStr[1],
+		Signature:  signStr[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signStr)
@@ -145,7 +146,8 @@ func (pc *PC) GetCompiledGrades() []int64 {
 	return i64
 }
 
-func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
+func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
+
 	p := pc.GetPaperAndRandomness(pId)
 	grades := pc.GetCompiledGrades()
 	
@@ -157,11 +159,11 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
 	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
 	logmsg := model.Log{
-		State: 18,
-		LogMsg: str,
+		State:      18,
+		LogMsg:     str,
 		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
+		Value:      signature[1],
+		Signature:  signature[0],
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signature)
@@ -178,13 +180,30 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 	r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
 	proof_out, _ := ccs08.ProveSet(i64, r, params)
 	result, _ := ccs08.VerifySet(&proof_out, &params)
-	if result != true {
+	if !result {
 		log.Panicf("Assert failure: expected true, actual: %v", result)
 	} else {
 		log.Println("PC proves that grade is in set of compiled grades.")
 	}
 	return revealPaperMsg
 }
+
+func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
+	somethinglist := []RandomizeGradesForProofStruct{}
+	grades := pc.GetCompiledGrades()
+	for _, g := range grades {
+		x := random.Int63n(1844674407370955161)  //some random large number to generate, 1 bits smaller than int64 cap.
+		msg := RandomizeGradesForProofStruct{
+			R:           x,
+			GradeBefore: g,
+			GradeAfter:  x + g,
+		}
+		somethinglist = append(somethinglist, msg)
+	}
+	return somethinglist
+}
+
+
 
 /*HELPER METHODS*/
 

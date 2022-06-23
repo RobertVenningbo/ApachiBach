@@ -98,6 +98,12 @@ type RevealPaper struct {
 	Rs    *big.Int
 }
 
+type RandomizeGradesForProofStruct struct {
+	R           int64
+	GradeBefore int64
+	GradeAfter  int64
+}
+
 //Claim
 
 type ClaimMessage struct {
