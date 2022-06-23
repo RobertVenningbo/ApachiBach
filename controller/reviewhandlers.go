@@ -253,7 +253,7 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 	msg := Message{
 		Proceed: logmsg.State == 13, 
 		Status:  "All grades are now submitted. Please continue.",
-		WhereTo: "signgradecommit",
+		WhereTo: "/signgradecommit",
 	}
 
 	tpl.Execute(c.Writer, msg)
@@ -280,7 +280,7 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	}
 
 	for _, r := range paper.ReviewerList {
-		if r.GetGradeForReviewer(r.UserID) == nil {
+		if r.GetGradeForReviewer(r.UserID) == nil { //TODO refactor so log messages aren't needed here
 			logmsg := model.Log{
 				State: 12,
 				LogMsg: "Not all grades have been submitted",
@@ -327,7 +327,7 @@ func GetAgreedGradeHandler(c *gin.Context) {
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //Where does the reviewer go after this?
+	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //TODO make a page that thanks the reviewer 
 	
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()

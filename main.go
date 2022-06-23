@@ -66,7 +66,8 @@ func main() {
 		router.GET("/getallbids", controller.GetAllBidsHandler)
 		router.GET("/collectreviews", controller.ShareReviewsButtonHandler)
 		router.GET("/checkreviews", controller.CheckReviewsHandler)
-		router.GET("/acceptpaper", controller.AcceptPaperHandler) //dunno if get or post
+		router.POST("/decision", controller.AcceptPaperHandler)
+		router.POST("/rejectpaper", controller.RejectPaperHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

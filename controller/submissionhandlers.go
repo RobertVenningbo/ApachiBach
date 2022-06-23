@@ -24,13 +24,16 @@ func WaitHandler(c *gin.Context) {
 	//TODO get data
 	//retrieve latest message from the log, check its state and depending on
 	//the state you change a string saying pending, ok, error or something along those lines
+	var logmsg model.Log
+	//gradeStruct := submitter.RetrieveGrade()
+
 	type Message struct {
 		Msg  string
 		Cont bool
 	}
 	msg := Message{
 		Msg:  "pending...",
-		Cont: false, //true for button, just trying some frontend logic
+		Cont: logmsg.State == 18, //Dont check on this, check on individual
 	}
 	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
 	tpl.Execute(c.Writer, &msg)
@@ -85,8 +88,6 @@ func UploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-
-
 	url := strings.Split(c.Request.Host, ":")
 	portAsInt, _ := strconv.Atoi(url[1])
 
@@ -119,4 +120,9 @@ func UploadFile(c *gin.Context) {
 
 	c.Redirect(303, "/wait")
 
+}
+
+func ClaimPaperHandler(c *gin.Context) {
+
+	submitter.ClaimPaper()
 }
