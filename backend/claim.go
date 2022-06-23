@@ -5,24 +5,6 @@ import (
 	"swag/model"
 )
 
-func (s *Submitter) GetPaperAfterReview() {
-	type struct RetrievedPapers{
-		
-	}
-	str := fmt.Sprintf("PC reveals accepted paper: %v", s.PaperCommittedValue.Paper.Id)
-	item := Trae.Find(str)
-	if item == nil {
-		CheckStringAgainstDB(str)
-		item = Trae.Find(str)
-	}
-	if item.value.([]byte) == nil {
-		
-	}
-	bytes := item.value.([]byte)
-	decodedPaperMsg := DecodeToStruct(bytes).(RevealPaper)
-
-
-}
 
 func (s *Submitter) ClaimPaper() { //step 19
 	paper := s.PaperCommittedValue.Paper
