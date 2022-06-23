@@ -74,7 +74,7 @@ func UserToReviewer(user model.User) backend.Reviewer {
 }
 
 func TestPlatform(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
+	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
 
 	tpl.Execute(c.Writer, nil)
 }

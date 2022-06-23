@@ -100,7 +100,7 @@ func AgreeOnGrade(paper *Paper) int {
 	length := len(paper.ReviewerList)
 	for _, r := range paper.ReviewerList {
 		gradeStruct = r.GetGradeForReviewer(r.UserID)
-		if gradeStruct == nil {
+		if gradeStruct == nil { //TODO refactor so log messages aren't needed here
 			logmsg := model.Log{
 				State: 12,
 				LogMsg: "Not all grades have been submitted",

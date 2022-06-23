@@ -146,10 +146,9 @@ func (pc *PC) GetCompiledGrades() []int64 {
 }
 
 func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
-
 	p := pc.GetPaperAndRandomness(pId)
 	grades := pc.GetCompiledGrades()
-
+	
 	revealPaperMsg := RevealPaper{
 		*p.Paper,
 		p.Rs,
@@ -189,7 +188,20 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper{
 
 /*HELPER METHODS*/
 
+func (pc *PC) CheckAcceptedPapers(pId int) bool{
+	
+	for _, p := range AcceptedPapers {
+		if p.Id == pId {
+			return true
+		}
+	}
+	return false
+}
+
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
+	if pc.CheckAcceptedPapers(pId) {
+		return
+	}
 	for _, p := range pc.AllPapers {
 		if p.Id == pId {
 			AcceptedPapers = append(AcceptedPapers, *p)

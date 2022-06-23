@@ -19,6 +19,9 @@
             margin: auto;
             width: 30%;
         }
+        .hidden {
+            display: none;
+        }
 
     </style>
     <body style="background: lightgray;">
@@ -27,17 +30,13 @@
             <p>Graded papers:</p> 
             {{range .}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
-             <form method="POST">
-                 <p>Paper title: {{.Title}}</p> 
-                 <p name="paperid" hidden="true"> {{ .ID }}</p>
-                 <p>Grade: {{.Grade}}</p> 
-             </form>   
                 <div class="center">
-                    <form action="javascript:var rslt=confirm('Are you sure you want to accept this paper?.');if(rslt){window.location.replace('/acceptpaper')}else{}" method="POST">
+                    <form action="/decision" method="POST">
+                        <p>Paper title: {{.Title}}</p> 
+                        <input class="hidden" type="text" name="paperid" value="{{ .ID }}" ></input>
+                        <p>Grade: {{.Grade}}</p>  
                         <button type="submit">Accept</button>
-                    </form>
-                    <form action="javascript:var rslt=confirm('Are you sure you want to reject this paper?.');if(rslt){window.location.replace('/rejectpaper')}else{}" method="POST">
-                        <button type="submit">Reject</button>
+                        <button formaction="/rejectpaper" type="submit">Reject</button>
                     </form>
                 </div>   
             </div>

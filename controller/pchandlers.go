@@ -192,37 +192,27 @@ func DecisionHandler(c *gin.Context) {
 }
 
 func AcceptPaperHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
-
-	c.Request.ParseForm() 
-	var PaperIds []string
-	for _, value := range c.Request.PostForm { //This doesn't work yet
-		fmt.Println("1")
-		PaperIds = append(PaperIds, value...)
+	paperid := c.Request.FormValue("paperid")
+	paperidint, err := strconv.Atoi(paperid)
+	if err != nil {
+		log.Println("error converting id string to id int")
+		return
 	}
-	fmt.Printf("len: %v", len(PaperIds))
-	fmt.Println("2")
-	for _, p := range backend.Pc.AllPapers {
-		fmt.Println("3")
-		for _, id := range PaperIds {
-			fmt.Println("4")
-			idInt, err := strconv.Atoi(id)
-			if err != nil {
-				log.Println("error converting id string to id int")
-			}
-			if idInt == p.Id {
-				fmt.Println("5")
-				backend.Pc.SendGrades2(idInt)
-				fmt.Println("6")
-				backend.Pc.AcceptPaper(idInt)
-				fmt.Println("7")
-				backend.Pc.CompileGrades()
-				fmt.Println("8")
-			}
-		}
+	backend.Pc.SendGrades2(paperidint)
+	backend.Pc.AcceptPaper(paperidint)
+
+	c.Redirect(303, "/decision")
+}
+
+func RejectPaperHandler(c *gin.Context) {
+	paperid := c.Request.FormValue("paperid")
+	paperidint, err := strconv.Atoi(paperid)
+	if err != nil {
+		log.Println("error converting id string to id int")
+		return
 	}
+	backend.Pc.SendGrades2(paperidint)
+	backend.Pc.RejectPaper(paperidint)
 
-
-	tpl.Execute(c.Writer, nil)
-
+	c.Redirect(303, "/decision")
 }
