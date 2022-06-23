@@ -150,7 +150,7 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
 
 	p := pc.GetPaperAndRandomness(pId)
 	grades := pc.GetCompiledGrades()
-	
+
 	revealPaperMsg := RevealPaper{
 		*p.Paper,
 		p.Rs,
@@ -233,10 +233,6 @@ func (pc *PC) RevealAllAcceptedPapers() {
 	}
 }
 
-func PostMembershipProofToLog(proof ccs08.proofSet, ){
-
-}
-
 func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
 	somethinglist := []RandomizeGradesForProofStruct{}
 	grades := pc.GetCompiledGrades()
@@ -254,10 +250,10 @@ func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
 
 /*HELPER METHODS*/
 
-func (pc *PC) CheckAcceptedPapers(pId int) bool{
-	
+func (pc *PC) CheckAcceptedPapers(pId int) bool {
+
 	for _, p := range AcceptedPapers {
-		if p.Id == pId {
+		if p.Papir.Id == pId {
 			return true
 		}
 	}
@@ -265,12 +261,14 @@ func (pc *PC) CheckAcceptedPapers(pId int) bool{
 }
 
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
+
 	if pc.CheckAcceptedPapers(pId) {
 		return
 	}
 	for _, p := range pc.AllPapers {
 		if p.Id == pId {
-			AcceptedPapers = append(AcceptedPapers, *p)
+			GradeAndPaper := pc.GetGradeAndPaper(pId)
+			AcceptedPapers = append(AcceptedPapers, GradeAndPaper)
 		}
 	}
 }
