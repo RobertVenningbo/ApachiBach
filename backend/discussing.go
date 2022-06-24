@@ -72,9 +72,7 @@ func (r *Reviewer) GradePaper(grade int) {
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(msg, encryptedSignedGradeStruct[1])
-
 }
-
 
 func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
@@ -119,7 +117,7 @@ func AgreeOnGrade(paper *Paper) int {
 	}
 	avg := float64(result) / float64(length)
 	grade := CalculateNearestGrade(avg)
-
+	
 	return grade
 }
 
@@ -195,7 +193,11 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	grade := AgreeOnGrade(r.PaperCommittedValue.Paper) //acquire agreed grade
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(grade), Kp.D.String()) //Notice Kp.(ecdsa.PrivateKey).D.String() seems super fishy, plz work.
+	gradeandstruct := GradeAndPaper{
+		Grade: int64(grade),
+		Papir: *r.PaperCommittedValue.Paper,
+	}
+	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeandstruct), Kp.D.String()) 
 	submitStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
 	logmsg := model.Log{
 		State: 14,
@@ -205,5 +207,5 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 		Signature: signedGrade[0],
 	}
 	model.CreateLogMsg(&logmsg)
-	Trae.Put(submitStr, signedGrade)
+	Trae.Put(submitStr, signedGrade[1])
 }

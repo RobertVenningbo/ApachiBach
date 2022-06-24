@@ -104,6 +104,11 @@ type RandomizeGradesForProofStruct struct {
 	GradeAfter  int64
 }
 
+type GradeAndPaper struct {
+	Grade int64
+	Papir Paper
+}
+
 //Claim
 
 type ClaimMessage struct {
