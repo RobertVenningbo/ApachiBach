@@ -19,47 +19,27 @@ func SubmissionHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, nil)
 }
 
+func GetGradesAndReviewsHandler(c *gin.Context) {
+	// var logmsgs []model.Log
+	// gradesandreviews := submitter.RetrieveGradeAndReviews()
+}
+
 func WaitHandler(c *gin.Context) {
 	//TODO get data
 	//retrieve latest message from the log, check its state and depending on
 	//the state you change a string saying pending, ok, error or something along those lines
-	var logmsgs []model.Log
-	//model.GetAllLogMsgsLogMsgs(&logmsgs)
-
-	gradesandreviews := submitter.RetrieveGradeAndReviews()
 
 	type Message struct {
 		Status  string
 		Cont    bool
-		Grade   int
-		Reviews []string
 	}
 	var msg Message
 
-	str_reject := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
-	str_accept := fmt.Sprintf("PC accepts Paper: %v", submitter.PaperCommittedValue.Paper.Id)
-	for _, l := range logmsgs {
-		if l.LogMsg == str_reject {
-			msg = Message{
-				Status: "Rejected",
-				Cont:   true,
-				Grade: gradesandreviews.Grade,
-				Reviews: gradesandreviews.Reviews,
-			}
-		} else if l.LogMsg == str_accept {
-			msg = Message{
-				Status: "Accepted",
-				Cont: true,
-				Grade: gradesandreviews.Grade,
-				Reviews: gradesandreviews.Reviews,
-			}
-		}
-		msg = Message{
-			Status: "Pending",
-			Cont: false,
-		}
+	msg = Message{
+		Status: "Pending",
+		Cont: false,
 	}
-
+	
 	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
 	tpl.Execute(c.Writer, &msg)
 }
