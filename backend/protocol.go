@@ -120,6 +120,7 @@ func InitGobs() {
 	gob.Register(ValueSignature{})
 	gob.Register(Message{})
 	gob.Register(ShareReviewsMessage{})
+	gob.Register(GradeAndPaper{})
 }
 
 func EncodeToBytes(p interface{}) []byte {

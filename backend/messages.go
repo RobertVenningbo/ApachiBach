@@ -80,12 +80,14 @@ type DiscussingViewData struct {
 	Reviews []ReviewStruct
 }
 
+
 //Decision
 
 type SendGradeStruct struct {
 	Reviews []string
 	Grade   int
 }
+
 
 type RejectMessage struct {
 	Commit *ecdsa.PublicKey
@@ -102,6 +104,7 @@ type RandomizeGradesForProofStruct struct {
 	R           int64
 	GradeBefore int64
 	GradeAfter  int64
+	PaperId		int
 }
 
 type GradeAndPaper struct {

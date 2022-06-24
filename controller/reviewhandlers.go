@@ -240,11 +240,6 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 	logmsg := model.Log{}
 	model.GetLastLogMsg(&logmsg)
 
-	if logmsg.State == 13 {
-		paper = reviewer.GetAssignedPaperFromPCLog()
-		backend.AgreeOnGrade(paper)
-	}
-
 	type Message struct {
 		Proceed bool
 		Status  string
@@ -311,7 +306,7 @@ func GetAgreedGradeHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html"))
 
 	paper = reviewer.GetAssignedPaperFromPCLog()
-	grade := backend.AgreeOnGrade(paper)
+	gradeStruct := reviewer.AgreeOnGrade(paper)
 
 	type Msg struct {
 		Title string
@@ -319,9 +314,9 @@ func GetAgreedGradeHandler(c *gin.Context) {
 	}
 	msg := Msg{
 		Title: paper.Title,
-		Grade: grade,
+		Grade: int(gradeStruct.Grade),
 	}
-
+	
 	tpl.Execute(c.Writer, msg)
 
 }

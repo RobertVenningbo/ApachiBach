@@ -45,12 +45,23 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 }
 
 //Retrieves the entire column "log_msg"
-func GetAllLogMsgsLogMsgs(log *[]Log) (err error) { 
-	err = database.DB.Select("log_msg").Find(log).Error
-	if err != nil {
-		return err
+func GetAllLogMsgsLogMsgs(logmsg *[]Log, msg string) { 
+	err := database.DB.Select("log_msg").Where("log_msg = ?", msg).Find(logmsg).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetAllLogMsgsLogMsgs")
 	}
-	return nil
+	
+}
+
+//Checks if log msg exists in the database
+func DoesLogMsgExist(msg string) bool {
+	var exists bool
+	err := database.DB.Model(Log{}).Select("count(*) > 0").Where("log_msg = ?", msg).Find(&exists).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in DoesLogMsgExist")
+	}
+	return exists
+
 }
 
 //get all log entries by a string

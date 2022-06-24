@@ -9,7 +9,6 @@ import (
 	"swag/backend"
 	"swag/model"
 	"text/template"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,7 +24,7 @@ func WaitHandler(c *gin.Context) {
 	//retrieve latest message from the log, check its state and depending on
 	//the state you change a string saying pending, ok, error or something along those lines
 	var logmsgs []model.Log
-	model.GetAllLogMsgsLogMsgs(&logmsgs)
+	//model.GetAllLogMsgsLogMsgs(&logmsgs)
 
 	gradesandreviews := submitter.RetrieveGradeAndReviews()
 

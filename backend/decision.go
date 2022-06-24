@@ -278,7 +278,7 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	}
 	for _, p := range pc.AllPapers {
 		if p.Id == pId {
-			AcceptedPapers = append(AcceptedPapers, *p)
+			//AcceptedPapers = append(AcceptedPapers, *p)
 			str := fmt.Sprintf("PC accepts Paper: %v", pId)
 			logmsg := model.Log{
 				State: 16,

@@ -92,7 +92,23 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	return &decodedGradeStruct
 }
 
-func AgreeOnGrade(paper *Paper) int {
+func (r *Reviewer) AgreeOnGrade2(paper *Paper) GradeAndPaper {
+	gradeandpaper := r.GetAgreedGrade(paper.Id)
+	if gradeandpaper != nil {
+		return *gradeandpaper
+	}
+
+
+	return *gradeandpaper
+}
+
+func (r *Reviewer) AgreeOnGrade(paper *Paper) GradeAndPaper {
+	gradeandpaper := r.GetAgreedGrade(paper.Id)
+
+	if gradeandpaper != nil {
+		return *gradeandpaper
+	}
+
 	var gradeStruct *IndividualGrade
 	result := 0
 	length := len(paper.ReviewerList)
@@ -105,7 +121,7 @@ func AgreeOnGrade(paper *Paper) int {
 				FromUserID: r.UserID,
 			}
 			model.CreateLogMsg(&logmsg)
-			return result
+			return GradeAndPaper{}
 		}
 		logmsg := model.Log{
 			State: 13,
@@ -117,10 +133,39 @@ func AgreeOnGrade(paper *Paper) int {
 	}
 	avg := float64(result) / float64(length)
 	grade := CalculateNearestGrade(avg)
+	msg := GradeAndPaper{
+		Grade: int64(grade),
+		Papir: *paper,
+	}
+	KpAndRg := r.GetReviewKpAndRg()
+	EncryptedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(msg), KpAndRg.GroupKey.D.String()) 
+	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", paper.Id)
+	logmsg := model.Log{
+		State: 13,
+		LogMsg: str,
+		FromUserID: r.UserID,
+		Value: EncryptedGradeStruct[1],
+		Signature: EncryptedGradeStruct[0],
+	}
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(str, EncryptedGradeStruct[1])
 	
-	return grade
+	return msg
 }
 
+func (r *Reviewer) GetAgreedGrade(pId int) *GradeAndPaper {
+	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", pId)
+	item := Trae.Find(str)
+	if item == nil {
+		CheckStringAgainstDB(str)
+		item = Trae.Find(str)
+	}
+	bytes := item.value.([]byte)
+	KpAndRg := r.GetReviewKpAndRg()
+	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
+	agreedGrade := DecodeToStruct(encodedAgreedGrade).(GradeAndPaper)
+	return &agreedGrade
+}
 func CalculateNearestGrade(avg float64) int {
 	closest := 999
 	minDiff := 999.0
@@ -142,14 +187,14 @@ func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
 	if found == nil {
 		KpAndRg := r.GetReviewKpAndRg()
 		Rg := KpAndRg.Rg
-		grade := AgreeOnGrade(r.PaperCommittedValue.Paper)
-		GradeBigInt := MsgToBigInt(EncodeToBytes(grade))
+		gradeStruct := r.AgreeOnGrade(r.PaperCommittedValue.Paper)
+		GradeBigInt := MsgToBigInt(EncodeToBytes(gradeStruct.Grade)) //This Grade needs to be randomized
 		GradeCommit, _ := r.GetCommitMessageReviewGrade(GradeBigInt, Rg)
 		logmsg := model.Log{
 			State: 13, //unsure about state
 			LogMsg: str,
 			FromUserID: r.UserID,
-			Value: EncodeToBytes(grade),
+			Value: EncodeToBytes(gradeStruct.Grade),
 			Signature: nil, //nothing signed
 		}
 		model.CreateLogMsg(&logmsg)
@@ -190,11 +235,11 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 }
 
 func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every reviewer
-	grade := AgreeOnGrade(r.PaperCommittedValue.Paper) //acquire agreed grade
+	gradeStruct := r.AgreeOnGrade(r.PaperCommittedValue.Paper) //acquire agreed grade
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
 	gradeandstruct := GradeAndPaper{
-		Grade: int64(grade),
+		Grade: int64(gradeStruct.Grade), //Needs to be randomized
 		Papir: *r.PaperCommittedValue.Paper,
 	}
 	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeandstruct), Kp.D.String()) 
