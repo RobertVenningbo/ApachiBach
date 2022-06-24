@@ -214,7 +214,7 @@ func (pc *PC) RevealAllAcceptedPapers() {
 			Signature:  signature[0],
 		}
 		model.CreateLogMsg(&logmsg)
-		Trae.Put(str, signature)
+		Trae.Put(str, signature[1])
 
 		/*NIZK*/
 		if errSetup != nil {
@@ -230,6 +230,17 @@ func (pc *PC) RevealAllAcceptedPapers() {
 		} else {
 			log.Println("PC proves that grade is in set of compiled grades.")
 		}
+		nizkStr := fmt.Sprintf("PC uploads grade NIZK for P%v", p.Paper.Id)
+		signatureNizk := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
+		nizkLogMsg := model.Log{
+			State:      18,
+			LogMsg:     nizkStr,
+			FromUserID: 4000,
+			Value:      signatureNizk[1],
+			Signature:  signatureNizk[0],
+		}
+		model.CreateLogMsg(&nizkLogMsg)
+		Trae.Put(nizkStr, signatureNizk[1])
 	}
 }
 

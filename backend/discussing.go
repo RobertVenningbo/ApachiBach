@@ -72,9 +72,7 @@ func (r *Reviewer) GradePaper(grade int) {
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(msg, encryptedSignedGradeStruct[1])
-
 }
-
 
 func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
@@ -119,7 +117,7 @@ func AgreeOnGrade(paper *Paper) int {
 	}
 	avg := float64(result) / float64(length)
 	grade := CalculateNearestGrade(avg)
-
+	
 	return grade
 }
 
