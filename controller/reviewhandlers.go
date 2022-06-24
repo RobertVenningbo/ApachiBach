@@ -274,16 +274,17 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		WhereTo string
 	}
 
+	exists := model.DoesLogMsgExist("All grades have been submitted")
 	for _, r := range paper.ReviewerList {
 		if r.GetGradeForReviewer(r.UserID) == nil { //TODO refactor so log messages aren't needed here
-			logmsg := model.Log{
+			logmsg = model.Log{
 				State: 12,
 				LogMsg: "Not all grades have been submitted",
 				FromUserID: r.UserID,
 			}
 			model.CreateLogMsg(&logmsg)
 		}
-		logmsg := model.Log{
+		logmsg = model.Log{
 			State: 13,
 			LogMsg: "All grades have been submitted",
 			FromUserID: r.UserID,

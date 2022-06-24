@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	random "math/rand"
 	"swag/model"
 
 	"github.com/0xdecaf/zkrp/ccs08"
@@ -244,21 +243,6 @@ func (pc *PC) RevealAllAcceptedPapers() {
 	}
 }
 
-func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
-	somethinglist := []RandomizeGradesForProofStruct{}
-	grades := pc.GetCompiledGrades()
-	for _, g := range grades {
-		x := random.Int63n(1844674407370955161) //some random large number to generate, 1 bits smaller than int64 cap.
-		msg := RandomizeGradesForProofStruct{
-			R:           x,
-			GradeBefore: g,
-			GradeAfter:  x + g,
-		}
-		somethinglist = append(somethinglist, msg)
-	}
-	return somethinglist
-}
-
 /*HELPER METHODS*/
 
 func (pc *PC) CheckAcceptedPapers(pId int) bool {
@@ -281,8 +265,8 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 			//AcceptedPapers = append(AcceptedPapers, *p)
 			str := fmt.Sprintf("PC accepts Paper: %v", pId)
 			logmsg := model.Log{
-				State: 16,
-				LogMsg: str,
+				State:      16,
+				LogMsg:     str,
 				FromUserID: 4000,
 			}
 			model.CreateLogMsg(&logmsg)
