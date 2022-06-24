@@ -24,17 +24,43 @@ func WaitHandler(c *gin.Context) {
 	//TODO get data
 	//retrieve latest message from the log, check its state and depending on
 	//the state you change a string saying pending, ok, error or something along those lines
-	var logmsg model.Log
-	//gradeStruct := submitter.RetrieveGrade()
+	var logmsgs []model.Log
+	model.GetAllLogMsgsLogMsgs(&logmsgs)
+
+	gradesandreviews := submitter.RetrieveGradeAndReviews()
 
 	type Message struct {
-		Msg  string
-		Cont bool
+		Status  string
+		Cont    bool
+		Grade   int
+		Reviews []string
 	}
-	msg := Message{
-		Msg:  "pending...",
-		Cont: logmsg.State == 18, //Dont check on this, check on individual
+	var msg Message
+
+	str_reject := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
+	str_accept := fmt.Sprintf("PC accepts Paper: %v", submitter.PaperCommittedValue.Paper.Id)
+	for _, l := range logmsgs {
+		if l.LogMsg == str_reject {
+			msg = Message{
+				Status: "Rejected",
+				Cont:   true,
+				Grade: gradesandreviews.Grade,
+				Reviews: gradesandreviews.Reviews,
+			}
+		} else if l.LogMsg == str_accept {
+			msg = Message{
+				Status: "Accepted",
+				Cont: true,
+				Grade: gradesandreviews.Grade,
+				Reviews: gradesandreviews.Reviews,
+			}
+		}
+		msg = Message{
+			Status: "Pending",
+			Cont: false,
+		}
 	}
+
 	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
 	tpl.Execute(c.Writer, &msg)
 }
@@ -100,7 +126,7 @@ func UploadFile(c *gin.Context) {
 		Usertype:   "submitter",
 		PublicKeys: pubkeys,
 	}
-	
+
 	model.CreateUser(&user)
 
 	submitter = backend.Submitter{

@@ -26,6 +26,7 @@ func GetLogMsgById(log *Log, id string) (err error) {
 	return nil
 }
 
+//get a single log entry by a string
 func GetLogMsgByMsg(logmsg *Log, msg string) {
 	result := database.DB.Where("log_msg = ?", msg).First(logmsg)
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -34,7 +35,7 @@ func GetLogMsgByMsg(logmsg *Log, msg string) {
 
 }
 
-//get all logmsg
+//get all log entries
 func GetAllLogMsgs(log *[]Log) (err error) {
 	err = database.DB.Find(log).Error
 	if err != nil {
@@ -43,7 +44,16 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 	return nil
 }
 
-//get all logmsg
+//Retrieves the entire column "log_msg"
+func GetAllLogMsgsLogMsgs(log *[]Log) (err error) { 
+	err = database.DB.Select("log_msg").Find(log).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//get all log entries by a string
 func GetAllLogMsgsByMsg(logmsg *[]Log, msg string) {
 	err := database.DB.Where("log_msg = ?", msg).Find(logmsg).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

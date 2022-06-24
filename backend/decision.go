@@ -208,7 +208,6 @@ func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
 /*HELPER METHODS*/
 
 func (pc *PC) CheckAcceptedPapers(pId int) bool{
-	
 	for _, p := range AcceptedPapers {
 		if p.Id == pId {
 			return true
@@ -224,6 +223,13 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	for _, p := range pc.AllPapers {
 		if p.Id == pId {
 			AcceptedPapers = append(AcceptedPapers, *p)
+			str := fmt.Sprintf("PC accepts Paper: %v", pId)
+			logmsg := model.Log{
+				State: 16,
+				LogMsg: str,
+				FromUserID: 4000,
+			}
+			model.CreateLogMsg(&logmsg)
 		}
 	}
 }
@@ -265,7 +271,7 @@ func (pc *PC) GetReviewsOnly(pId int) []string {
 }
 
 //This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
-func (s *Submitter) RetrieveGrade() SendGradeStruct {
+func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 	Kpcs := GenerateSharedSecret(&Pc, s, nil)
 
 	getStr := fmt.Sprintf("PC sends grade and reviews to submitter who submitted paper , %v", s.PaperCommittedValue.Paper.Id)
