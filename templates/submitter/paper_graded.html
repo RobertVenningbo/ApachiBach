@@ -15,11 +15,13 @@
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>            
             
-            <div style="display: flex; justify-content: center; flex-direction: row">
-                {{ range .Count }}
-                <div style="margin: 30px">
-                    <h2>Very nice paper</h2> 
-                </div>            
+            <div class="flexrowcenter">
+                {{ range .Reviews}}
+                <div>
+                    <textarea readonly style="resize: none;" class="smoothborder" rows="4" cols="50">
+    {{ .Review }}
+                    </textarea>
+                </div>
                 {{ end }}
             </div>
         </div>

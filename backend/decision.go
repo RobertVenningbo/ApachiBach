@@ -315,13 +315,13 @@ func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
 	return decodedGradeAndPaper
 }
 
-func (pc *PC) GetReviewsOnly(pId int) []string {
-	reviews := []string{}
+func (pc *PC) GetReviewsOnly(pId int) []ReviewStruct {
+	reviews := []ReviewStruct{}
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {
 			for _, r := range v.ReviewerList {
 				result, _ := pc.GetReviewStruct(r)
-				reviews = append(reviews, result.Review)
+				reviews = append(reviews, result)
 			}
 		}
 	}

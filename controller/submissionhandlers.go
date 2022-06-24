@@ -20,15 +20,35 @@ func SubmissionHandler(c *gin.Context) {
 }
 
 func GetGradesAndReviewsHandler(c *gin.Context) {
-	// var logmsgs []model.Log
-	// gradesandreviews := submitter.RetrieveGradeAndReviews()
+	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
+	gradeandreviews := submitter.RetrieveGradeAndReviews()
+	type Message struct {
+		Status string
+		Grade int
+		Reviews []backend.ReviewStruct
+	}
+
+	str_rejected := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
+	str_accepted := fmt.Sprintf("PC reveals accepted paper: %v", submitter.PaperCommittedValue.Paper.Id)
+
+	var msg Message
+	if model.DoesLogMsgExist(str_rejected) {
+		msg = Message{
+			Status: "Rejected",
+			Grade: gradeandreviews.Grade,
+			Reviews: gradeandreviews.Reviews,
+		}
+	} else if model.DoesLogMsgExist(str_accepted) {
+		msg = Message{
+			Status: "Accepted",
+			Grade: gradeandreviews.Grade,
+			Reviews: gradeandreviews.Reviews,
+		}
+	}
+	tpl.Execute(c.Writer, &msg)
 }
 
 func WaitHandler(c *gin.Context) {
-	//TODO get data
-	//retrieve latest message from the log, check its state and depending on
-	//the state you change a string saying pending, ok, error or something along those lines
-
 	type Message struct {
 		Status  string
 		Cont    bool
@@ -36,15 +56,24 @@ func WaitHandler(c *gin.Context) {
 	var msg Message
 
 	msg = Message{
-		Status: "Pending",
+		Status: "Pending.",
 		Cont: false,
+	}
+	
+	str_rejected := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
+	str_accepted := fmt.Sprintf("PC reveals accepted paper: %v", submitter.PaperCommittedValue.Paper.Id)
+	if model.DoesLogMsgExist(str_rejected) || model.DoesLogMsgExist(str_accepted) {
+		msg = Message{
+			Status: "Your paper has been graded.",
+			Cont: true,
+		}
 	}
 	
 	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
 	tpl.Execute(c.Writer, &msg)
 }
 
-func GradedPaperHandler(c *gin.Context) {
+func GradedPaperHandler(c *gin.Context) { //delete
 
 	type Reviewer struct {
 	}

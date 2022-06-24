@@ -42,6 +42,7 @@ func main() {
 		router.GET("/wait", controller.WaitHandler)
 		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.POST("/upload", controller.UploadFile)
+		router.GET("/getgrade", controller.GetGradesAndReviewsHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.PrepStageHandler)

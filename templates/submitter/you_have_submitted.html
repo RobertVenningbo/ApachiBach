@@ -12,8 +12,11 @@
         <div style="text-align: center; margin-top: 100px;">
             <h1 style="margin-bottom: 50px;">You have submitted a paper</h1>
             <p>Your paper is being reviewed</p>            
-            <p>Status: {{ .Msg }}</p>
-            {{if .Cont }} <button>click me</button> {{end}}            
+            <p>Status: {{ .Status }}</p>
+            {{if .Cont }} 
+            <form action="/getgrade" method="GET">
+                <button>Continue</button> {{end}}            
+            </form>
         </div>
     </body>
 </html>

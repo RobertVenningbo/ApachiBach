@@ -84,7 +84,7 @@ type DiscussingViewData struct {
 //Decision
 
 type SendGradeStruct struct {
-	Reviews []string
+	Reviews []ReviewStruct
 	Grade   int
 }
 
