@@ -116,10 +116,10 @@ func WriteToFileHandler(c *gin.Context) {
 				currentuser, err := user.Current()
 				if err != nil {
 					panic(err)
-				  }
+				}
 				downloads := currentuser.HomeDir + "/Downloads/"
 				fmt.Println(downloads) //del once it all works
-				err = os.WriteFile(downloads + p.Title + ".pdf", paperbytes, 0644)
+				err = os.WriteFile(downloads+p.Title+".pdf", paperbytes, 0644)
 				if err != nil {
 					log.Println("error writing file")
 				}
@@ -128,7 +128,6 @@ func WriteToFileHandler(c *gin.Context) {
 	}
 	tpl.Execute(c.Writer, papers)
 }
-
 
 func MakeBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
@@ -246,7 +245,7 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 13, 
+		Proceed: logmsg.State == 13,
 		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
@@ -273,25 +272,13 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		Status  string
 		WhereTo string
 	}
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", reviewer.PaperCommittedValue.Paper.Id)
 
-	exists := model.DoesLogMsgExist("All grades have been submitted")
-	for _, r := range paper.ReviewerList {
-		if r.GetGradeForReviewer(r.UserID) == nil { //TODO refactor so log messages aren't needed here
-			logmsg = model.Log{
-				State: 12,
-				LogMsg: "Not all grades have been submitted",
-				FromUserID: r.UserID,
-			}
-			model.CreateLogMsg(&logmsg)
-		}
-		logmsg = model.Log{
-			State: 13,
-			LogMsg: "All grades have been submitted",
-			FromUserID: r.UserID,
-		}
-
-		model.CreateLogMsg(&logmsg)
+	exists := model.DoesLogMsgExist(str)
+	if !exists{
+		return
 	}
+	reviewer.PublishAgreedGrade()
 
 	msg := Message{
 		Proceed: logmsg.State == 13, //change later
@@ -300,7 +287,6 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	}
 
 	tpl.Execute(c.Writer, msg)
-
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
@@ -317,17 +303,16 @@ func GetAgreedGradeHandler(c *gin.Context) {
 		Title: paper.Title,
 		Grade: int(gradeStruct.Grade),
 	}
-	
+
 	tpl.Execute(c.Writer, msg)
 
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //TODO make a page that thanks the reviewer 
-	
+	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //TODO make a page that thanks the reviewer
+
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 
 	tpl.Execute(c.Writer, nil)
 }
-

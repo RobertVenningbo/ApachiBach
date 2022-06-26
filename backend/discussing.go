@@ -112,7 +112,7 @@ func (r *Reviewer) CheckAllSubmittedGrades() bool {
 }
 
 func (r *Reviewer) RandomizeGrades(grade int64, paperId int) *RandomizeGradesForProofStruct {
-	x := random.Int63n(1844674407370955161) //some random large number to generate, 1 bits smaller than int64 cap.
+	x := random.Int63n(1844674407370955161) //some random large number to generate from, 1 bit smaller than int64 max cap.
 	return &RandomizeGradesForProofStruct{
 		R:           x,
 		GradeBefore: grade,
@@ -134,27 +134,18 @@ func (r *Reviewer) PublishAgreedGrade() {
 	avg := float64(result) / float64(length)
 	grade := CalculateNearestGrade(avg)
 	randomGradeStruct := r.RandomizeGrades(int64(grade), papir.Id)
-	///CONTINIUE HERE
-	logmsg := model.Log{
-		State:      13,
-		LogMsg:     "All grades have been submitted",
-		FromUserID: r.UserID,
-	}
-	model.CreateLogMsg(&logmsg)
 	KpAndRg := r.GetReviewKpAndRg()
-	EncryptedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(msg), KpAndRg.GroupKey.D.String())
-	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", 2)
-	logmsg2 := model.Log{
+	EncryptedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(randomGradeStruct), KpAndRg.GroupKey.D.String())
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", papir.Id)
+	logmsg := model.Log{
 		State:      13,
 		LogMsg:     str,
 		FromUserID: r.UserID,
 		Value:      EncryptedGradeStruct[1],
 		Signature:  EncryptedGradeStruct[0],
 	}
-	model.CreateLogMsg(&logmsg2)
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, EncryptedGradeStruct[1])
-
-	return msg
 }
 
 func (r *Reviewer) AgreeOnGrade(paper *Paper) GradeAndPaper {

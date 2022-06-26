@@ -188,11 +188,11 @@ func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
 }
 
 func (pc *PC) RevealAllAcceptedPapers() {
-
-	RandomizedGradesStruct := pc.RandomizeGradesForProof()
+	//TODO
+	// get randomizedGradesStruct data from log
 	grades := []int64{}
-	for _, v := range RandomizedGradesStruct {
-		grades = append(grades, v.GradeAfter)
+	for _, v1 := range []int{2,3} {
+		grades = append(grades, int64(v1))
 	}
 	params, errSetup := ccs08.SetupSet(grades)
 	for _, v := range AcceptedPapers {

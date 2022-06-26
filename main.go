@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	_ "log"
-	_ "net/http"
 	"os"
 	"swag/backend"
-	_ "swag/backend"
 	"swag/controller"
 	"swag/database"
 	"swag/model"
