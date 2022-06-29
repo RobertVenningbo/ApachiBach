@@ -181,7 +181,6 @@ func FinishedReviewHandler(c *gin.Context) {
 	review := c.Request.FormValue("textarea_name")
 	reviewer.FinishReview(review)
 	reviewer.SignReviewPaperCommit()
-	fmt.Println(review)
 
 	logmsg := model.Log{}
 	model.GetLastLogMsg(&logmsg)
@@ -275,11 +274,6 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	str := fmt.Sprintf("All grades have been submitted for Paper: %v", reviewer.PaperCommittedValue.Paper.Id)
 
 	exists := model.DoesLogMsgExist(str)
-	if !exists{
-		return
-	}
-	reviewer.PublishAgreedGrade()
-
 	msg := Message{
 		Proceed: logmsg.State == 13, //change later
 		Status:  "All grades have been submitted. Please continue.",
@@ -287,13 +281,17 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	}
 
 	tpl.Execute(c.Writer, msg)
+	if !exists {
+		return
+	}
+	reviewer.PublishAgreedGrade()
+
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html"))
 
-	paper = reviewer.GetAssignedPaperFromPCLog()
-	gradeStruct := reviewer.AgreeOnGrade(paper)
+	gradeStruct := reviewer.GetAgreedGroupGrade()
 
 	type Msg struct {
 		Title string
@@ -301,11 +299,10 @@ func GetAgreedGradeHandler(c *gin.Context) {
 	}
 	msg := Msg{
 		Title: paper.Title,
-		Grade: int(gradeStruct.Grade),
+		Grade: int(gradeStruct.GradeBefore),
 	}
 
 	tpl.Execute(c.Writer, msg)
-
 }
 
 func SignGradeHandler(c *gin.Context) {

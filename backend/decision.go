@@ -191,7 +191,7 @@ func (pc *PC) RevealAllAcceptedPapers() {
 	//TODO
 	// get randomizedGradesStruct data from log
 	grades := []int64{}
-	for _, v1 := range []int{2,3} {
+	for _, v1 := range []int{2, 3} {
 		grades = append(grades, int64(v1))
 	}
 	params, errSetup := ccs08.SetupSet(grades)
@@ -276,16 +276,37 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	}
 }
 
-func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
-	KpAndRg := pc.GetKpAndRgPC(pId)
+func (pc *PC) CheckAllSignedGrades(pId int) bool {
+	for _, v := range pc.AllPapers {
+		if pId == v.Id {
+			for _, r := range v.ReviewerList {
+				GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
+				exists := model.DoesLogMsgExist(GetStr)
+				if !exists {
+					log.Println("aboooort mission")
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
+	AOK := pc.CheckAllSignedGrades(pId)
+	if !AOK {
+		return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
+	}
 	holder := 0
-	Kp := KpAndRg.GroupKey
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {
 			holder = v.ReviewerList[0].UserID
 		}
 	}
 	GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", holder)
+	KpAndRg := pc.GetKpAndRgPC(pId)
+	Kp := KpAndRg.GroupKey
+
 	item := Trae.Find(GetStr)
 	if item == nil {
 		CheckStringAgainstDB(GetStr)
@@ -293,7 +314,7 @@ func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
 	}
 	bytes := item.value.([]byte)
 	encodedGradeAndPaper := Decrypt(bytes, Kp.D.String())
-	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(GradeAndPaper)
+	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(RandomizeGradesForProofStruct)
 	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
 
 	return decodedGradeAndPaper

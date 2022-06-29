@@ -121,6 +121,7 @@ func InitGobs() {
 	gob.Register(Message{})
 	gob.Register(ShareReviewsMessage{})
 	gob.Register(GradeAndPaper{})
+	gob.Register(RandomizeGradesForProofStruct{})
 }
 
 func EncodeToBytes(p interface{}) []byte {
