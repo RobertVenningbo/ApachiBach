@@ -306,10 +306,22 @@ func GetAgreedGradeHandler(c *gin.Context) {
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //TODO make a page that thanks the reviewer
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) //TODO make a page that thanks the reviewer
+
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+
+	msg := Message{
+		Proceed: true, //change later
+		Status:  "Thank you for participating! 📝😉 \n don't click continiue.",
+		WhereTo: "http://facebook.com/profile.php?=73322363",
+	}
 
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 
-	tpl.Execute(c.Writer, nil)
+	tpl.Execute(c.Writer, msg)
 }

@@ -12,6 +12,7 @@ import (
 )
 
 var ispctaken bool
+
 //var AcceptedPapers []backend.Paper
 
 func PCHomeHandler(c *gin.Context) {
@@ -183,7 +184,7 @@ func DecisionHandler(c *gin.Context) {
 		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
 		msg := Paper{
 			Title: p.Title,
-			Grade: int(GradeAndPaper.Grade),
+			Grade: int(GradeAndPaper.GradeAfter),
 			ID:    p.Id,
 		}
 		papers = append(papers, msg)
@@ -217,8 +218,8 @@ func RejectPaperHandler(c *gin.Context) {
 	c.Redirect(303, "/decision")
 }
 
-func CompileGradesHandler(c *gin.Context){
-	
+func CompileGradesHandler(c *gin.Context) {
+
 }
 
 func ConfirmOwnershipHandler(c *gin.Context) {
