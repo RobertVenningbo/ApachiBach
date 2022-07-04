@@ -31,7 +31,7 @@ func (pc *PC) SendGrades2(pId int) { //Step 15 new
 
 	msgStruct := SendGradeStruct{
 		reviews,
-		int(GradeAndPaper.GradeAfter),
+		int(GradeAndPaper.GradeBefore),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), string(Kpcs))
@@ -53,7 +53,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 	Kpcs := GenerateSharedSecret(pc, subm, nil)
 	msgStruct := SendGradeStruct{
 		reviews,
-		int(GradeAndPaper.GradeAfter),
+		int(GradeAndPaper.GradeBefore),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
@@ -81,9 +81,15 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 	ReviewSignedStruct := pc.GetReviewSignedStruct(pId)
 	ReviewCommit := ReviewSignedStruct.Commit
 
+	// type RejectMessage struct {
+	// 	Commit *ecdsa.PublicKey
+	// 	Grade  int
+	// 	Rg     *big.Int
+	// }
+	// maybe check the commit like the protocol describes any third party can do
 	rejectMsg := RejectMessage{
 		ReviewCommit,
-		int(GradeAndPaper.GradeAfter),
+		int(GradeAndPaper.GradeBefore),
 		Rg,
 	}
 
@@ -108,6 +114,9 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 var AcceptedPapers []RandomizeGradesForProofStruct //Global
 
 func (pc *PC) CompileGrades() { //step 17
+	if len(AcceptedPapers) == 0 {
+		log.Println("****** \n SILENT CRASHING \n ******")
+	}
 	grades := []int{}
 	for _, p := range AcceptedPapers {
 		GradeAndPaper := pc.GetGradeAndPaper(p.PaperId)
@@ -148,12 +157,7 @@ func (pc *PC) GetCompiledGrades() []int64 {
 func (pc *PC) RevealAllAcceptedPapers() {
 
 	// ***SETUP PHASE***
-	grades := []int64{}
-	for _, v1 := range AcceptedPapers {
-		IntGrade := pc.GetGradeAndPaper(v1.PaperId)
-		grades = append(grades, int64(IntGrade.GradeAfter))
-	}
-	params, errSetup := ccs08.SetupSet(grades)
+	params, errSetup := ccs08.SetupSet(pc.GetCompiledGrades())
 	// *** *** *** ***
 
 	for _, v := range AcceptedPapers {
@@ -217,7 +221,7 @@ func (pc *PC) CheckAcceptedPapers(pId int) bool {
 
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 
-	if pc.CheckAcceptedPapers(pId) {
+	if pc.CheckAcceptedPapers(pId) { //such that we dont get any duplicates
 		return
 	}
 	for _, p := range pc.AllPapers {
@@ -253,10 +257,10 @@ func (pc *PC) CheckAllSignedGrades(pId int) bool {
 }
 
 func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
-	AOK := pc.CheckAllSignedGrades(pId)
-	if !AOK {
-		return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
-	}
+	// AOK := pc.CheckAllSignedGrades(pId)
+	// if !AOK {
+	// 	return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
+	// }
 	holder := 0
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {

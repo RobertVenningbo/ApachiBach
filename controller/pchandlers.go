@@ -184,7 +184,7 @@ func DecisionHandler(c *gin.Context) {
 		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
 		msg := Paper{
 			Title: p.Title,
-			Grade: int(GradeAndPaper.GradeAfter),
+			Grade: int(GradeAndPaper.GradeBefore),
 			ID:    p.Id,
 		}
 		papers = append(papers, msg)
@@ -219,7 +219,9 @@ func RejectPaperHandler(c *gin.Context) {
 }
 
 func CompileGradesHandler(c *gin.Context) {
-
+	backend.Pc.CompileGrades()
+	backend.Pc.RevealAllAcceptedPapers()
+	c.Redirect(303, "/decision")
 }
 
 func ConfirmOwnershipHandler(c *gin.Context) {

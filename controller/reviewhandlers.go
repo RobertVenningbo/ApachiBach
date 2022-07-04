@@ -182,16 +182,15 @@ func FinishedReviewHandler(c *gin.Context) {
 	reviewer.FinishReview(review)
 	reviewer.SignReviewPaperCommit()
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
+	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", reviewer.PaperCommittedValue.Paper.Id)
+	proceed := model.DoesLogMsgExist(putStr)
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 11, //change later
+		Proceed: proceed,
 		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
@@ -202,16 +201,15 @@ func FinishedReviewHandler(c *gin.Context) {
 func GetFinishedReviewHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
+	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", reviewer.PaperCommittedValue.Paper.Id)
+	proceed := model.DoesLogMsgExist(putStr)
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 11, //change later
+		Proceed: proceed,
 		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
@@ -262,10 +260,6 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		log.Println("Error converting grade to int")
 	}
 	reviewer.GradePaper(gradeAsInt)
-
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
 	type Message struct {
 		Proceed bool
 		Status  string
@@ -275,17 +269,18 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 
 	exists := model.DoesLogMsgExist(str)
 	msg := Message{
-		Proceed: logmsg.State == 13, //change later
+		Proceed: exists, //change later
 		Status:  "All grades have been submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
 
 	tpl.Execute(c.Writer, msg)
-	if !exists {
+
+	if exists {
 		return
 	}
-	reviewer.PublishAgreedGrade()
 
+	reviewer.PublishAgreedGrade()
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {

@@ -151,6 +151,7 @@ func (r *Reviewer) PublishAgreedGrade() {
 
 func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
 	if !r.CheckAllSubmittedGrades() { //shouldn't happen but a way to make the program not fail entirely.
+		log.Panic("GetAgreedGroupGrade failed.")
 		return RandomizeGradesForProofStruct{}
 	}
 

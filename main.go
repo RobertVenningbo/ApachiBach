@@ -65,6 +65,7 @@ func main() {
 		router.GET("/checkreviews", controller.CheckReviewsHandler)
 		router.POST("/decision", controller.AcceptPaperHandler)
 		router.POST("/rejectpaper", controller.RejectPaperHandler)
+		router.POST("/compilegrades", controller.CompileGradesHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")
