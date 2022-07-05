@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	random "math/rand"
 	"swag/model"
 
 	"github.com/0xdecaf/zkrp/ccs08"
@@ -32,7 +31,7 @@ func (pc *PC) SendGrades2(pId int) { //Step 15 new
 
 	msgStruct := SendGradeStruct{
 		reviews,
-		int(GradeAndPaper.Grade),
+		int(GradeAndPaper.GradeBefore),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), string(Kpcs))
@@ -54,7 +53,7 @@ func (pc *PC) SendGrades(subm *Submitter) { //step 15
 	Kpcs := GenerateSharedSecret(pc, subm, nil)
 	msgStruct := SendGradeStruct{
 		reviews,
-		int(GradeAndPaper.Grade),
+		int(GradeAndPaper.GradeBefore),
 	}
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
@@ -82,9 +81,15 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 	ReviewSignedStruct := pc.GetReviewSignedStruct(pId)
 	ReviewCommit := ReviewSignedStruct.Commit
 
+	// type RejectMessage struct {
+	// 	Commit *ecdsa.PublicKey
+	// 	Grade  int
+	// 	Rg     *big.Int
+	// }
+	// maybe check the commit like the protocol describes any third party can do
 	rejectMsg := RejectMessage{
 		ReviewCommit,
-		int(GradeAndPaper.Grade),
+		int(GradeAndPaper.GradeBefore),
 		Rg,
 	}
 
@@ -106,13 +111,16 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 
 /*PC ACCEPTS PAPER PATH*/
 
-var AcceptedPapers []GradeAndPaper //Global
+var AcceptedPapers []RandomizeGradesForProofStruct //Global
 
 func (pc *PC) CompileGrades() { //step 17
+	if len(AcceptedPapers) == 0 {
+		log.Println("****** \n SILENT CRASHING \n ******")
+	}
 	grades := []int{}
 	for _, p := range AcceptedPapers {
-		GradeAndPaper := pc.GetGradeAndPaper(p.Papir.Id)
-		grades = append(grades, int(GradeAndPaper.Grade))
+		GradeAndPaper := pc.GetGradeAndPaper(p.PaperId)
+		grades = append(grades, int(GradeAndPaper.GradeAfter))
 	}
 
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
@@ -146,58 +154,14 @@ func (pc *PC) GetCompiledGrades() []int64 {
 	return i64
 }
 
-func (pc *PC) RevealAcceptedPaperInfo(pId int) RevealPaper {
-
-	p := pc.GetPaperAndRandomness(pId)
-	grades := pc.GetCompiledGrades()
-
-	revealPaperMsg := RevealPaper{
-		*p.Paper,
-		p.Rs,
-	}
-
-	signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(revealPaperMsg), "")
-	str := fmt.Sprintf("PC reveals accepted paper: %v", p)
-	logmsg := model.Log{
-		State:      18,
-		LogMsg:     str,
-		FromUserID: 4000,
-		Value:      signature[1],
-		Signature:  signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, signature[1])
-
-	/*NIZK*/
-	params, errSetup := ccs08.SetupSet(grades)
-	if errSetup != nil {
-		log.Panicln(errSetup)
-	}
-	var i64 int64
-	IntGrade := pc.GetGradeAndPaper(pId)
-	i64 = int64(IntGrade.Grade)
-	//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
-	r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
-	proof_out, _ := ccs08.ProveSet(i64, r, params)
-	result, _ := ccs08.VerifySet(&proof_out, &params)
-	if !result {
-		log.Panicf("Assert failure: expected true, actual: %v", result)
-	} else {
-		log.Println("PC proves that grade is in set of compiled grades.")
-	}
-	return revealPaperMsg
-}
-
 func (pc *PC) RevealAllAcceptedPapers() {
 
-	RandomizedGradesStruct := pc.RandomizeGradesForProof()
-	grades := []int64{}
-	for _, v := range RandomizedGradesStruct {
-		grades = append(grades, v.GradeAfter)
-	}
-	params, errSetup := ccs08.SetupSet(grades)
+	// ***SETUP PHASE***
+	params, errSetup := ccs08.SetupSet(pc.GetCompiledGrades())
+	// *** *** *** ***
+
 	for _, v := range AcceptedPapers {
-		p := pc.GetPaperAndRandomness(v.Papir.Id)
+		p := pc.GetPaperAndRandomness(v.PaperId)
 
 		revealPaperMsg := RevealPaper{
 			*p.Paper,
@@ -220,10 +184,9 @@ func (pc *PC) RevealAllAcceptedPapers() {
 		if errSetup != nil {
 			log.Panicln(errSetup)
 		}
-		IntGrade := pc.GetGradeAndPaper(v.Papir.Id)
-		//TODO: NOTE THAT WE HAVE TO RANDOMIZE GRADES ish. No duplicates plz
+		IntGrade := pc.GetGradeAndPaper(v.PaperId)
 		r, _ := rand.Int(rand.Reader, elliptic.P256().Params().N)
-		proof_out, _ := ccs08.ProveSet(IntGrade.Grade, r, params)
+		proof_out, _ := ccs08.ProveSet(IntGrade.GradeAfter, r, params)
 		result, _ := ccs08.VerifySet(&proof_out, &params)
 		if !result {
 			log.Panicf("Assert failure: expected true, actual: %v", result)
@@ -244,27 +207,12 @@ func (pc *PC) RevealAllAcceptedPapers() {
 	}
 }
 
-func (pc *PC) RandomizeGradesForProof() []RandomizeGradesForProofStruct {
-	somethinglist := []RandomizeGradesForProofStruct{}
-	grades := pc.GetCompiledGrades()
-	for _, g := range grades {
-		x := random.Int63n(1844674407370955161) //some random large number to generate, 1 bits smaller than int64 cap.
-		msg := RandomizeGradesForProofStruct{
-			R:           x,
-			GradeBefore: g,
-			GradeAfter:  x + g,
-		}
-		somethinglist = append(somethinglist, msg)
-	}
-	return somethinglist
-}
-
 /*HELPER METHODS*/
 
 func (pc *PC) CheckAcceptedPapers(pId int) bool {
 
 	for _, p := range AcceptedPapers {
-		if p.Papir.Id == pId {
+		if p.PaperId == pId {
 			return true
 		}
 	}
@@ -273,7 +221,7 @@ func (pc *PC) CheckAcceptedPapers(pId int) bool {
 
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 
-	if pc.CheckAcceptedPapers(pId) {
+	if pc.CheckAcceptedPapers(pId) { //such that we dont get any duplicates
 		return
 	}
 	for _, p := range pc.AllPapers {
@@ -281,8 +229,8 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 			//AcceptedPapers = append(AcceptedPapers, *p)
 			str := fmt.Sprintf("PC accepts Paper: %v", pId)
 			logmsg := model.Log{
-				State: 16,
-				LogMsg: str,
+				State:      16,
+				LogMsg:     str,
 				FromUserID: 4000,
 			}
 			model.CreateLogMsg(&logmsg)
@@ -292,16 +240,37 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	}
 }
 
-func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
-	KpAndRg := pc.GetKpAndRgPC(pId)
+func (pc *PC) CheckAllSignedGrades(pId int) bool {
+	for _, v := range pc.AllPapers {
+		if pId == v.Id {
+			for _, r := range v.ReviewerList {
+				GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
+				exists := model.DoesLogMsgExist(GetStr)
+				if !exists {
+					log.Println("aboooort mission")
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
+	// AOK := pc.CheckAllSignedGrades(pId)
+	// if !AOK {
+	// 	return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
+	// }
 	holder := 0
-	Kp := KpAndRg.GroupKey
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {
 			holder = v.ReviewerList[0].UserID
 		}
 	}
 	GetStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", holder)
+	KpAndRg := pc.GetKpAndRgPC(pId)
+	Kp := KpAndRg.GroupKey
+
 	item := Trae.Find(GetStr)
 	if item == nil {
 		CheckStringAgainstDB(GetStr)
@@ -309,7 +278,7 @@ func (pc *PC) GetGradeAndPaper(pId int) GradeAndPaper {
 	}
 	bytes := item.value.([]byte)
 	encodedGradeAndPaper := Decrypt(bytes, Kp.D.String())
-	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(GradeAndPaper)
+	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(RandomizeGradesForProofStruct)
 	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
 
 	return decodedGradeAndPaper

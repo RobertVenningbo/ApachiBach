@@ -116,10 +116,10 @@ func WriteToFileHandler(c *gin.Context) {
 				currentuser, err := user.Current()
 				if err != nil {
 					panic(err)
-				  }
+				}
 				downloads := currentuser.HomeDir + "/Downloads/"
 				fmt.Println(downloads) //del once it all works
-				err = os.WriteFile(downloads + p.Title + ".pdf", paperbytes, 0644)
+				err = os.WriteFile(downloads+p.Title+".pdf", paperbytes, 0644)
 				if err != nil {
 					log.Println("error writing file")
 				}
@@ -128,7 +128,6 @@ func WriteToFileHandler(c *gin.Context) {
 	}
 	tpl.Execute(c.Writer, papers)
 }
-
 
 func MakeBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
@@ -182,18 +181,16 @@ func FinishedReviewHandler(c *gin.Context) {
 	review := c.Request.FormValue("textarea_name")
 	reviewer.FinishReview(review)
 	reviewer.SignReviewPaperCommit()
-	fmt.Println(review)
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
+	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", reviewer.PaperCommittedValue.Paper.Id)
+	proceed := model.DoesLogMsgExist(putStr)
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 11, //change later
+		Proceed: proceed,
 		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
@@ -204,16 +201,15 @@ func FinishedReviewHandler(c *gin.Context) {
 func GetFinishedReviewHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
+	putStr := fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", reviewer.PaperCommittedValue.Paper.Id)
+	proceed := model.DoesLogMsgExist(putStr)
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 11, //change later
+		Proceed: proceed,
 		Status:  "All reviews are now finished. Please continue to discussing.",
 		WhereTo: "/discussing",
 	}
@@ -246,7 +242,7 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 13, 
+		Proceed: logmsg.State == 13,
 		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
@@ -264,49 +260,33 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		log.Println("Error converting grade to int")
 	}
 	reviewer.GradePaper(gradeAsInt)
-
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", reviewer.PaperCommittedValue.Paper.Id)
 
-	for _, r := range paper.ReviewerList {
-		if r.GetGradeForReviewer(r.UserID) == nil { //TODO refactor so log messages aren't needed here
-			logmsg := model.Log{
-				State: 12,
-				LogMsg: "Not all grades have been submitted",
-				FromUserID: r.UserID,
-			}
-			model.CreateLogMsg(&logmsg)
-		}
-		logmsg := model.Log{
-			State: 13,
-			LogMsg: "All grades have been submitted",
-			FromUserID: r.UserID,
-		}
-
-		model.CreateLogMsg(&logmsg)
-	}
-
+	exists := model.DoesLogMsgExist(str)
 	msg := Message{
-		Proceed: logmsg.State == 13, //change later
+		Proceed: exists, //change later
 		Status:  "All grades have been submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
 
 	tpl.Execute(c.Writer, msg)
 
+	if exists {
+		return
+	}
+
+	reviewer.PublishAgreedGrade()
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html"))
 
-	paper = reviewer.GetAssignedPaperFromPCLog()
-	gradeStruct := reviewer.AgreeOnGrade(paper)
+	gradeStruct := reviewer.GetAgreedGroupGrade()
 
 	type Msg struct {
 		Title string
@@ -314,19 +294,29 @@ func GetAgreedGradeHandler(c *gin.Context) {
 	}
 	msg := Msg{
 		Title: paper.Title,
-		Grade: int(gradeStruct.Grade),
+		Grade: int(gradeStruct.GradeBefore),
 	}
-	
-	tpl.Execute(c.Writer, msg)
 
+	tpl.Execute(c.Writer, msg)
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/avggrade.html")) //TODO make a page that thanks the reviewer 
-	
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) //TODO make a page that thanks the reviewer
+
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+
+	msg := Message{
+		Proceed: true, //change later
+		Status:  "Thank you for participating! 📝😉 \n don't click continiue.",
+		WhereTo: "http://facebook.com/profile.php?=73322363",
+	}
+
 	reviewer.SignCommitsAndNonce()
 	reviewer.SignAndEncryptGrade()
 
-	tpl.Execute(c.Writer, nil)
+	tpl.Execute(c.Writer, msg)
 }
-

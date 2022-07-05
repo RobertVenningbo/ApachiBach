@@ -40,12 +40,11 @@ func TestAgreeOnGrade(t *testing.T) {
 	Pc.AllPapers[0].ReviewerList = append(Pc.AllPapers[0].ReviewerList, reviewerSlice...)
 	Pc.GenerateKeysForDiscussing() //Calling this to fill log with necessary data, has been tested in reviewing_test.go
 
-
 	reviewer.GradePaper(4)
 	reviewer2.GradePaper(7)
 	reviewer3.GradePaper(12)
 
-	got := AgreeOnGrade(&paperListTest[0])
+	got := reviewer.GetAgreedGroupGrade()
 	want := 7
 
 	assert.Equal(t, want, got, "TestAgreeOnGrade")
@@ -56,9 +55,9 @@ func TestMakeGradeCommit(t *testing.T) {
 	reviewer2.PaperCommittedValue.Paper = &p
 	reviewerSlice := []Reviewer{reviewer, reviewer2}
 	Pc.AllPapers[0] = &p
-	paperListTest[0].ReviewerList= append(paperListTest[0].ReviewerList, reviewerSlice...)
+	paperListTest[0].ReviewerList = append(paperListTest[0].ReviewerList, reviewerSlice...)
 
-	Pc.GenerateKeysForDiscussing() 
+	Pc.GenerateKeysForDiscussing()
 	gradeCommit := reviewer.MakeGradeCommit()
 	gradeCommit2 := reviewer2.MakeGradeCommit()
 

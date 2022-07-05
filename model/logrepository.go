@@ -32,7 +32,6 @@ func GetLogMsgByMsg(logmsg *Log, msg string) {
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		log.Println("Error in GetLogMsgByMsg")
 	}
-
 }
 
 //get all log entries

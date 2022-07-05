@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	_ "log"
-	_ "net/http"
 	"os"
 	"swag/backend"
-	_ "swag/backend"
 	"swag/controller"
 	"swag/database"
 	"swag/model"
@@ -69,6 +66,7 @@ func main() {
 		router.GET("/checkreviews", controller.CheckReviewsHandler)
 		router.POST("/decision", controller.AcceptPaperHandler)
 		router.POST("/rejectpaper", controller.RejectPaperHandler)
+		router.POST("/compilegrades", controller.CompileGradesHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

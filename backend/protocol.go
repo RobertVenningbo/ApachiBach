@@ -38,6 +38,8 @@ func InitLocalPC() {
 	Pc.Keys = &key
 }
 
+var NoMultipleAppend bool
+
 func InitLocalPCPaperList() {
 	msgs := []model.Log{}
 	model.GetAllLogMsgs(&msgs)
@@ -51,6 +53,10 @@ func InitLocalPCPaperList() {
 			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
 			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 			paper := paperAndRandomess.Paper
+			if NoMultipleAppend { //nasty fix i know 
+				return
+			}
+			NoMultipleAppend = true
 			Pc.AllPapers = append(Pc.AllPapers, paper)
 			fmt.Printf("pc paper length: %v \n", len(Pc.AllPapers))
 		}
@@ -121,6 +127,7 @@ func InitGobs() {
 	gob.Register(Message{})
 	gob.Register(ShareReviewsMessage{})
 	gob.Register(GradeAndPaper{})
+	gob.Register(RandomizeGradesForProofStruct{})
 }
 
 func EncodeToBytes(p interface{}) []byte {

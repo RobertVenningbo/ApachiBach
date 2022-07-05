@@ -154,7 +154,6 @@ func (pc *PC) CollectReviews() { //step 11
 			Value:      listSignature[1],
 			Signature:  listSignature[0],
 		}
-		fmt.Println(12)
 		err := model.CreateLogMsg(&logmsg)
 		if err != nil {
 			log.Println("error in (pc).CollectReviews")
