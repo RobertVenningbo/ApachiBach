@@ -219,11 +219,72 @@ func RejectPaperHandler(c *gin.Context) {
 }
 
 func CompileGradesHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/confirm_owner.html"))
+
 	backend.Pc.CompileGrades()
 	backend.Pc.RevealAllAcceptedPapers()
-	c.Redirect(303, "/decision")
+
+
+	type Paper struct {
+		Title string
+		Grade int
+		ID    int
+	}
+	var papers []Paper
+
+	for _, p := range backend.Pc.AllPapers {
+		if backend.Pc.CheckAcceptedPapers(p.Id) {
+			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
+			msg := Paper{
+				Title: p.Title,
+				Grade: int(GradeAndPaper.GradeBefore),
+				ID:    p.Id,
+			}
+			papers = append(papers, msg)
+		}
+	}
+
+	tpl.Execute(c.Writer, papers)
 }
 
 func ConfirmOwnershipHandler(c *gin.Context) {
+	paperid := c.Request.FormValue("paperid")
+	paperidint, err := strconv.Atoi(paperid)
+	if err != nil {
+		log.Println("error converting id string to id int")
+		return
+	}
+
+	users := []model.User{}
+	model.GetSubmitters(&users)
+	var submitterSlice []backend.Submitter
+	for _, user := range users {
+		submitterSlice = append(submitterSlice, UserToSubmitter(user))
+	}
+
+	backend.Pc.ConfirmOwnership(paperidint)
+	c.Redirect(303, "/confirmowner")
+}
+
+func GetConfirmOwnershipHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/confirm_owner.html"))
+	type Paper struct {
+		Title string
+		Grade int
+		ID    int
+	}
+	var papers []Paper
+	for _, p := range backend.Pc.AllPapers {
+		if backend.Pc.CheckAcceptedPapers(p.Id) {
+			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
+			msg := Paper{
+				Title: p.Title,
+				Grade: int(GradeAndPaper.GradeBefore),
+				ID:    p.Id,
+			}
+			papers = append(papers, msg)
+		}
+	}
+	tpl.Execute(c.Writer, papers)
 
 }

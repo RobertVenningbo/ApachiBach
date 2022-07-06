@@ -6,7 +6,7 @@ import (
 )
 
 
-func (s *Submitter) ClaimPaper() { //step 19
+func (s *Submitter) ClaimPaper(pId int) { //step 19
 	paper := s.PaperCommittedValue.Paper
 	ri := s.SubmitterCommittedValue.Val
 	//rii := s.GetPrivateBigInt("ri") new way of getting something private
@@ -15,7 +15,7 @@ func (s *Submitter) ClaimPaper() { //step 19
 		s,
 		ri,
 	}
-	str := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
+	str := fmt.Sprintf("Submitter claims paper %v by revealing paper and ri.", pId)
 	signature := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(msg), "")
 	logmsg := model.Log{
 		State:      19,
@@ -28,65 +28,76 @@ func (s *Submitter) ClaimPaper() { //step 19
 	Trae.Put(str, signature)
 }
 
-func (pc *PC) ConfirmOwnership(s *Submitter) { //step 20
 
-	sig, claim := GetClaimMessage(s)
-	SPK := pc.GetSubmitterPK(s.UserID)
-	claimBytes := EncodeToBytes(claim)
-	hash, _ := GetMessageHash(claimBytes)
-	isLegit := Verify(&SPK, sig, hash)
-	if !isLegit {
-		fmt.Printf("PC couldn't verify signature from submitter %v \n", s.UserID)
-	}
-	/*perhaps verify some of the properties of claimMsg*/
+func (pc *PC) ConfirmOwnership(pId int) { //step 20
 
-	signature := SignsPossiblyEncrypts(pc.Keys, claimBytes, "")
+	if pc.GetClaimMessage(pId) == nil {
+		return
+	} else {
+		claim := pc.GetClaimMessage(pId)
+		
+		claimBytes := EncodeToBytes(claim)
+		signature := SignsPossiblyEncrypts(pc.Keys, claimBytes, "")
 
-	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
-	logmsg := model.Log{
-		State: 20,
-		LogMsg: putStr,
-		FromUserID: 4000,
-		Value: signature[1],
-		Signature: signature[0],
-	}
-	model.CreateLogMsg(&logmsg)
-	Trae.Put(putStr, signature)
+		putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
+
+		logmsg := model.Log{
+			State: 20,
+			LogMsg: putStr,
+			FromUserID: 4000,
+			Value: signature[1],
+			Signature: signature[0],
+		}
+		model.CreateLogMsg(&logmsg)
+		Trae.Put(putStr, signature)
+    }
 }
 
-func GetConfirmMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature from the submitter and the ClaimMessage
-	//Probably needs error handling for when checking claim
-	// message for a submitter which haven't submitted one
-	_, claim := GetClaimMessage(s)
-	getStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, s.UserID)
+func (pc *PC) GetConfirmMessage(pId int) ([]byte, *ClaimMessage) { //returns signature from the submitter and the ClaimMessage
+	claim := pc.GetClaimMessage(pId)
+	getStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
 	item := Trae.Find(getStr)
+	if item == nil {
+		CheckStringAgainstDB(getStr)
+		item = tree.Find(getStr)
+	}
 
 	claimMsgBytes := item.value.([][]byte)
 	sig, encoded := SplitSignatureAndMsg(claimMsgBytes)
 	claimMsg := DecodeToStruct(encoded).(ClaimMessage)
 
-	return sig, claimMsg
+	return sig, &claimMsg
 }
 
-func GetClaimMessage(s *Submitter) ([]byte, ClaimMessage) { //returns signature from the submitter and the ClaimMessage
+func (pc *PC) GetClaimMessage(pId int) *ClaimMessage { 
 	//Probably needs error handling for when checking claim
 	// message for a submitter which haven't submitted one
 
-	getStr := fmt.Sprintf("Submitter %v, claims paper by revealing paper and ri.", s.UserID)
+	getStr := fmt.Sprintf("Submitter claims paper %v by revealing paper and ri.", pId)
 	item := Trae.Find(getStr)
 	if item == nil {
 		CheckStringAgainstDB(getStr)
 		item = Trae.Find(getStr)
 	}
 
+	if item == nil {
+		fmt.Println("Submitter hasn't claimed ownership of paper yet.")
+		return nil
+	}
+	SPK := pc.GetPaperSubmitterPK(pId)
 	claimMsgBytes := item.value.([]byte)
-
+    hash, _  := GetMessageHash(claimMsgBytes)
 	var sigmsg model.Log 
 	model.GetLogMsgByMsg(&sigmsg, getStr)
 	sig := sigmsg.Signature
-	
-	
+	isLegit := Verify(&SPK, sig, hash)
+	if !isLegit {
+		fmt.Printf("PC couldn't verify signature from submitter who submitted paper %v \n", pId)
+	} else {
+		fmt.Printf("PC verifies signature from submitter who submitted %v \n", pId)
+	}
+
 	claimMsg := DecodeToStruct(claimMsgBytes).(ClaimMessage)
 
-	return sig, claimMsg
+	return &claimMsg
 }

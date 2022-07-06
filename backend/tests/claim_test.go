@@ -10,13 +10,13 @@ import (
 func TestClaimAndConfirmPaper(t *testing.T) {
 	submitter.Submit(&p)
 
-	submitter.ClaimPaper()
+	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
-	Pc.ConfirmOwnership(&submitter)
+	Pc.ConfirmOwnership(submitter.PaperCommittedValue.Paper.Id)
 
 	// Asserting
-	_, ClaimPC := GetConfirmMessage(&submitter)
-	_, ClaimSubmitter := GetClaimMessage(&submitter)
+	_, ClaimPC := GetConfirmMessage(submitter.PaperCommittedValue.Paper.Id)
+	_, ClaimSubmitter := GetClaimMessage(submitter.PaperCommittedValue.Paper.Id)
 
 	assert.Equal(t, ClaimPC, ClaimSubmitter, "failz")
 }

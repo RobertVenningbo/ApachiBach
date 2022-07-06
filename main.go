@@ -40,6 +40,7 @@ func main() {
 		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.POST("/upload", controller.UploadFile)
 		router.GET("/getgrade", controller.GetGradesAndReviewsHandler)
+		router.GET("/claimgrade", controller.ClaimPaperHandler)
 		router.Run(":" + serverport)
 	} else if os.Args[1] == "reviewer" {
 		router.GET("/", controller.PrepStageHandler)
@@ -67,6 +68,8 @@ func main() {
 		router.POST("/decision", controller.AcceptPaperHandler)
 		router.POST("/rejectpaper", controller.RejectPaperHandler)
 		router.POST("/compilegrades", controller.CompileGradesHandler)
+		router.POST("/confirmowner", controller.ConfirmOwnershipHandler)
+		router.GET("/confirmowner", controller.GetConfirmOwnershipHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

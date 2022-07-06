@@ -98,12 +98,8 @@ func GradedPaperHandler(c *gin.Context) { //delete
 
 func UploadFile(c *gin.Context) {
 	fmt.Println("File Upload Endpoint Hit")
-	// Parse our multipart form, 10 << 20 specifies a maximum
-	// upload of 10 MB files.
+	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
 	c.Request.ParseMultipartForm(10 << 20)
-	// FormFile returns the first file for the given key `myFile`
-	// it also returns the FileHeader so we can get the Filename,
-	// the Header and the size of the file
 
 	name := c.Request.FormValue("name")
 	title := c.Request.FormValue("title")
@@ -157,6 +153,9 @@ func UploadFile(c *gin.Context) {
 }
 
 func ClaimPaperHandler(c *gin.Context) {
+	
+	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
-	submitter.ClaimPaper()
+	c.Redirect(303, "/getgrade")
+	
 }

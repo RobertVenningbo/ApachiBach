@@ -21,7 +21,6 @@ var reviewerexists bool
 
 func PrepStageHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
-
 	var logMsg model.Log
 	err := model.GetLastLogMsg(&logMsg)
 	if err != nil {

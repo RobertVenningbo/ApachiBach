@@ -14,7 +14,9 @@
             <p>Your paper is being reviewed</p>            
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>            
-            
+            <form action="/claimgrade" method="GET">
+                <button>Claim grade</button>          
+            </form>
             <div class="flexrowcenter">
                 {{ range .Reviews}}
                 <div>

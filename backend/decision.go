@@ -219,6 +219,18 @@ func (pc *PC) CheckAcceptedPapers(pId int) bool {
 	return false
 }
 
+func (pc *PC) GetAcceptedPapers() []*Paper {
+	var acceptedPapers []*Paper
+
+	for _, p := range pc.AllPapers {
+		if pc.CheckAcceptedPapers(p.Id) {
+			acceptedPapers = append(acceptedPapers, p)
+		}
+	}
+	return acceptedPapers
+
+}
+
 func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 
 	if pc.CheckAcceptedPapers(pId) { //such that we dont get any duplicates
