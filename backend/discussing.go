@@ -15,7 +15,6 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	Kp := KpAndRg.GroupKey
 	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, []byte(input), Kp.D.String())
 	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
-	log.Println(logStr)
 	Trae.Put(logStr, encryptedSignedMsg)
 
 	logmsg := model.Log{
@@ -28,7 +27,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	model.CreateLogMsg(&logmsg)
 }
 
-func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
+func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData { 
 	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
 	var messages []string
 	var logmsgs []model.Log
@@ -40,8 +39,16 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 		reviewkpandrg := r.GetReviewKpAndRg()
 		Kp := reviewkpandrg.GroupKey
 		for _, v := range logsmsgsnotbinded {
+			
 			bytes := Decrypt(v.Value, Kp.D.String())
 			messages = append(messages, string(bytes))
+
+			var user model.User
+			model.GetReviewerByID(&user, v.FromUserID)
+			pubkeys := DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
+			isLegit := VerifySignature(logStr, bytes, &pubkeys) //This doesn't work, problem with keys - possibly pointers
+			fmt.Printf("\n\n %v \n\n", isLegit)
+
 		}
 	}
 	reviewStruct := r.GetCollectedReviews()
@@ -53,6 +60,8 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 
 	return data
 }
+
+
 
 func (r *Reviewer) GradePaper(grade int) {
 	gradeStruct := IndividualGrade{
@@ -266,3 +275,4 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(submitStr, signedGrade[1])
 }
+

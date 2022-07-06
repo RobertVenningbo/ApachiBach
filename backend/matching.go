@@ -15,8 +15,6 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 		Kpcr := pc.GetKPCRFromLog(reviewerSlice[r].UserID) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
-			_, val := SplitSignatureAndMsg(SignedAndEncryptedPaper)
-			fmt.Sprintln(val)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
 			fmt.Println(msg)
 			Trae.Put(msg, SignedAndEncryptedPaper)
@@ -42,7 +40,6 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, r.UserID)
 		fmt.Println("GetMsg: " + GetMsg)
 		treeItem := Trae.Find(GetMsg)
-
 		if treeItem == nil {
 			CheckStringAgainstDB(GetMsg)
 			treeItem = Trae.Find(GetMsg)
@@ -53,6 +50,13 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
 		pList = append(pList, &paper)
+
+		isLegit := VerifySignature(GetMsg, decrypted, &Pc.Keys.PublicKey)
+		if !isLegit {
+			fmt.Printf("Reviewer %v couldn't verify signature from PC \n", r.UserID)
+		} else {
+			fmt.Printf("Reviewer %v verifies signature from PC - recieves distributed papers \n", r.UserID)
+		}
 	}
 	return pList
 }
@@ -208,7 +212,6 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 
 func (pc *PC) MatchPapers() {
 	for _, p := range pc.AllPapers {
-		fmt.Println("in match papers")
 		PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id)) //notice what we are creating our commitment from, maybe this ok.
 
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
@@ -259,7 +262,7 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	bytes := item.value.([]byte)
 	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
-	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
+
 
 	return ret
 }
@@ -275,7 +278,13 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	bytes := item.value.([]byte)
 	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
-	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
+
+	isLegit := VerifySignature(msg, bytes, &Pc.Keys.PublicKey)
+	if !isLegit {
+		fmt.Printf("\nReviewer %v couldn't verify signature from PC ", reviewer.UserID)
+	} else {
+		fmt.Printf("\nReviewer %v verifies signature from PC - recieves ReviewSignedStruct ", reviewer.UserID)
+	}
 
 	return ret
 }

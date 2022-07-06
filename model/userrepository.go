@@ -44,6 +44,14 @@ func GetPC(user *User) (err error){
 	return nil
 }
 
+func GetReviewerByID(user *User, id int) (err error) {
+	err = database.DB.Where("id = ?", id).Find(user).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetReviewers(user *[]User) (err error){
 	err = database.DB.Where("usertype = ?", "reviewer").Find(user).Error
 	//err = database.DB.Where("usertype = ?", "reviewer").Error

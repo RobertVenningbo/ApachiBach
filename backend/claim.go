@@ -86,11 +86,8 @@ func (pc *PC) GetClaimMessage(pId int) *ClaimMessage {
 	}
 	SPK := pc.GetPaperSubmitterPK(pId)
 	claimMsgBytes := item.value.([]byte)
-    hash, _  := GetMessageHash(claimMsgBytes)
-	var sigmsg model.Log 
-	model.GetLogMsgByMsg(&sigmsg, getStr)
-	sig := sigmsg.Signature
-	isLegit := Verify(&SPK, sig, hash)
+
+	isLegit := VerifySignature(getStr, claimMsgBytes, &SPK)
 	if !isLegit {
 		fmt.Printf("PC couldn't verify signature from submitter who submitted paper %v \n", pId)
 	} else {

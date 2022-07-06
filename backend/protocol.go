@@ -158,6 +158,20 @@ func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
 	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
 }
 
+func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool {
+	var sigmsg model.Log 
+	model.GetLogMsgByMsg(&sigmsg, str)
+	sig := sigmsg.Signature
+
+	hash, _ := GetMessageHash(encodedMsg)
+	isLegit := Verify(&Pc.Keys.PublicKey, sig, hash)
+
+	if !isLegit {
+		return false
+	} 
+    return true
+}
+
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message
 	hash, _ := GetMessageHash(bytes)
 	signature, _ := ecdsa.SignASN1(rand.Reader, priv, hash)
