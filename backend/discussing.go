@@ -103,14 +103,6 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	return &decodedGradeStruct
 }
 
-func (r *Reviewer) AgreeOnGrade2(paper *Paper) GradeAndPaper {
-	gradeandpaper := r.GetAgreedGrade(paper.Id)
-	if gradeandpaper != nil {
-		return *gradeandpaper
-	}
-
-	return *gradeandpaper
-}
 
 func (r *Reviewer) CheckAllSubmittedGrades() bool {
 	for _, v := range r.PaperCommittedValue.Paper.ReviewerList {

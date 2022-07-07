@@ -279,7 +279,7 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		return
 	}
 
-	reviewer.PublishAgreedGrade()
+	reviewer.PublishAgreedGrade() //This will never be called if we have more than 1 reviewer
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
@@ -300,7 +300,7 @@ func GetAgreedGradeHandler(c *gin.Context) {
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) //TODO make a page that thanks the reviewer
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) 
 
 	type Message struct {
 		Proceed bool
@@ -310,8 +310,8 @@ func SignGradeHandler(c *gin.Context) {
 
 	msg := Message{
 		Proceed: true, //change later
-		Status:  "Thank you for participating! 📝😉 \n don't click continiue.",
-		WhereTo: "http://facebook.com/profile.php?=73322363",
+		Status:  "Thank you for participating! 📝😉 ",
+		WhereTo: "/",
 	}
 
 	reviewer.SignCommitsAndNonce()

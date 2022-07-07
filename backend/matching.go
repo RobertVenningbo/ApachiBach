@@ -311,10 +311,10 @@ func (pc *PC) SupplyNIZK(p *Paper) bool {
 	}
 
 	if !proof.OpenP256(C1, C2, nonce, &submitterPK, &pc.Keys.PublicKey) {
-		works = false //for testing
+		works = false 
 		fmt.Println("Error: The review commit and paper submission commit does not hide the same paper")
 	} else {
-		works = true //for testing
+		works = true 
 		fmt.Println("The review commit and paper submission commit hides the same paper")
 	}
 	return works

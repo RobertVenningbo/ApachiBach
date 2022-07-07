@@ -70,6 +70,7 @@ func main() {
 		router.POST("/compilegrades", controller.CompileGradesHandler)
 		router.POST("/confirmowner", controller.ConfirmOwnershipHandler)
 		router.GET("/confirmowner", controller.GetConfirmOwnershipHandler)
+		router.GET("/checkconfirms", controller.CheckConfirmedOwnershipHandler)
 		router.Run(":" + serverport)
 	} else {
 		fmt.Println("Wrong arguments given")

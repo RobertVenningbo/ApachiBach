@@ -153,9 +153,23 @@ func UploadFile(c *gin.Context) {
 }
 
 func ClaimPaperHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) //Should be a shared template
+
+	type Message struct {
+		Proceed bool
+		Status  string
+		WhereTo string
+	}
+
+	msg := Message{
+		Proceed: true, //change later
+		Status:  "Protocol finished. Thank you for submitting a paper! ",
+		WhereTo: "/",
+	}
+
 	
 	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
-	c.Redirect(303, "/getgrade")
+	tpl.Execute(c.Writer, msg)
 	
 }

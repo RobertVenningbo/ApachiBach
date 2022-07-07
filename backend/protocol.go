@@ -53,10 +53,11 @@ func InitLocalPCPaperList() {
 			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
 			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 			paper := paperAndRandomess.Paper
-			if NoMultipleAppend { //nasty fix i know 
-				return
-			}
-			NoMultipleAppend = true
+			// This is commented out because it doesn't allow for multiple submitters, however reviewers get duplicated papers shown-
+			// if NoMultipleAppend { //nasty fix i know
+			// 	return
+			// }
+			// NoMultipleAppend = true
 			Pc.AllPapers = append(Pc.AllPapers, paper)
 			fmt.Printf("pc paper length: %v \n", len(Pc.AllPapers))
 		}
