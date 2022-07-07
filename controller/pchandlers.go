@@ -53,7 +53,6 @@ func BidWaitHandler(c *gin.Context) {
 		reviewerSlice = append(reviewerSlice, UserToReviewer(user))
 	}
 	backend.InitLocalPCPaperList()
-	fmt.Printf("\n BidWaitHandler allpapers length: %v", len(backend.Pc.AllPapers))
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
 
 	tpl.Execute(c.Writer, nil)
@@ -172,28 +171,6 @@ func CheckReviewsHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, msgs)
 }
 
-func CheckConfirmedOwnerships() string{
-	var users []model.User
-	model.GetSubmitters(&users)
-	userlength := len(users)
-	confirmedLength := 0
-
-	for _, p := range backend.AcceptedPapers {
-		str := fmt.Sprintf("Submitter claims paper %v by revealing paper and ri.", p.PaperId)
-		var logmsgs []model.Log
-		model.GetAllLogMsgsByMsg(&logmsgs, str)
-		confirmedLength = len(logmsgs)
-	}
-
-	str := fmt.Sprintf("%v/%v submitters have claimed ownership of their paper", confirmedLength, userlength)
-
-	return str
-}
-
-func CheckConfirmedOwnershipHandler(c *gin.Context) {
-
-}
-
 func DecisionHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
 	type Paper struct {
@@ -247,6 +224,7 @@ func CompileGradesHandler(c *gin.Context) {
 	backend.Pc.CompileGrades()
 	backend.Pc.RevealAllAcceptedPapers()
 
+
 	type Paper struct {
 		Title string
 		Grade int
@@ -266,17 +244,7 @@ func CompileGradesHandler(c *gin.Context) {
 		}
 	}
 
-	type Message struct {
-		Papers	[]Paper
-		Status  string
-	}
-
-	msg := Message{
-		Papers: papers,
-		Status: "",
-	}
-
-	tpl.Execute(c.Writer, msg)
+	tpl.Execute(c.Writer, papers)
 }
 
 func ConfirmOwnershipHandler(c *gin.Context) {
@@ -317,18 +285,6 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 			papers = append(papers, msg)
 		}
 	}
-
-	type Message struct {
-		Papers	[]Paper
-		Status  string
-	}
-
-	status := CheckConfirmedOwnerships()
-
-	msg := Message{
-		Papers: papers,
-		Status: status,
-	}
-	tpl.Execute(c.Writer, msg)
+	tpl.Execute(c.Writer, papers)
 
 }

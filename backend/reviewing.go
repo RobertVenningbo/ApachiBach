@@ -16,13 +16,6 @@ func (r *Reviewer) GetAssignedPaperFromPCLog() *Paper {
 	encodedPaper := Decrypt(logmsg.Value, Kpcr)
 	decodedPaper := DecodeToStruct(encodedPaper).(Paper)
 
-	isLegit := VerifySignature(str, encodedPaper, &Pc.Keys.PublicKey)
-	if !isLegit {
-		fmt.Printf("\nReviewer %v couldn't verify signature from PC ", r.UserID)
-	} else {
-		fmt.Printf("\nReviewer %v verifies signature from PC - recieves assigned paper %v", r.UserID, decodedPaper.Id)
-	}
-
 	return &decodedPaper
 
 }
@@ -100,7 +93,6 @@ func (pc *PC) GenerateKeysForDiscussing() { //step 10
 				Value:      reviewKpAndRg[1],
 				Signature:  reviewKpAndRg[0],
 			}
-
 			model.CreateLogMsg(&logmsg)
 			Trae.Put(str, reviewKpAndRg[1])
 
@@ -178,18 +170,9 @@ func (r *Reviewer) GetReviewKpAndRg() ReviewKpAndRg { //Perhaps add verification
 		reviewKpAndRg = Trae.Find(str)
 	}
 	bytes := reviewKpAndRg.value.([]byte)
-
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 	encodedReviewKpAndRg := Decrypt(bytes, Kpcr)
 	decodedReviewKpAndRg := DecodeToStruct(encodedReviewKpAndRg).(ReviewKpAndRg)
-
-	isLegit := VerifySignature(str, encodedReviewKpAndRg, &Pc.Keys.PublicKey)
-
-	if !isLegit {
-		fmt.Printf("\n Reviewer %v couldn't verify signature in GetReviewKpAndRg", r.UserID)
-	} else {
-		fmt.Printf("\n Reviewer %v verifies signature in GetReviewKpAndRg", r.UserID)
-	}
 
 	return decodedReviewKpAndRg
 }
@@ -244,13 +227,6 @@ func (r *Reviewer) GetCollectedReviews() []ReviewStruct {
 	bytes := treeItem.value.([]byte)
 	encodedReviewStructList := Decrypt(bytes, kpAndRg.GroupKey.D.String())
 	decodedReviewStructList := DecodeToStruct(encodedReviewStructList).([]ReviewStruct)
-
-	isLegit := VerifySignature(getStr, encodedReviewStructList, &Pc.Keys.PublicKey)
-	if !isLegit {
-		fmt.Printf("\n Reviewer %v couldn't verify signature when collecting reviews", r.UserID)
-	} else {
-		fmt.Printf("\n Reviewer %v verifies PC signature when collecting reviews", r.UserID)
-	}
 
 	return decodedReviewStructList
 }

@@ -53,11 +53,10 @@ func InitLocalPCPaperList() {
 			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
 			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 			paper := paperAndRandomess.Paper
-			// This is commented out because it doesn't allow for multiple submitters, however reviewers get duplicated papers shown-
-			// if NoMultipleAppend { //nasty fix i know
-			// 	return
-			// }
-			// NoMultipleAppend = true
+			if NoMultipleAppend { //nasty fix i know 
+				return
+			}
+			NoMultipleAppend = true
 			Pc.AllPapers = append(Pc.AllPapers, paper)
 			fmt.Printf("pc paper length: %v \n", len(Pc.AllPapers))
 		}
@@ -157,20 +156,6 @@ func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
 	//signBytes := EncodeToBytes(signature)
 
 	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
-}
-
-func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool {
-	var sigmsg model.Log 
-	model.GetLogMsgByMsg(&sigmsg, str)
-	sig := sigmsg.Signature
-
-	hash, _ := GetMessageHash(encodedMsg)
-	isLegit := Verify(&Pc.Keys.PublicKey, sig, hash)
-
-	if !isLegit {
-		return false
-	} 
-    return true
 }
 
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message

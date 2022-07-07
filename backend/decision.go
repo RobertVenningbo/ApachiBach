@@ -320,18 +320,9 @@ func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 		CheckStringAgainstDB(getStr)
 		item = Trae.Find(getStr)
 	}
-
 	bytes := item.value.([]byte)
 	encoded := Decrypt(bytes, Kpcs)
 	decoded := DecodeToStruct(encoded).(SendGradeStruct)
-
-	isLegit := VerifySignature(getStr, encoded, &Pc.Keys.PublicKey)
-	if !isLegit {
-		fmt.Printf("\n Submitter %v couldn't verify PC signature when collecting grades & reviews", s.UserID)
-	} else {
-		fmt.Printf("\n Submitter %v verifies PC signature when collecting reviews", s.UserID)
-	}
-
 
 	return decoded
 }
