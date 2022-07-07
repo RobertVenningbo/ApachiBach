@@ -59,7 +59,6 @@ func InitLocalPCPaperList() {
 			// }
 			// NoMultipleAppend = true
 			Pc.AllPapers = append(Pc.AllPapers, paper)
-			fmt.Printf("pc paper length: %v \n", len(Pc.AllPapers))
 		}
 	}
 }
@@ -138,7 +137,6 @@ func EncodeToBytes(p interface{}) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println("uncompressed size (bytes): ", len(buf.Bytes()))
 	return buf.Bytes()
 }
 
@@ -173,7 +171,7 @@ func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool 
     return true
 }
 
-func (reviewer *Reviewer) VerifyDiscussingMessage(bytes []byte, logStr string) {
+func (reviewer *Reviewer) VerifyDiscussingMessage(bytes []byte, logStr string) { //Verifies signature for each msg, bad thing is it does it for all messages when refreshing
 	var isLegit bool
 	for _, r := range reviewer.PaperCommittedValue.Paper.ReviewerList {
 			hash, _  := GetMessageHash(bytes)
@@ -185,6 +183,23 @@ func (reviewer *Reviewer) VerifyDiscussingMessage(bytes []byte, logStr string) {
 				fmt.Printf("\nReviewer %v verifies disccusing message from Reviewer %v", reviewer.UserID, r.UserID )
 				return
 			}
+	}
+}
+
+func (pc *PC) VerifyGradesFromReviewers(pId int, msg []byte, logstr string) {
+	for _, p := range pc.AllPapers { //Verifies submitted grade for each reviewer, need to double check it works with multiple reviewers
+		if pId == p.Id {
+			for _, r := range p.ReviewerList {
+				hash, _  := GetMessageHash(msg)
+				var sigmsg model.Log 
+				model.GetLogMsgByMsg(&sigmsg, logstr)
+				sig := sigmsg.Signature
+				isLegit := Verify(&r.Keys.PublicKey, sig, hash)
+				if isLegit {
+					fmt.Printf("\nPC verifies signature for grade from reviewer %v", r.UserID)
+				} 
+			}
+		}
 	}
 }
 

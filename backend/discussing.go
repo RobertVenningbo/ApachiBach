@@ -233,7 +233,6 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 		Nonce,
 	}
 
-	fmt.Printf("%#v\n", gradeReviewCommits)
 	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
 	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
 	logmsg := model.Log{
@@ -254,6 +253,7 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 
 	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
 	submitStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
+
 	logmsg := model.Log{
 		State:      14,
 		LogMsg:     submitStr,
