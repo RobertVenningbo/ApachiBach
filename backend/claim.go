@@ -30,7 +30,6 @@ func (s *Submitter) ClaimPaper(pId int) { //step 19
 
 
 func (pc *PC) ConfirmOwnership(pId int) { //step 20
-
 	if pc.GetClaimMessage(pId) == nil {
 		return
 	} else {
@@ -53,6 +52,7 @@ func (pc *PC) ConfirmOwnership(pId int) { //step 20
     }
 }
 
+//Not used -- yet?
 func (pc *PC) GetConfirmMessage(pId int) ([]byte, *ClaimMessage) { //returns signature from the submitter and the ClaimMessage
 	claim := pc.GetClaimMessage(pId)
 	getStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
@@ -84,11 +84,14 @@ func (pc *PC) GetClaimMessage(pId int) *ClaimMessage {
 		fmt.Println("Submitter hasn't claimed ownership of paper yet.")
 		return nil
 	}
-	fmt.Printf("\n\nlolol\n\n")
 	SPK := pc.GetPaperSubmitterPK(pId)
 	claimMsgBytes := item.value.([]byte)
+    hash, _  := GetMessageHash(claimMsgBytes)
+	var sigmsg model.Log 
+	model.GetLogMsgByMsg(&sigmsg, getStr)
+	sig := sigmsg.Signature
+	isLegit := Verify(&SPK, sig, hash)
 
-	isLegit := VerifySignature(getStr, claimMsgBytes, &SPK)
 	if !isLegit {
 		fmt.Printf("PC couldn't verify signature from submitter who submitted paper %v \n", pId)
 	} else {

@@ -163,8 +163,6 @@ func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool 
 	var sigmsg model.Log 
 	model.GetLogMsgByMsg(&sigmsg, str)
 	sig := sigmsg.Signature
-	fmt.Printf("\n sig: %v", sig) //for testing
-
 
 	hash, _ := GetMessageHash(encodedMsg)
 	isLegit := Verify(&Pc.Keys.PublicKey, sig, hash)
@@ -173,6 +171,21 @@ func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool 
 		return false
 	} 
     return true
+}
+
+func (reviewer *Reviewer) VerifyDiscussingMessage(bytes []byte, logStr string) {
+	var isLegit bool
+	for _, r := range reviewer.PaperCommittedValue.Paper.ReviewerList {
+			hash, _  := GetMessageHash(bytes)
+			var sigmsg model.Log 
+			model.GetLogMsgByMsg(&sigmsg, logStr)
+			sig := sigmsg.Signature
+			isLegit = Verify(&r.Keys.PublicKey, sig, hash)
+			if isLegit {
+				fmt.Printf("\nReviewer %v verifies disccusing message from Reviewer %v", reviewer.UserID, r.UserID )
+				return
+			}
+	}
 }
 
 func SignsPossiblyEncrypts(priv *ecdsa.PrivateKey, bytes []byte, passphrase string) [][]byte { //signs and possibly encrypts a message

@@ -17,10 +17,13 @@ func (pc *PC) GetKPCSFromLog(pId int) []byte {
 		CheckStringAgainstDB(msg)
 		item = Trae.Find(msg)
 	}
+
+	
 	bytes := item.value.([]byte)
 	decodedSubmitMessage := DecodeToStruct(bytes)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
+
 
 	return kpcs
 }

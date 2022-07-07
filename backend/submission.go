@@ -68,11 +68,6 @@ func (s *Submitter) Submit(p *Paper) {
 	signedCommitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(commitMsg), "")
 	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
 
-
-	fmt.Printf("\n EncodedPaperCommit: %v", EncodeToBytes(commitMsg))
-	fmt.Printf("\n Keys: %v", s.Keys.PublicKey)
-	fmt.Printf("\n Sig: %v", signedCommitMsg[0])
-
 	logmsg2 := model.Log{
 		State:      2,
 		LogMsg:     msg,
@@ -81,9 +76,8 @@ func (s *Submitter) Submit(p *Paper) {
 		Signature:  signedCommitMsg[0],
 	}
 	model.CreateLogMsg(&logmsg2)
-
-	log.Println(msg + " logged") //Both commits signed and logged
-
+	
+	//TODO: Why are we logging KsString and PK?? they are the same thing
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
 	logmsg3 := model.Log{
 		State:      2,
@@ -102,8 +96,6 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 	model.CreateLogMsg(&logmsg4)
 
-	log.Println(KsString + " logged.")
-
 	PCsignedPaperCommit := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(PaperSubmissionCommit), "")
 	str := fmt.Sprintf("PCsignedPaperCommit%v", p.Id)
 	logmsg5 := model.Log{
@@ -114,7 +106,6 @@ func (s *Submitter) Submit(p *Paper) {
 		Signature:  PCsignedPaperCommit[0],
 	}
 	model.CreateLogMsg(&logmsg5)
-	log.Println("PCsignedPaperCommit logged - The PC signed a paper commit.") //PC signed a paper submission commit (step 3 done)
 
 	s.StorePrivateBigInt(ri, "ri")
 }
@@ -154,12 +145,12 @@ func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 
 func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
 	PK := fmt.Sprintf("SubmitterPublicKey %v", sUserID)
+	
 	item := Trae.Find(PK)
 	if item == nil {
 		CheckStringAgainstDB(PK)
 		item = Trae.Find(PK)
 	}
-
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	REALPK := decodedPK.(ecdsa.PublicKey)
 
@@ -180,13 +171,14 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	encodedPaperCommit := decodedCommitMsg.(CommitMsg).PaperCommit
 	decodedpaperCommit := DecodeToStruct(encodedPaperCommit)
 
-	SPK := pc.GetPaperSubmitterPK(id)
 
-	fmt.Printf("\n encodedPaperCommit: %v", bytes)
-	fmt.Printf("\n keys: %v", SPK)
+	SPK := pc.GetSubmitterPK(id)
 
-
-	isLegit := VerifySignature(msg, bytes, &SPK)
+    hash, _  := GetMessageHash(bytes)
+	var sigmsg model.Log 
+	model.GetLogMsgByMsg(&sigmsg, msg)
+	sig := sigmsg.Signature
+	isLegit := Verify(&SPK, sig, hash)
 	if !isLegit {
 		fmt.Printf("\nPC couldn't verify signature getting PaperSubmissionCommit for P%v \n", id)
 	} else {
@@ -222,5 +214,17 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 
 	decryptedPaperAndRandomness := Decrypt(submitMessage.PaperAndRandomness, string(kpcs))
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
+
+	SPK := pc.GetSubmitterPK(pId)
+	hash, _  := GetMessageHash(bytes)
+	var sigmsg model.Log 
+	model.GetLogMsgByMsg(&sigmsg, msg)
+	sig := sigmsg.Signature
+	isLegit := Verify(&SPK, sig, hash)
+	if !isLegit {
+		fmt.Printf("\nPC couldn't verify signature getting PaperAndRandomness for P%v \n", pId)
+	} else {
+		fmt.Printf("\nPC verifies signature getting PaperAndRandomness for P%v \n", pId)
+	}
 	return PaperAndRandomness
 }

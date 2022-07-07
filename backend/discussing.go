@@ -42,12 +42,7 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 			
 			bytes := Decrypt(v.Value, Kp.D.String())
 			messages = append(messages, string(bytes))
-
-			var user model.User
-			model.GetReviewerByID(&user, v.FromUserID)
-			pubkeys := DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
-			isLegit := VerifySignature(logStr, bytes, &pubkeys) //This doesn't work, problem with keys - possibly pointers
-			fmt.Printf("\n\n %v \n\n", isLegit)
+			r.VerifyDiscussingMessage(bytes, logStr)
 
 		}
 	}
@@ -100,6 +95,8 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	Kp := KpAndRg.GroupKey
 	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
+
+	
 	return &decodedGradeStruct
 }
 
@@ -267,4 +264,5 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(submitStr, signedGrade[1])
 }
+
 
