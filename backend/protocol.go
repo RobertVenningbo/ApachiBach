@@ -163,6 +163,8 @@ func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool 
 	var sigmsg model.Log 
 	model.GetLogMsgByMsg(&sigmsg, str)
 	sig := sigmsg.Signature
+	fmt.Printf("\n sig: %v", sig) //for testing
+
 
 	hash, _ := GetMessageHash(encodedMsg)
 	isLegit := Verify(&Pc.Keys.PublicKey, sig, hash)

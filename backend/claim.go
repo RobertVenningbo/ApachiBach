@@ -59,7 +59,7 @@ func (pc *PC) GetConfirmMessage(pId int) ([]byte, *ClaimMessage) { //returns sig
 	item := Trae.Find(getStr)
 	if item == nil {
 		CheckStringAgainstDB(getStr)
-		item = tree.Find(getStr)
+		item = Trae.Find(getStr)
 	}
 
 	claimMsgBytes := item.value.([][]byte)
@@ -84,6 +84,7 @@ func (pc *PC) GetClaimMessage(pId int) *ClaimMessage {
 		fmt.Println("Submitter hasn't claimed ownership of paper yet.")
 		return nil
 	}
+	fmt.Printf("\n\nlolol\n\n")
 	SPK := pc.GetPaperSubmitterPK(pId)
 	claimMsgBytes := item.value.([]byte)
 

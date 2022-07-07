@@ -21,6 +21,7 @@ func (pc *PC) GetKPCSFromLog(pId int) []byte {
 	decodedSubmitMessage := DecodeToStruct(bytes)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
+
 	return kpcs
 }
 

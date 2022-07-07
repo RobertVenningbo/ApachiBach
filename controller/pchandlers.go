@@ -12,6 +12,8 @@ import (
 )
 
 var ispctaken bool
+var initpaperlist bool
+var sharedreviews bool
 
 //var AcceptedPapers []backend.Paper
 
@@ -52,7 +54,10 @@ func BidWaitHandler(c *gin.Context) {
 	for _, user := range users {
 		reviewerSlice = append(reviewerSlice, UserToReviewer(user))
 	}
-	backend.InitLocalPCPaperList()
+	if !initpaperlist {
+		backend.InitLocalPCPaperList()
+		initpaperlist = true
+	}
 	fmt.Printf("\n BidWaitHandler allpapers length: %v", len(backend.Pc.AllPapers))
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
 
@@ -115,8 +120,11 @@ func ShareReviewsHandler(c *gin.Context) {
 	backend.Pc.AssignPaper(bidList)
 	backend.Pc.MatchPapers()
 	backend.Pc.DeliverAssignedPaper()
-
-	messages := PaperRowHelper()
+	messages := backend.ShareReviewsMessage{}
+	if !sharedreviews {
+		messages = PaperRowHelper()
+		sharedreviews = true
+	}
 
 	tpl.Execute(c.Writer, &messages)
 }
@@ -153,7 +161,11 @@ func PaperRowHelper() backend.ShareReviewsMessage {
 
 func CheckReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
-	msgs := PaperRowHelper()
+	msgs := backend.ShareReviewsMessage{}
+	if !sharedreviews {
+		msgs = PaperRowHelper()
+		sharedreviews = true
+	}
 	var users []model.User
 	model.GetReviewers(&users)
 	size := len(users)
@@ -172,7 +184,7 @@ func CheckReviewsHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, msgs)
 }
 
-func CheckConfirmedOwnerships() string{
+func CheckConfirmedOwnerships() string {
 	var users []model.User
 	model.GetSubmitters(&users)
 	userlength := len(users)
@@ -267,8 +279,8 @@ func CompileGradesHandler(c *gin.Context) {
 	}
 
 	type Message struct {
-		Papers	[]Paper
-		Status  string
+		Papers []Paper
+		Status string
 	}
 
 	msg := Message{
@@ -319,8 +331,8 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 	}
 
 	type Message struct {
-		Papers	[]Paper
-		Status  string
+		Papers []Paper
+		Status string
 	}
 
 	status := CheckConfirmedOwnerships()

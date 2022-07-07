@@ -34,7 +34,7 @@ func (s *Submitter) Submit(p *Paper) {
 		Encrypt([]byte(sharedKpcs), Pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message 
 	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
 
 	logmsg := model.Log{
@@ -67,6 +67,11 @@ func (s *Submitter) Submit(p *Paper) {
 
 	signedCommitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(commitMsg), "")
 	msg = fmt.Sprintf("signedCommitMsg%v", p.Id)
+
+
+	fmt.Printf("\n EncodedPaperCommit: %v", EncodeToBytes(commitMsg))
+	fmt.Printf("\n Keys: %v", s.Keys.PublicKey)
+	fmt.Printf("\n Sig: %v", signedCommitMsg[0])
 
 	logmsg2 := model.Log{
 		State:      2,
@@ -141,6 +146,7 @@ func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 		CheckStringAgainstDB(KsString)
 		item = Trae.Find(KsString)
 	}
+	
 	decodedPK := DecodeToStruct(item.value.([]byte))
 	PK := decodedPK.(ecdsa.PublicKey)
 	return PK
@@ -173,10 +179,24 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 
 	encodedPaperCommit := decodedCommitMsg.(CommitMsg).PaperCommit
 	decodedpaperCommit := DecodeToStruct(encodedPaperCommit)
+
+	SPK := pc.GetPaperSubmitterPK(id)
+
+	fmt.Printf("\n encodedPaperCommit: %v", bytes)
+	fmt.Printf("\n keys: %v", SPK)
+
+
+	isLegit := VerifySignature(msg, bytes, &SPK)
+	if !isLegit {
+		fmt.Printf("\nPC couldn't verify signature getting PaperSubmissionCommit for P%v \n", id)
+	} else {
+		fmt.Printf("\nPC verifies signature getting PaperSubmissionCommit for P%v \n", id)
+	}
+
 	return decodedpaperCommit.(ecdsa.PublicKey)
 }
 
-func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not used for anything, maybe change submitter to userID
+func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not used for anything
 	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
 	signedCommitMsg := Trae.Find(putStr)
 	if signedCommitMsg.value == nil {

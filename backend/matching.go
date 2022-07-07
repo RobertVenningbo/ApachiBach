@@ -97,7 +97,7 @@ func (pc *PC) GetAllBids() []*PaperBid {
 	return bidList
 }
 
-func (r *Reviewer) GetBiddedPaper() *PaperBid { // possibly
+func (r *Reviewer) GetBiddedPaper() *PaperBid { // not being used anywhere
 	Kpcr := GenerateSharedSecret(&Pc, nil, r)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
 	EncryptedSignedBid := Trae.Find(msg)
