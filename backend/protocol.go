@@ -128,6 +128,7 @@ func InitGobs() {
 	gob.Register(ShareReviewsMessage{})
 	gob.Register(GradeAndPaper{})
 	gob.Register(RandomizeGradesForProofStruct{})
+	gob.Register(EqProof{})
 }
 
 func EncodeToBytes(p interface{}) []byte {
@@ -152,7 +153,6 @@ func DecodeToStruct(s []byte) (x interface{}) { //Decodes encoded struct to stru
 
 func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
 
-	//signBytes := EncodeToBytes(signature)
 
 	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
 }

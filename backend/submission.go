@@ -171,7 +171,6 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	encodedPaperCommit := decodedCommitMsg.(CommitMsg).PaperCommit
 	decodedpaperCommit := DecodeToStruct(encodedPaperCommit)
 
-
 	SPK := pc.GetSubmitterPK(id)
 
     hash, _  := GetMessageHash(bytes)

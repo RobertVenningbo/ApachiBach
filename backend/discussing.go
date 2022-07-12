@@ -56,8 +56,6 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 	return data
 }
 
-
-
 func (r *Reviewer) GradePaper(grade int) {
 	gradeStruct := IndividualGrade{
 		r.PaperCommittedValue.Paper.Id,
