@@ -54,7 +54,7 @@ func BidWaitHandler(c *gin.Context) {
 	}
 	backend.InitLocalPCPaperList()
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
-
+	
 	tpl.Execute(c.Writer, nil)
 }
 

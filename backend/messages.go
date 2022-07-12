@@ -162,13 +162,6 @@ type Paper struct {
 	Title        string
 }
 
-type Paper2 struct {
-	Id           int
-	Selected     bool
-	ReviewerList []Reviewer
-	Bytes        []byte
-}
-
 type PaperBid struct {
 	Paper    *Paper
 	Reviewer *Reviewer
