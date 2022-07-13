@@ -300,18 +300,14 @@ func GetAgreedGradeHandler(c *gin.Context) {
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) 
+	tpl = template.Must(template.ParseFiles("templates/public/finished.html")) 
 
 	type Message struct {
-		Proceed bool
 		Status  string
-		WhereTo string
 	}
 
 	msg := Message{
-		Proceed: true, //change later
 		Status:  "Thank you for participating! 📝😉 ",
-		WhereTo: "/",
 	}
 
 	reviewer.SignCommitsAndNonce()

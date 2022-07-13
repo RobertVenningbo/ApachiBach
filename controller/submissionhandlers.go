@@ -3,12 +3,13 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"strconv"
 	"strings"
-
 	"swag/backend"
 	"swag/model"
 	"text/template"
+	"time"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,6 +17,28 @@ var tpl = template.Must(template.ParseFiles("templates/submitter/submission.html
 var submitter backend.Submitter
 
 func SubmissionHandler(c *gin.Context) {
+	url := strings.Split(c.Request.Host, ":")
+	portAsInt, _ := strconv.Atoi(url[1])
+
+	keys := backend.NewKeys()
+	pubkeys := backend.EncodeToBytes(keys.PublicKey)
+
+	user := model.User{
+		Id:         portAsInt,
+		Username:   "",
+		Usertype:   "submitter",
+		PublicKeys: pubkeys,
+	}
+
+	model.CreateUser(&user)
+
+	submitter = backend.Submitter{
+		Keys:                    keys,
+		UserID:                  portAsInt, //userID
+		SubmitterCommittedValue: &backend.CommitStruct{},
+		PaperCommittedValue:     &backend.CommitStructPaper{},
+	}
+
 	tpl.Execute(c.Writer, nil)
 }
 
@@ -101,7 +124,7 @@ func UploadFile(c *gin.Context) {
 	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
 	c.Request.ParseMultipartForm(10 << 20)
 
-	name := c.Request.FormValue("name")
+	//name := c.Request.FormValue("name")
 	title := c.Request.FormValue("title")
 	file, handler, err := c.Request.FormFile("myFile")
 	if err != nil {
@@ -118,33 +141,18 @@ func UploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-	url := strings.Split(c.Request.Host, ":")
-	portAsInt, _ := strconv.Atoi(url[1])
 
-	keys := backend.NewKeys()
-	pubkeys := backend.EncodeToBytes(keys.PublicKey)
-
-	user := model.User{
-		Id:         portAsInt,
-		Username:   name,
-		Usertype:   "submitter",
-		PublicKeys: pubkeys,
-	}
-
-	model.CreateUser(&user)
-
-	submitter = backend.Submitter{
-		Keys:                    keys,
-		UserID:                  portAsInt, //userID
-		SubmitterCommittedValue: &backend.CommitStruct{},
-		PaperCommittedValue:     &backend.CommitStructPaper{},
-	}
+	source := rand.NewSource(time.Now().UnixNano())
+	rand := rand.New(source)
+	paperid := rand.Intn(99999-10000)
 
 	paper := backend.Paper{
-		Id:    portAsInt,
+		Id:    paperid, 
 		Bytes: fileBytes,
 		Title: title,
 	}
+	
+
 
 	submitter.Submit(&paper)
 
@@ -153,18 +161,14 @@ func UploadFile(c *gin.Context) {
 }
 
 func ClaimPaperHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html")) //Should be a shared template
+	tpl = template.Must(template.ParseFiles("templates/public/finished.html")) 
 
 	type Message struct {
-		Proceed bool
 		Status  string
-		WhereTo string
 	}
 
 	msg := Message{
-		Proceed: true, //change later
-		Status:  "Protocol finished. Thank you for submitting a paper! ",
-		WhereTo: "/",
+		Status:  "Thank you for submitting a paper! ",
 	}
 
 	

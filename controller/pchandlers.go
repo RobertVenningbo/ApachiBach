@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -15,12 +16,10 @@ var ispctaken bool
 var initpaperlist bool
 var sharedreviews bool
 
-//var AcceptedPapers []backend.Paper
-
 func PCHomeHandler(c *gin.Context) {
-
 	var tpl = template.Must(template.ParseFiles("templates/pc/pc.html"))
-	tpl.Execute(c.Writer, nil)
+	msg := CheckSubmissions()
+	tpl.Execute(c.Writer, msg)
 	var DBuser model.User
 	model.GetPC(&DBuser)
 	if ispctaken {
@@ -44,6 +43,28 @@ func PCHomeHandler(c *gin.Context) {
 		PublicKeys: pubkeys,
 	}
 	model.CreateUser(&user)
+
+}
+
+//Helper function for PC home handler checks if all submitters have submitted
+func CheckSubmissions() backend.CheckSubmissionsMessage {
+	var submitters []model.User
+	var logmsgs []model.Log
+	var str []string
+	model.GetSubmitters(&submitters)
+	model.GetAllLogMsgsByState(&logmsgs, 1)
+	for _, l := range logmsgs {
+		paperid := strings.Split(l.LogMsg, " ")
+		submitted := "Submitter " + strconv.Itoa(l.FromUserID) + " submitted paper " + paperid[1]
+		str = append(str, submitted)
+	}
+	msg := backend.CheckSubmissionsMessage{
+		SubmittersLength: len(submitters),
+		Submissions: len(logmsgs),
+		Submitters: str,
+	}
+	return msg
+
 }
 
 func BidWaitHandler(c *gin.Context) {
@@ -52,7 +73,7 @@ func BidWaitHandler(c *gin.Context) {
 	model.GetReviewers(&users)
 	var reviewerSlice []backend.Reviewer
 	for _, user := range users {
-		reviewerSlice = append(reviewerSlice, UserToReviewer(user))
+		reviewerSlice = append(reviewerSlice, backend.UserToReviewer(user))
 	}
 	if !initpaperlist {
 		backend.InitLocalPCPaperList()
@@ -60,19 +81,19 @@ func BidWaitHandler(c *gin.Context) {
 	}
 	fmt.Printf("\n BidWaitHandler allpapers length: %v", len(backend.Pc.AllPapers))
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
-	
-	tpl.Execute(c.Writer, nil)
+
+	data := GetAllBids()
+
+	tpl.Execute(c.Writer, data)
 }
 
-func GetAllBidsHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
+
+func GetAllBids() backend.AllBids { //Helper function to check if reviewers have bidded on papers
 	bidList := backend.Pc.GetAllBids()
 	var users []model.User
 	model.GetReviewers(&users)
-
 	var unique []int
 	m := map[int]bool{}
-
 	for _, v := range bidList {
 		if !m[v.Reviewer.UserID] {
 			if v.Reviewer.UserID == -1 {
@@ -82,17 +103,8 @@ func GetAllBidsHandler(c *gin.Context) {
 			unique = append(unique, v.Reviewer.UserID)
 		}
 	}
-
 	str := ""
 	showBool := false
-
-	type AllBids struct {
-		PaperBidCount int
-		Status        string
-		ShowBool      bool
-		UsersLength   int
-	}
-
 	if len(users) == len(unique) {
 		str = "All reviewers have made bids"
 		showBool = true
@@ -102,13 +114,18 @@ func GetAllBidsHandler(c *gin.Context) {
 		showBool = true
 	}
 
-	data := AllBids{
+	data := backend.AllBids{
 		PaperBidCount: len(unique),
 		Status:        str,
 		ShowBool:      showBool,
 		UsersLength:   len(users),
 	}
+	return data
+}
 
+func GetAllBidsHandler(c *gin.Context) {
+	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
+	data := GetAllBids()
 	tpl.Execute(c.Writer, data)
 
 }
@@ -202,10 +219,6 @@ func CheckConfirmedOwnerships() string {
 	return str
 }
 
-func CheckConfirmedOwnershipHandler(c *gin.Context) {
-
-}
-
 func DecisionHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
 	type Paper struct {
@@ -290,24 +303,31 @@ func CompileGradesHandler(c *gin.Context) {
 
 	tpl.Execute(c.Writer, msg)
 }
+func FinishedProtocolHandler(c *gin.Context) {
+
+	c.Redirect(303, "/postconfirmowner")
+}
 
 func ConfirmOwnershipHandler(c *gin.Context) {
 	paperid := c.Request.FormValue("paperid")
+	fmt.Printf("\nPaperID: %v", paperid)
 	paperidint, err := strconv.Atoi(paperid)
 	if err != nil {
-		log.Println("error converting id string to id int")
+		log.Println("\nerror converting string to id int")
 		return
 	}
+	backend.Pc.ConfirmOwnership(paperidint)
+	var tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
-	users := []model.User{}
-	model.GetSubmitters(&users)
-	var submitterSlice []backend.Submitter
-	for _, user := range users {
-		submitterSlice = append(submitterSlice, UserToSubmitter(user))
+	type Message struct {
+		Status string
 	}
 
-	backend.Pc.ConfirmOwnership(paperidint)
-	c.Redirect(303, "/confirmowner")
+	msg := Message{
+		Status: "Confirmed ownership of all submitted papers",
+	}
+
+	tpl.Execute(c.Writer, msg)
 }
 
 func GetConfirmOwnershipHandler(c *gin.Context) {

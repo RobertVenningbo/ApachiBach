@@ -11,7 +11,7 @@ import (
 )
 
 func (pc *PC) GetKPCSFromLog(pId int) []byte {
-	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
+	msg := fmt.Sprintf("SignedSubmitMsg %v", pId)
 	item := Trae.Find(msg)
 	if item == nil {
 		CheckStringAgainstDB(msg)

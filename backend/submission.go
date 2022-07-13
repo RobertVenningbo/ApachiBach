@@ -35,7 +35,7 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 
 	SignedSubmitMsg := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message 
-	msg := fmt.Sprintf("SignedSubmitMsg%v", p.Id)
+	msg := fmt.Sprintf("SignedSubmitMsg %v", p.Id)
 
 	logmsg := model.Log{
 		State:      1,
@@ -77,7 +77,6 @@ func (s *Submitter) Submit(p *Paper) {
 	}
 	model.CreateLogMsg(&logmsg2)
 	
-	//TODO: Why are we logging KsString and PK?? they are the same thing
 	KsString := fmt.Sprintf("SubmitterPublicKey with P%v", p.Id)
 	logmsg3 := model.Log{
 		State:      2,
@@ -86,15 +85,6 @@ func (s *Submitter) Submit(p *Paper) {
 		Value:      EncodeToBytes(&s.Keys.PublicKey),
 	}
 	model.CreateLogMsg(&logmsg3)
-
-	PK := fmt.Sprintf("SubmitterPublicKey %v", s.UserID)
-	logmsg4 := model.Log{
-		State:      2,
-		LogMsg:     PK,
-		FromUserID: s.UserID,
-		Value:      EncodeToBytes(&s.Keys.PublicKey),
-	}
-	model.CreateLogMsg(&logmsg4)
 
 	PCsignedPaperCommit := SignsPossiblyEncrypts(Pc.Keys, EncodeToBytes(PaperSubmissionCommit), "")
 	str := fmt.Sprintf("PCsignedPaperCommit%v", p.Id)
@@ -143,20 +133,6 @@ func (pc *PC) GetPaperSubmitterPK(pId int) ecdsa.PublicKey {
 	return PK
 }
 
-func (pc *PC) GetSubmitterPK(sUserID int) ecdsa.PublicKey {
-	PK := fmt.Sprintf("SubmitterPublicKey %v", sUserID)
-	
-	item := Trae.Find(PK)
-	if item == nil {
-		CheckStringAgainstDB(PK)
-		item = Trae.Find(PK)
-	}
-	decodedPK := DecodeToStruct(item.value.([]byte))
-	REALPK := decodedPK.(ecdsa.PublicKey)
-
-	return REALPK
-}
-
 func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	msg := fmt.Sprintf("signedCommitMsg%v", id)
 	signedCommitMsg := Trae.Find(msg)
@@ -171,7 +147,7 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	encodedPaperCommit := decodedCommitMsg.(CommitMsg).PaperCommit
 	decodedpaperCommit := DecodeToStruct(encodedPaperCommit)
 
-	SPK := pc.GetSubmitterPK(id)
+	SPK := pc.GetPaperSubmitterPK(id)
 
     hash, _  := GetMessageHash(bytes)
 	var sigmsg model.Log 
@@ -187,20 +163,9 @@ func (pc *PC) GetPaperSubmissionCommit(id int) ecdsa.PublicKey {
 	return decodedpaperCommit.(ecdsa.PublicKey)
 }
 
-func (pc *PC) GetPaperSubmissionSignature(submitter *Submitter) []byte { //Not used for anything
-	putStr := fmt.Sprintf("signedCommitMsg%v", submitter.UserID)
-	signedCommitMsg := Trae.Find(putStr)
-	if signedCommitMsg.value == nil {
-		CheckStringAgainstDB(putStr)
-		signedCommitMsg = Trae.Find(putStr)
-	}
-	bytes := signedCommitMsg.value.([][]byte)
-	sig, _ := SplitSignatureAndMsg(bytes)
-	return sig
-}
 
 func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
-	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
+	msg := fmt.Sprintf("SignedSubmitMsg %v", pId)
 	item := Trae.Find(msg)
 	if item == nil {
 		CheckStringAgainstDB(msg)
@@ -214,7 +179,7 @@ func (pc *PC) GetPaperAndRandomness(pId int) SubmitStruct {
 	decryptedPaperAndRandomness := Decrypt(submitMessage.PaperAndRandomness, string(kpcs))
 	PaperAndRandomness := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 
-	SPK := pc.GetSubmitterPK(pId)
+	SPK := pc.GetPaperSubmitterPK(pId)
 	hash, _  := GetMessageHash(bytes)
 	var sigmsg model.Log 
 	model.GetLogMsgByMsg(&sigmsg, msg)

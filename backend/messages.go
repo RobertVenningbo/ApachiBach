@@ -10,6 +10,7 @@ type SubmitMessage struct {
 	EncryptedKpcs      []byte
 }
 
+
 type CommitMsg struct {
 	IdenityCommit []byte
 	PaperCommit   []byte
@@ -28,6 +29,12 @@ type Message struct {
 type ShareReviewsMessage struct {
 	Reviews string
 	Msgs    []Message
+}
+
+type CheckSubmissionsMessage struct {
+	SubmittersLength int
+	Submissions      int
+	Submitters		 []string
 }
 
 //Review
@@ -49,6 +56,13 @@ type ReviewKpAndRg struct {
 }
 
 //Matching
+
+type AllBids struct {
+	PaperBidCount int
+	Status        string
+	ShowBool      bool
+	UsersLength   int
+}
 
 type ReviewSignedStruct struct {
 	Commit *ecdsa.PublicKey

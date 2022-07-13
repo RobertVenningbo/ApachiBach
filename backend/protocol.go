@@ -222,3 +222,30 @@ func SplitSignatureAndMsg(bytes [][]byte) ([]byte, []byte) { // returns signatur
 	sig, msg := bytes[0], bytes[1]
 	return sig, msg
 }
+
+func UserToReviewer(user model.User) Reviewer {
+	keys := DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
+	return Reviewer{
+		UserID: user.Id,
+		Keys: &ecdsa.PrivateKey{
+			PublicKey: keys,
+			D:         big.NewInt(0),
+		},
+		PaperCommittedValue: &CommitStructPaper{},
+	}
+}
+
+func UserToSubmitter(user model.User) Submitter {
+	keys := DecodeToStruct(user.PublicKeys).(ecdsa.PublicKey)
+	return Submitter{
+		UserID: user.Id,
+		Keys: &ecdsa.PrivateKey{
+			PublicKey: keys,
+			D:         big.NewInt(0),
+		},
+		SubmitterCommittedValue: &CommitStruct{},
+		PaperCommittedValue: &CommitStructPaper{},
+		Receiver: &Receiver{},
+	}
+}
+

@@ -36,7 +36,7 @@ func GetLogMsgByMsg(logmsg *Log, msg string) {
 
 //get all log entries
 func GetAllLogMsgs(log *[]Log) (err error) {
-	err = database.DB.Find(log).Error
+	err = database.DB.Select("id, state, log_msg, from_user_id, value, signature").Find(log).Error
 	if err != nil {
 		return err
 	}
@@ -50,6 +50,20 @@ func GetAllLogMsgsLogMsgs(logmsg *[]Log, msg string) {
 		log.Println("Error in GetAllLogMsgsLogMsgs")
 	}
 	
+}
+
+func GetAllLogMsgsFromSender(logmsg *[]Log, id int) {
+	err := database.DB.Select("from_user_id").Where("from_user_id = ?", id).Find(&logmsg).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetAllLogMsgsFromSender")
+	}
+}
+
+func GetAllLogMsgsByState(logmsg *[]Log, state int) {
+	err := database.DB.Select("state, log_msg, from_user_id, value, signature").Where("state = ?", state).Find(&logmsg).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetAllLogMsgsByState")
+	}
 }
 
 //Checks if log msg exists in the database

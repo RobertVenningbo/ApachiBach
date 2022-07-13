@@ -24,6 +24,17 @@
         }
 
     </style>
+
+<script>
+    function myFunction() {
+      var txt;
+      if (confirm("Confirm all submitters have claimed their submitted papers.")) {
+        xhr.open("POST", "/confirmowner");
+      } else {
+      }
+    }
+    </script>
+    
     <body style="background: lightgray;">
         <h2>Confirm ownership of accepted papers</h2>
         <div style="text-align: center;">
@@ -34,7 +45,7 @@
                     <form action="/confirmowner" method="POST">
                         <p>Paper title: {{.Title}}</p> 
                         <p>Grade: {{.Grade}}</p>
-                        <button type="submit">Confirm ownership</button>
+                        <button onclick="myFunction()" type="submit">Confirm ownership</button>
                         <input class="hidden" type="text" name="paperid" value="{{ .ID }}" ></input>
                     </form>
                 </div>   
