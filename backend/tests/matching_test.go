@@ -113,7 +113,7 @@ func TestSupplyNizk(t *testing.T) {
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	ReviewCommit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	ReviewCommit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
 		ReviewCommit,
@@ -146,7 +146,7 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	rr := ec.GetRandomInt(Pc.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
-	commit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	commit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	//reviewerKeyList := []ecdsa.PublicKey{}

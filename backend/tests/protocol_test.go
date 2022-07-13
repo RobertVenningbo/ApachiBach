@@ -1,8 +1,6 @@
 package backend_test
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
 	"fmt"
 	. "swag/backend"
 	"swag/ec"
@@ -59,74 +57,6 @@ func TestGenerateSharedSecret(t *testing.T) {
 
 }
 
-func TestVerifyTrapdoorSubmitter(t *testing.T) {
-	rec := NewReceiver(submitter.Keys)
-	submitter.Receiver = rec
-	got := submitter.VerifyTrapdoorSubmitter(GetTrapdoor(submitter.Receiver))
-
-	want := true
-
-	if got != want {
-		t.Errorf("TestGetCommitMessageVerifyTrapdoorSubmitter failed")
-	}
-}
-
-func TestPedersenCommitment(t *testing.T) {
-
-	submitter.Receiver = NewReceiver(submitter.Keys)
-
-	a := ec.GetRandomInt(submitter.Keys.D)
-	b := ec.GetRandomInt(submitter.Keys.D)
-	c, err := submitter.GetCommitMessage(a, b)
-
-	if err != nil {
-		t.Errorf("Error in GetCommitMsg: %v", err)
-	}
-
-	SetCommitment(submitter.Receiver, c)
-	submittedVal, r := submitter.GetDecommitMsg()
-
-	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
-
-	assert.Equal(t, true, success, "pedersen failed")
-
-}
-
-func TestPedersenCommitmentPaper(t *testing.T) {
-
-	submitter.Receiver = NewReceiver(submitter.Keys)
-
-	a := ec.GetRandomInt(submitter.Keys.D)
-	b := ec.GetRandomInt(submitter.Keys.D)
-	c, err := submitter.GetCommitMessagePaper(a, b)
-
-	if err != nil {
-		t.Errorf("Error in GetCommitMsg: %v", err)
-	}
-
-	SetCommitment(submitter.Receiver, c)
-	submittedVal, r := submitter.GetDecommitMsgPaper()
-
-	success := submitter.Receiver.CheckDecommitment(r, submittedVal)
-
-	assert.Equal(t, true, success, "pedersen paper commitment failed")
-
-}
-
-func TestCommitSignatureAndVerify(t *testing.T) {
-
-	a := ec.GetRandomInt(submitter.Keys.D)
-	b := ec.GetRandomInt(submitter.Keys.D)
-	c, _ := submitter.GetCommitMessage(a, b)
-
-	hashedMsgSubmit1, _ := GetMessageHash([]byte(fmt.Sprintf("%v", c)))
-
-	signatureSubmit, _ := ecdsa.SignASN1(rand.Reader, submitter.Keys, hashedMsgSubmit1) //rand.Reader idk??
-
-	got := ecdsa.VerifyASN1(&submitter.Keys.PublicKey, hashedMsgSubmit1, signatureSubmit) //testing
-
-	assert.Equal(t, true, got, "Sign and Verify failed")
-}
 
 func TestEncryptAndDecrypt(t *testing.T) {
 	passphrase := "password"
@@ -165,8 +95,8 @@ func TestVerifyMethod(t *testing.T) {
 func TestGetPaperSubmissionCommit(t *testing.T) {
 	r := ec.GetRandomInt(submitter.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
-	commit, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
-	commit2, _ := submitter.GetCommitMessagePaper(PaperBigInt, r)
+	commit, _ := submitter.GetPaperSubmissionCommit(PaperBigInt, r)
+	commit2, _ := submitter.GetPaperSubmissionCommit(PaperBigInt, r)
 
 	commitMsg := CommitMsg{
 		EncodeToBytes(commit),

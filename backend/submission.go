@@ -55,7 +55,7 @@ func (s *Submitter) Submit(p *Paper) {
 
 	//paper submission commit
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
-	PaperSubmissionCommit, err := s.GetCommitMessagePaper(PaperBigInt, rs)
+	PaperSubmissionCommit, err := s.GetPaperSubmissionCommit(PaperBigInt, rs)
 	if err != nil {
 		fmt.Printf("Error in submission.go GetCommitMsgPaper: %v\n", err)
 	}
