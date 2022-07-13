@@ -144,19 +144,24 @@ func (pc *PC) DeliverAssignedPaper() { //Unfortunately, reviewers get access to 
 }
 
 func (pc *PC) AssignPaper(bidList []*PaperBid) {
-	reviewersBidsTaken := []Reviewer{}
+	reviewersBidsTaken := []*Reviewer{}
 
-	for _, bid := range bidList {
-		for _, p := range pc.AllPapers {
+	for _, p := range pc.AllPapers {
+		if p.Selected {
+			break
+		}
+		for _, bid := range bidList {
 			if p.Id == bid.Paper.Id {
 				if !p.Selected {
 					if bid.Reviewer.PaperCommittedValue == nil {
 						bid.Reviewer.PaperCommittedValue = &CommitStructPaper{}
 					}
-					p.Selected = true
 					p.ReviewerList = append(p.ReviewerList, *bid.Reviewer)
+					p.Selected = true
+					fmt.Println("tilføjer " + fmt.Sprint(bid.Reviewer.UserID) + " til " + fmt.Sprint(p.Id) + " 1")
 				} else {
-					reviewersBidsTaken = append(reviewersBidsTaken, *bid.Reviewer)
+					reviewersBidsTaken = append(reviewersBidsTaken, bid.Reviewer)
+					fmt.Println("tilføjer " + fmt.Sprint(bid.Reviewer.UserID) + " til " + fmt.Sprint(p.Id) + " 2")
 				}
 			}
 		}
@@ -170,7 +175,8 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 			if !p.Selected {
 				x = true
 				p.Selected = true
-				p.ReviewerList = append(p.ReviewerList, r)
+				p.ReviewerList = append(p.ReviewerList, *r)
+				fmt.Println("tilføjer " + fmt.Sprint(r.UserID) + " til " + fmt.Sprint(p.Id) + " 3")
 				break
 			}
 		}
@@ -184,7 +190,8 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 			r.PaperCommittedValue = &CommitStructPaper{}
 			for _, p := range pc.AllPapers {
 				p.Selected = true
-				p.ReviewerList = append(p.ReviewerList, r)
+				p.ReviewerList = append(p.ReviewerList, *r)
+				fmt.Println("tilføjer " + fmt.Sprint(r.UserID) + " til " + fmt.Sprint(p.Id) + " 4")
 				break
 			}
 		}

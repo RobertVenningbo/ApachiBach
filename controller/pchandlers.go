@@ -60,7 +60,7 @@ func BidWaitHandler(c *gin.Context) {
 	}
 	fmt.Printf("\n BidWaitHandler allpapers length: %v", len(backend.Pc.AllPapers))
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
-
+	
 	tpl.Execute(c.Writer, nil)
 }
 

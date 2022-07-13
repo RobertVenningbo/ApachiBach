@@ -1,3 +1,1 @@
-Ctrl+f comments/TODO's
-Make concurrent with diff. mains.
-
+reviewers must continiue to bidding at the same time, easy fix.

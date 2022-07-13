@@ -53,14 +53,13 @@ func InitLocalPCPaperList() {
 			decryptedPaperAndRandomness := Decrypt(submitMsg.PaperAndRandomness, string(decryptedKpcs))
 			paperAndRandomess := DecodeToStruct(decryptedPaperAndRandomness).(SubmitStruct)
 			paper := paperAndRandomess.Paper
-			// This is commented out because it doesn't allow for multiple submitters, however reviewers get duplicated papers shown-
-			// if NoMultipleAppend { //nasty fix i know
-			// 	return
-			// }
-			// NoMultipleAppend = true
+			if NoMultipleAppend { //nasty fix i know
+				return
+			}
 			Pc.AllPapers = append(Pc.AllPapers, paper)
 		}
 	}
+	NoMultipleAppend = true
 }
 
 func GenerateSharedSecret(pc *PC, submitter *Submitter, reviewer *Reviewer) string {
