@@ -76,9 +76,8 @@ func WaitHandler(c *gin.Context) {
 		Status  string
 		Cont    bool
 	}
-	var msg Message
 
-	msg = Message{
+	msg := Message{
 		Status: "Pending.",
 		Cont: false,
 	}
@@ -96,35 +95,11 @@ func WaitHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, &msg)
 }
 
-func GradedPaperHandler(c *gin.Context) { //delete
-
-	type Reviewer struct {
-	}
-	type Message struct {
-		Status string
-		Grade  int
-		Count  []Reviewer
-	}
-	reviewers := []Reviewer{
-		{},
-		{},
-	}
-	msg := Message{
-		Status: "pending...",
-		Grade:  4,
-		Count:  reviewers,
-	}
-
-	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
-	tpl.Execute(c.Writer, &msg)
-}
-
 func UploadFile(c *gin.Context) {
 	fmt.Println("File Upload Endpoint Hit")
 	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
 	c.Request.ParseMultipartForm(10 << 20)
 
-	//name := c.Request.FormValue("name")
 	title := c.Request.FormValue("title")
 	file, handler, err := c.Request.FormFile("myFile")
 	if err != nil {
@@ -152,12 +127,9 @@ func UploadFile(c *gin.Context) {
 		Title: title,
 	}
 	
-
-
 	submitter.Submit(&paper)
 
 	c.Redirect(303, "/wait")
-
 }
 
 func ClaimPaperHandler(c *gin.Context) {
@@ -175,5 +147,4 @@ func ClaimPaperHandler(c *gin.Context) {
 	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
 	tpl.Execute(c.Writer, msg)
-	
 }

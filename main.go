@@ -16,6 +16,12 @@ func main() {
 	router := gin.Default()
 	db := database.Init()
 	h := controller.New(db)
+	if (db.Migrator().HasTable(&model.Log{}) && os.Args[1] == "pc") {
+		db.Migrator().DropTable(&model.Log{})
+	}
+	if (db.Migrator().HasTable(&model.User{}) && os.Args[1] == "pc") {
+		db.Migrator().DropTable(&model.User{})
+	}
 	db.AutoMigrate(&model.Log{})
 	db.AutoMigrate(&model.User{})
 	backend.InitGobs()
@@ -37,7 +43,6 @@ func main() {
 	if os.Args[1] == "submitter" {
 		router.GET("/", controller.SubmissionHandler)
 		router.GET("/wait", controller.WaitHandler)
-		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.POST("/upload", controller.UploadFile)
 		router.GET("/getgrade", controller.GetGradesAndReviewsHandler)
 		router.GET("/claimgrade", controller.ClaimPaperHandler)

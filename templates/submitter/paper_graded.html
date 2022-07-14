@@ -15,13 +15,13 @@
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>            
             <form action="/claimgrade" method="GET">
-                <button>Claim grade</button>          
+                <button>Claim paper</button>          
             </form>
             <div class="flexrowcenter">
                 {{ range .Reviews}}
                 <div>
                     <textarea readonly style="resize: none;" class="smoothborder" rows="4" cols="50">
-    {{ .Review }}
+{{ .Review }}
                     </textarea>
                 </div>
                 {{ end }}

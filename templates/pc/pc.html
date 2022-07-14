@@ -9,7 +9,7 @@
       <link rel="stylesheet" href="">
     </head>
     <body style="background: lightgray;">
-        <div style="text-align: center;">
+        <div style="text-align: center; margin-top: 72px;">
           <h1>PC</h1>
           <label>Choose submission deadline</label>
           <input type="datetime-local">
@@ -22,7 +22,7 @@
             <button>Send papers to reviewers</button>
           </a>
           <br>
-          <p>{{.Submissions}}/{{.SubmittersLength}} submitters have submitted papers.</p>
+          <p>{{.Submissions}}/{{.SubmittersLength}} submitters have submitted a paper.</p>
           <br>
           <div>
             {{ range .Submitters }}
