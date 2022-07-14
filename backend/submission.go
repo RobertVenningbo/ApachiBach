@@ -47,7 +47,8 @@ func (s *Submitter) Submit(p *Paper) {
 	model.CreateLogMsg(&logmsg)
 
 	//submitter identity commit
-	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s))
+	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s.UserID))
+	fmt.Println("SubmitterBigInt " + fmt.Sprint(SubmitterBigInt))
 	SubmitterIdenityCommit, err := s.GetCommitMessage(SubmitterBigInt, ri)
 	if err != nil {
 		fmt.Printf("Error in submission.go GetCommitMsg: %v\n", err)

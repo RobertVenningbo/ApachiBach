@@ -158,10 +158,8 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 					}
 					p.ReviewerList = append(p.ReviewerList, *bid.Reviewer)
 					p.Selected = true
-					fmt.Println("tilføjer " + fmt.Sprint(bid.Reviewer.UserID) + " til " + fmt.Sprint(p.Id) + " 1")
 				} else {
 					reviewersBidsTaken = append(reviewersBidsTaken, bid.Reviewer)
-					fmt.Println("tilføjer " + fmt.Sprint(bid.Reviewer.UserID) + " til " + fmt.Sprint(p.Id) + " 2")
 				}
 			}
 		}
@@ -176,7 +174,6 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 				x = true
 				p.Selected = true
 				p.ReviewerList = append(p.ReviewerList, *r)
-				fmt.Println("tilføjer " + fmt.Sprint(r.UserID) + " til " + fmt.Sprint(p.Id) + " 3")
 				break
 			}
 		}
@@ -191,7 +188,6 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 			for _, p := range pc.AllPapers {
 				p.Selected = true
 				p.ReviewerList = append(p.ReviewerList, *r)
-				fmt.Println("tilføjer " + fmt.Sprint(r.UserID) + " til " + fmt.Sprint(p.Id) + " 4")
 				break
 			}
 		}

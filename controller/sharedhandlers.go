@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"net/http"
+	"sort"
 	"swag/model"
 	"text/template"
 
@@ -17,10 +17,11 @@ func LogHandler(c *gin.Context) {
 
 	for i := range logs {
 		logsView = append(logsView, logs[i])
-		if len(logsView[i].Value) > 100 {
-			logsView[i].Value = []byte{69, 69, 69, 69}
-		}
+		logsView[i].Value = []byte{69, 69, 69, 69}
 	}
+	sort.SliceStable(logsView, func(i, j int) bool {
+		return logsView[i].Id < logsView[j].Id
+	})
 	tpl.Execute(c.Writer, &logsView)
 }
 

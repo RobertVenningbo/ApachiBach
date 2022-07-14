@@ -140,7 +140,7 @@ func ClaimPaperHandler(c *gin.Context) {
 	}
 
 	msg := Message{
-		Status:  "Thank you for submitting a paper! ",
+		Status:  "Thank you for participating as a submitter! 📝😉 ",
 	}
 
 	

@@ -300,14 +300,14 @@ func GetAgreedGradeHandler(c *gin.Context) {
 }
 
 func SignGradeHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/public/finished.html")) 
+	tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {
-		Status  string
+		Status string
 	}
 
 	msg := Message{
-		Status:  "Thank you for participating! 📝😉 ",
+		Status: "Thank you for participating as a reviewer! 📝😉 ",
 	}
 
 	reviewer.SignCommitsAndNonce()

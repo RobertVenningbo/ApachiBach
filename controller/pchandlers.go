@@ -60,8 +60,8 @@ func CheckSubmissions() backend.CheckSubmissionsMessage {
 	}
 	msg := backend.CheckSubmissionsMessage{
 		SubmittersLength: len(submitters),
-		Submissions: len(logmsgs),
-		Submitters: str,
+		Submissions:      len(logmsgs),
+		Submitters:       str,
 	}
 	return msg
 
@@ -86,7 +86,6 @@ func BidWaitHandler(c *gin.Context) {
 
 	tpl.Execute(c.Writer, data)
 }
-
 
 func GetAllBids() backend.AllBids { //Helper function to check if reviewers have bidded on papers
 	bidList := backend.Pc.GetAllBids()
@@ -179,10 +178,7 @@ func PaperRowHelper() backend.ShareReviewsMessage {
 func CheckReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
 	msgs := backend.ShareReviewsMessage{}
-	if !sharedreviews {
-		msgs = PaperRowHelper()
-		sharedreviews = true
-	}
+	sharedreviews = true
 	var users []model.User
 	model.GetReviewers(&users)
 	size := len(users)
@@ -201,10 +197,9 @@ func CheckReviewsHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, msgs)
 }
 
+//check up on this
 func CheckConfirmedOwnerships() string {
-	var users []model.User
-	model.GetSubmitters(&users)
-	userlength := len(users)
+	userlength := len(backend.AcceptedPapers)
 	confirmedLength := 0
 
 	for _, p := range backend.AcceptedPapers {
@@ -214,7 +209,7 @@ func CheckConfirmedOwnerships() string {
 		confirmedLength = len(logmsgs)
 	}
 
-	str := fmt.Sprintf("%v/%v submitters have claimed ownership of their paper", confirmedLength, userlength)
+	str := fmt.Sprintf("%v/%v submitters have claimed ownership of their accepted paper", confirmedLength, userlength)
 
 	return str
 }
@@ -339,7 +334,7 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 	}
 	var papers []Paper
 	for _, p := range backend.Pc.AllPapers {
-		if backend.Pc.CheckAcceptedPapers(p.Id) {
+		if backend.Pc.CheckAcceptedPapers(p.Id) { // this check doesn't make sense? at least not how its used. No time currently, will check up on this later
 			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
 			msg := Paper{
 				Title: p.Title,
@@ -362,5 +357,4 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 		Status: status,
 	}
 	tpl.Execute(c.Writer, msg)
-
 }
