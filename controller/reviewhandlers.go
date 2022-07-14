@@ -19,7 +19,7 @@ var paper *backend.Paper
 var reviewer backend.Reviewer
 var reviewerexists bool
 
-func PrepStageHandler(c *gin.Context) {
+func PrepStageHandler(c *gin.Context) { //this really needs to be looked at
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 	var logMsg model.Log
 	err := model.GetLastLogMsg(&logMsg)
