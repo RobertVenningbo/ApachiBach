@@ -141,7 +141,6 @@ func (pc *PC) CollectReviews() { //step 11
 			if err != nil {
 				log.Println(err)
 			}
-			fmt.Printf("%#v \n", reviewStruct)
 			ReviewStructList = append(ReviewStructList, reviewStruct)
 		}
 		listSignature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(ReviewStructList), Kp.D.String())

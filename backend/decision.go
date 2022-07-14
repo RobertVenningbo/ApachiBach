@@ -11,16 +11,20 @@ import (
 )
 
 func (pc *PC) GetKPCSFromLog(pId int) []byte {
-	msg := fmt.Sprintf("SignedSubmitMsg%v", pId)
+	msg := fmt.Sprintf("SignedSubmitMsg %v", pId)
 	item := Trae.Find(msg)
 	if item == nil {
 		CheckStringAgainstDB(msg)
 		item = Trae.Find(msg)
 	}
+
+	
 	bytes := item.value.([]byte)
 	decodedSubmitMessage := DecodeToStruct(bytes)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
+
+
 	return kpcs
 }
 
@@ -36,30 +40,6 @@ func (pc *PC) SendGrades2(pId int) { //Step 15 new
 
 	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), string(Kpcs))
 	str := fmt.Sprintf("PC sends grade and reviews to submitter who submitted paper , %v", pId)
-	logmsg := model.Log{
-		State:      15,
-		LogMsg:     str,
-		FromUserID: 4000,
-		Value:      EncMsgStruct[1],
-		Signature:  EncMsgStruct[0],
-	}
-	model.CreateLogMsg(&logmsg)
-	Trae.Put(str, EncMsgStruct)
-}
-
-func (pc *PC) SendGrades(subm *Submitter) { //step 15
-	GradeAndPaper := pc.GetGradeAndPaper(subm.PaperCommittedValue.Paper.Id)
-	reviews := pc.GetReviewsOnly(subm.PaperCommittedValue.Paper.Id)
-	Kpcs := GenerateSharedSecret(pc, subm, nil)
-	msgStruct := SendGradeStruct{
-		reviews,
-		int(GradeAndPaper.GradeBefore),
-	}
-
-	EncMsgStruct := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(msgStruct), Kpcs)
-
-	str := fmt.Sprintf("PC sends grade and reviews to submitter, %v", subm.UserID)
-
 	logmsg := model.Log{
 		State:      15,
 		LogMsg:     str,
@@ -291,10 +271,12 @@ func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
 	bytes := item.value.([]byte)
 	encodedGradeAndPaper := Decrypt(bytes, Kp.D.String())
 	decodedGradeAndPaper := DecodeToStruct(encodedGradeAndPaper).(RandomizeGradesForProofStruct)
-	log.Printf("PC decrypts retrieved encrypted grade for paper %v \n", pId)
+	pc.VerifyGradesFromReviewers(pId, encodedGradeAndPaper, GetStr)
+	log.Printf("\nPC decrypts retrieved encrypted grade for paper %v \n", pId)
 
 	return decodedGradeAndPaper
 }
+
 
 func (pc *PC) GetReviewsOnly(pId int) []ReviewStruct {
 	reviews := []ReviewStruct{}
@@ -309,7 +291,6 @@ func (pc *PC) GetReviewsOnly(pId int) []ReviewStruct {
 	return reviews
 }
 
-//This is for when the application is distributed s.t. a submitter can retrieve its reviews and grade.
 func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 	Kpcs := GenerateSharedSecret(&Pc, s, nil)
 

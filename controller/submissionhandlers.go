@@ -3,12 +3,13 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"strconv"
 	"strings"
-
 	"swag/backend"
 	"swag/model"
 	"text/template"
+	"time"
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,6 +17,28 @@ var tpl = template.Must(template.ParseFiles("templates/submitter/submission.html
 var submitter backend.Submitter
 
 func SubmissionHandler(c *gin.Context) {
+	url := strings.Split(c.Request.Host, ":")
+	portAsInt, _ := strconv.Atoi(url[1])
+
+	keys := backend.NewKeys()
+	pubkeys := backend.EncodeToBytes(keys.PublicKey)
+
+	user := model.User{
+		Id:         portAsInt,
+		Username:   "",
+		Usertype:   "submitter",
+		PublicKeys: pubkeys,
+	}
+
+	model.CreateUser(&user)
+
+	submitter = backend.Submitter{
+		Keys:                    keys,
+		UserID:                  portAsInt, //userID
+		SubmitterCommittedValue: &backend.CommitStruct{},
+		PaperCommittedValue:     &backend.CommitStructPaper{},
+	}
+
 	tpl.Execute(c.Writer, nil)
 }
 
@@ -53,9 +76,8 @@ func WaitHandler(c *gin.Context) {
 		Status  string
 		Cont    bool
 	}
-	var msg Message
 
-	msg = Message{
+	msg := Message{
 		Status: "Pending.",
 		Cont: false,
 	}
@@ -73,35 +95,11 @@ func WaitHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, &msg)
 }
 
-func GradedPaperHandler(c *gin.Context) { //delete
-
-	type Reviewer struct {
-	}
-	type Message struct {
-		Status string
-		Grade  int
-		Count  []Reviewer
-	}
-	reviewers := []Reviewer{
-		{},
-		{},
-	}
-	msg := Message{
-		Status: "pending...",
-		Grade:  4,
-		Count:  reviewers,
-	}
-
-	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
-	tpl.Execute(c.Writer, &msg)
-}
-
 func UploadFile(c *gin.Context) {
 	fmt.Println("File Upload Endpoint Hit")
 	// Parse our multipart form, 10 << 20 specifies a maximum upload of 10 MB files.
 	c.Request.ParseMultipartForm(10 << 20)
 
-	name := c.Request.FormValue("name")
 	title := c.Request.FormValue("title")
 	file, handler, err := c.Request.FormFile("myFile")
 	if err != nil {
@@ -118,44 +116,35 @@ func UploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-	url := strings.Split(c.Request.Host, ":")
-	portAsInt, _ := strconv.Atoi(url[1])
 
-	keys := backend.NewKeys()
-	pubkeys := backend.EncodeToBytes(keys.PublicKey)
-
-	user := model.User{
-		Id:         portAsInt,
-		Username:   name,
-		Usertype:   "submitter",
-		PublicKeys: pubkeys,
-	}
-
-	model.CreateUser(&user)
-
-	submitter = backend.Submitter{
-		Keys:                    keys,
-		UserID:                  portAsInt, //userID
-		SubmitterCommittedValue: &backend.CommitStruct{},
-		PaperCommittedValue:     &backend.CommitStructPaper{},
-	}
+	source := rand.NewSource(time.Now().UnixNano())
+	rand := rand.New(source)
+	paperid := rand.Intn(99999-10000)
 
 	paper := backend.Paper{
-		Id:    portAsInt,
+		Id:    paperid, 
 		Bytes: fileBytes,
 		Title: title,
 	}
-
+	
 	submitter.Submit(&paper)
 
 	c.Redirect(303, "/wait")
-
 }
 
 func ClaimPaperHandler(c *gin.Context) {
+	tpl = template.Must(template.ParseFiles("templates/public/finished.html")) 
+
+	type Message struct {
+		Status  string
+	}
+
+	msg := Message{
+		Status:  "Thank you for participating as a submitter! 📝😉 ",
+	}
+
 	
 	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
-	c.Redirect(303, "/getgrade")
-	
+	tpl.Execute(c.Writer, msg)
 }

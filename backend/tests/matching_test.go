@@ -51,51 +51,49 @@ func TestGetBiddedPaper(t *testing.T) {
 	assert.Equal(t, reviewerScope, paperBid.Reviewer, "TestGetBiddedPaper failed")
 }
 
-// func TestAssignPapers(t *testing.T) {
-// 	reviewer3 := Reviewer{
-// 		3,
-// 		NewKeys(),
-// 		nil,
-// 	}
-// 	reviewer4 := Reviewer{
-// 		4,
-// 		NewKeys(),
-// 		nil,
-// 	}
-// 	p1 := Paper{
-// 		1,
-// 		false,
-// 		nil,
-// 		nil,
-// 		"",
-// 	}
-// 	p2 := Paper{
-// 		2,
-// 		false,
-// 		nil,
-// 		nil,
-// 		"",
-// 	}
-// 	p3 := Paper{
-// 		3,
-// 		false,
-// 		nil,
-// 		nil,
-// 		"",
-// 	}
+func TestAssignPapers(t *testing.T) {
 
-// 	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2, &p3)
-// 	reviewerSlice := []*Reviewer{&reviewer, &reviewer2, &reviewer3, &reviewer4}
+	p1 := Paper{
+		1,
+		false,
+		nil,
+		nil,
+		"",
+	}
+	p2 := Paper{
+		2,
+		false,
+		nil,
+		nil,
+		"",
+	}
 
-// 	reviewer.SignBidAndEncrypt(&p1)
-// 	reviewer2.SignBidAndEncrypt(&p1)
-// 	reviewer3.SignBidAndEncrypt(&p1)
-// 	reviewer4.SignBidAndEncrypt(&p1)
+	Pc.AllPapers = append(Pc.AllPapers, &p1, &p2)
 
-// 	Pc.AssignPaper(reviewerSlice)
+	bid1 := PaperBid{
+		Paper: &p1,
+		Reviewer: &reviewer,
+	}
+	bid2 := PaperBid{
+		Paper: &p2,
+		Reviewer: &reviewer,
+	}
+	bid3 := PaperBid{
+		Paper: &p1,
+		Reviewer: &reviewer2,
+	}
+	bid4 := PaperBid{
+		Paper: &p2,
+		Reviewer: &reviewer2,
+	}
+	var bidSlice []*PaperBid
+	bidSlice = append(bidSlice, &bid1, &bid2, &bid3, &bid4)
+	
 
-// 	//TODO insert assert
-// }
+	Pc.AssignPaper(bidSlice)
+
+	//TODO insert assert
+}
 
 func TestSupplyNizk(t *testing.T) {
 	keys := NewKeys()
@@ -115,7 +113,7 @@ func TestSupplyNizk(t *testing.T) {
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	ReviewCommit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	ReviewCommit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
 		ReviewCommit,
@@ -148,7 +146,7 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	rr := ec.GetRandomInt(Pc.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
-	commit, _ := Pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+	commit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	//reviewerKeyList := []ecdsa.PublicKey{}

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-<title>Submitter</title>
+<title>The log</title>
+<style>
+    table, th, td {
+  border: 1px solid gray;
+}
+</style>
 <body style="background: lightgray;">
     <div>
         <blockquote>
@@ -34,8 +39,8 @@
                     <td>{{ .Id }}</td>
                     <td>{{ .State }}</td>
                     <td>{{ .LogMsg }}</td>
-                    <td>FromUserId currently not implemented</td>
-                    <td style="width: 20em;">{{ .Value }}</td>
+                    <td>{{ .FromUserID }}</td>
+                    <td>{{ .Value }}</td>
                 </tr>
                 {{ end }}
                 </tbody>

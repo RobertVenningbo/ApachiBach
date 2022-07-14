@@ -15,21 +15,16 @@ import (
 func main() {
 	router := gin.Default()
 	db := database.Init()
-	h := controller.New(db)
+	if (db.Migrator().HasTable(&model.Log{}) && os.Args[1] == "pc") {
+		db.Migrator().DropTable(&model.Log{})
+	}
+	if (db.Migrator().HasTable(&model.User{}) && os.Args[1] == "pc") {
+		db.Migrator().DropTable(&model.User{})
+	}
 	db.AutoMigrate(&model.Log{})
 	db.AutoMigrate(&model.User{})
 	backend.InitGobs()
-	/*
-		Shared routes/end-points
-	*/
-	// router.LoadHTMLGlob("templates/*")
-	v1 := router.Group("/v1/api")
-	{
-		// set&get for the log
-		v1.POST("/logmsg", h.CreateMessage)
-		v1.GET("/logmsg", h.GetMessages)
-		v1.GET("/logmsg/:id", h.GetMessage)
-	}
+
 	router.GET("/testing", controller.TestPlatform) //TODO OBS.
 	router.GET("/log", controller.LogHandler)
 
@@ -37,7 +32,6 @@ func main() {
 	if os.Args[1] == "submitter" {
 		router.GET("/", controller.SubmissionHandler)
 		router.GET("/wait", controller.WaitHandler)
-		router.GET("/papergraded", controller.GradedPaperHandler)
 		router.POST("/upload", controller.UploadFile)
 		router.GET("/getgrade", controller.GetGradesAndReviewsHandler)
 		router.GET("/claimgrade", controller.ClaimPaperHandler)
@@ -68,6 +62,7 @@ func main() {
 		router.POST("/decision", controller.AcceptPaperHandler)
 		router.POST("/rejectpaper", controller.RejectPaperHandler)
 		router.POST("/compilegrades", controller.CompileGradesHandler)
+		router.GET("/finished", controller.FinishedProtocolHandler)
 		router.POST("/confirmowner", controller.ConfirmOwnershipHandler)
 		router.GET("/confirmowner", controller.GetConfirmOwnershipHandler)
 		router.Run(":" + serverport)

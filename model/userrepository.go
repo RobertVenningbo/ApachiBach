@@ -28,14 +28,6 @@ func UpdateUsername(id int, username string) (err error) {
 	return nil
 }
 
-func InsertPublicKeys(id int, keys []byte) (err error) {
-	err = database.DB.Model(User{}).Where("id = ?", id).Update("publickeys", keys).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetPC(user *User) (err error){
 	err = database.DB.Where("usertype = ?", "pc").First(user).Error
 	if err != nil {
