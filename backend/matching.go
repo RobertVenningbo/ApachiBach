@@ -21,11 +21,11 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 			fmt.Println(msg)
 			Trae.Put(msg, SignedAndEncryptedPaper)
 			logmsg := model.Log{
-				State:     4,
-				LogMsg:    msg,
+				State:      4,
+				LogMsg:     msg,
 				FromUserID: 4000,
-				Value:     SignedAndEncryptedPaper[1],
-				Signature: SignedAndEncryptedPaper[0],
+				Value:      SignedAndEncryptedPaper[1],
+				Signature:  SignedAndEncryptedPaper[0],
 			}
 			model.CreateLogMsg(&logmsg)
 		}
@@ -41,13 +41,14 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	for p := range paperSlice {
 		GetMsg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, r.UserID)
 		fmt.Println("GetMsg: " + GetMsg)
-		EncryptedSignedBid := Trae.Find(GetMsg)
-		if EncryptedSignedBid == nil {
+		treeItem := Trae.Find(GetMsg)
+
+		if treeItem == nil {
 			CheckStringAgainstDB(GetMsg)
-			EncryptedSignedBid = Trae.Find(GetMsg)
+			treeItem = Trae.Find(GetMsg)
 		}
-		fmt.Println("ESB: ", EncryptedSignedBid, "xd")
-		bytes := EncryptedSignedBid.value.([]byte)
+
+		bytes := treeItem.value.([]byte)
 		decrypted := Decrypt(bytes, Kpcr)
 		decoded := DecodeToStruct(decrypted)
 		paper := decoded.(Paper)
@@ -56,18 +57,40 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 	return pList
 }
 
-func (r *Reviewer) GetBiddedPaper() *PaperBid {
-
-	Kpcr := GenerateSharedSecret(&Pc, nil, r)
-	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+func (pc *PC) GetBiddedPaper(id int) *PaperBid {
+	Kpcr := pc.GetKPCRFromLog(id)
+	msg := fmt.Sprintf("EncryptedSignedBids %v", id)
 	EncryptedSignedBid := Trae.Find(msg)
-	bytes := EncryptedSignedBid.value.([][]byte)
-	_, enc := SplitSignatureAndMsg(bytes)
-	decrypted := Decrypt([]byte(enc), Kpcr)
+
+	if EncryptedSignedBid == nil {
+		CheckStringAgainstDB(msg)
+		EncryptedSignedBid = Trae.Find(msg)
+	}
+	if EncryptedSignedBid == nil {
+		return &PaperBid{
+			nil,
+			&Reviewer{
+				UserID:              -1,
+				Keys:                nil,
+				PaperCommittedValue: nil,
+			},
+		}
+	}
+	bytes := EncryptedSignedBid.value.([]byte)
+	decrypted := Decrypt(bytes, Kpcr)
 	decoded := DecodeToStruct(decrypted)
 	bid := decoded.(PaperBid)
-	fmt.Printf("%s %v \n", "reviewer: ", bid.Reviewer)
 	return &bid
+}
+
+func (pc *PC) GetAllBids() []*PaperBid {
+	var users []model.User
+	model.GetReviewers(&users)
+	var bidList []*PaperBid
+	for _, u := range users {
+		bidList = append(bidList, pc.GetBiddedPaper(u.Id))
+	}
+	return bidList
 }
 
 func (r *Reviewer) MakeBid(pap *Paper) *PaperBid {
@@ -82,54 +105,62 @@ func (r *Reviewer) SignBidAndEncrypt(p *Paper) { //set encrypted bid list
 	bid := r.MakeBid(p)
 	Kpcr := GenerateSharedSecret(&Pc, nil, r) //Shared secret key between R and PC
 	EncryptedSignedBid := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(bid), Kpcr)
+	sig, msgvalue := SplitSignatureAndMsg(EncryptedSignedBid)
 	msg := fmt.Sprintf("EncryptedSignedBids %v", r.UserID)
+
+	logMsg := model.Log{
+		State:      5, //check
+		LogMsg:     msg,
+		FromUserID: bid.Reviewer.UserID,
+		Value:      msgvalue,
+		Signature:  sig,
+	}
+
+	model.CreateLogMsg(&logMsg)
 	Trae.Put(msg, EncryptedSignedBid)
 	log.Println(msg + "logged.")
 }
 
-func (pc *PC) ReplaceWithBids(reviewerSlice []*Reviewer) ([]*Paper, []*PaperBid) { //Not used, maybe delete
-	bidList := []*PaperBid{}
-	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].GetBiddedPaper()
-		bidList = append(bidList, p)
-	}
-
+func (pc *PC) DeliverAssignedPaper() { //Unfortunately, reviewers get access to the entire paper reviewerlist this way
 	for _, p := range pc.AllPapers {
-		for _, b := range bidList {
-			if p.Id == b.Paper.Id {
-				p = b.Paper
-
+		for _, r := range p.ReviewerList {
+			str := fmt.Sprintf("DeliveredPaperForR%v", r.UserID)
+			Kpcr := pc.GetKPCRFromLog(r.UserID)
+			EncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(p), Kpcr)
+			logmsg := model.Log{
+				State:      7,
+				LogMsg:     str,
+				FromUserID: 4000,
+				Value:      EncryptedPaper[1],
+				Signature:  EncryptedPaper[0],
 			}
+			model.CreateLogMsg(&logmsg)
 		}
 	}
-	return pc.AllPapers, bidList
 }
 
-func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
-	reviewersBidsTaken := []Reviewer{}
-	bidList := []*PaperBid{}
-	for i := range reviewerSlice { //loop to get list of all bidded papers
-		p := reviewerSlice[i].GetBiddedPaper()
-		bidList = append(bidList, p)
-	}
-	for _, bid := range bidList {
-		for _, p := range pc.AllPapers {
+func (pc *PC) AssignPaper(bidList []*PaperBid) {
+	reviewersBidsTaken := []*Reviewer{}
+
+	for _, p := range pc.AllPapers {
+		if p.Selected {
+			break
+		}
+		for _, bid := range bidList {
 			if p.Id == bid.Paper.Id {
 				if !p.Selected {
 					if bid.Reviewer.PaperCommittedValue == nil {
 						bid.Reviewer.PaperCommittedValue = &CommitStructPaper{}
 					}
-					p.Selected = true
 					p.ReviewerList = append(p.ReviewerList, *bid.Reviewer)
-					break
+					p.Selected = true
 				} else {
-					reviewersBidsTaken = append(reviewersBidsTaken, *bid.Reviewer)
-					break
+					reviewersBidsTaken = append(reviewersBidsTaken, bid.Reviewer)
 				}
 			}
 		}
 	}
-	for i, r := range reviewersBidsTaken {
+	for _, r := range reviewersBidsTaken {
 		x := false
 		if r.PaperCommittedValue == nil {
 			r.PaperCommittedValue = &CommitStructPaper{}
@@ -138,49 +169,31 @@ func (pc *PC) AssignPaper(reviewerSlice []*Reviewer) {
 			if !p.Selected {
 				x = true
 				p.Selected = true
-				reviewer := &r
-				p.ReviewerList = append(p.ReviewerList, *reviewer)
+				p.ReviewerList = append(p.ReviewerList, *r)
 				break
 			}
 		}
 		if x {
-			reviewersBidsTaken[i].UserID = -1
+			r.UserID = -1
 			x = false
 		}
 	}
 	for _, r := range reviewersBidsTaken {
-		if ((r.PaperCommittedValue == nil) || (r.PaperCommittedValue == &CommitStructPaper{})) && (r.UserID != -1) {
+		if r.UserID != -1 {
 			r.PaperCommittedValue = &CommitStructPaper{}
 			for _, p := range pc.AllPapers {
 				p.Selected = true
-				p.ReviewerList = append(p.ReviewerList, r)
+				p.ReviewerList = append(p.ReviewerList, *r)
 				break
 			}
 		}
 	}
-	pc.SetReviewersPaper(reviewerSlice)
 }
 
-// This method is a little messy however it is not expected to be called on a lot of entities.
-// **Finds every assigned reviewer for every paper and makes it bidirectional, such that a reviewer also has a reference to a paper**
-// **Basically a fast reversal of assignPaper in terms of being bidirectional**
-func (pc *PC) SetReviewersPaper(reviewerList []*Reviewer) {
-	for _, p := range pc.AllPapers {
-		for _, r := range p.ReviewerList {
-			for _, r1 := range reviewerList {
-				if r.UserID == r1.UserID {
-					if r1.PaperCommittedValue == nil {
-						r1.PaperCommittedValue = &CommitStructPaper{}
-					}
-					r1.PaperCommittedValue.Paper = p
-				}
-			}
-		}
-	}
-}
 func (pc *PC) MatchPapers() {
 	for _, p := range pc.AllPapers {
-		PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
+		fmt.Println("in match papers")
+		PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id)) //notice what we are creating our commitment from, maybe this ok.
 
 		nonce_r := ec.GetRandomInt(pc.Keys.D)
 
@@ -188,14 +201,11 @@ func (pc *PC) MatchPapers() {
 		for _, r := range p.ReviewerList {
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
-
 		rr := pc.GetPaperAndRandomness(p.Id).Rr
-
-		commit, err := pc.GetCommitMessagePaperPC(PaperBigInt, rr)
+		commit, err := pc.GetPaperReviewCommitPC(PaperBigInt, rr) //paper review commit
 		if err != nil {
-			log.Panic("matchPaperz error")
+			log.Panic("Error in MatchPapers")
 		}
-
 		reviewStruct := ReviewSignedStruct{
 			commit,
 			reviewerKeyList,
@@ -205,7 +215,15 @@ func (pc *PC) MatchPapers() {
 		signature := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(reviewStruct), "")
 
 		msg := fmt.Sprintf("ReviewSignedStruct with P%v", p.Id)
-		Trae.Put(msg, signature)
+		logmsg := model.Log{
+			State:      7,
+			LogMsg:     msg,
+			FromUserID: 4000,
+			Value:      signature[1],
+			Signature:  signature[0],
+		}
+		model.CreateLogMsg(&logmsg)
+		Trae.Put(msg, signature[1])
 
 		nizkBool := pc.SupplyNIZK(p)
 		if !nizkBool {
@@ -218,8 +236,12 @@ func (pc *PC) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
 	item := Trae.Find(msg)
-	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
-	decodedStruct := DecodeToStruct(encodedStruct)
+	if item == nil {
+		CheckStringAgainstDB(msg)
+		item = Trae.Find(msg)
+	}
+	bytes := item.value.([]byte)
+	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
 	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
 
@@ -230,8 +252,12 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 	ret := ReviewSignedStruct{}
 	msg := fmt.Sprintf("ReviewSignedStruct with P%v", pId)
 	item := Trae.Find(msg)
-	_, encodedStruct := SplitSignatureAndMsg(item.value.([][]byte))
-	decodedStruct := DecodeToStruct(encodedStruct)
+	if item == nil {
+		CheckStringAgainstDB(msg)
+		item = Trae.Find(msg)
+	}
+	bytes := item.value.([]byte)
+	decodedStruct := DecodeToStruct(bytes)
 	ret = decodedStruct.(ReviewSignedStruct)
 	fmt.Printf("%s %v \n", "Review Commit: ", ret.Commit)
 
@@ -239,22 +265,29 @@ func (reviewer *Reviewer) GetReviewSignedStruct(pId int) ReviewSignedStruct {
 }
 
 func (pc *PC) SupplyNIZK(p *Paper) bool {
-	works := false                                             //for testing
 	paperSubmissionCommit := pc.GetPaperSubmissionCommit(p.Id) //PaperSubmissionCommit generated in Submit.go
+	rs := pc.GetPaperAndRandomness(p.Id).Rs   //Rs generated in submit
+	rr := pc.GetPaperAndRandomness(p.Id).Rr   //Rr generated in submit
 	reviewSignedStruct := pc.GetReviewSignedStruct(p.Id)
-	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated in matchPapers
+	reviewCommit := reviewSignedStruct.Commit //ReviewCommit generated by PC in matchPapers()
+	nonce := reviewSignedStruct.Nonce         //Nonce from reviewSignedStruct
 
-	nonce := reviewSignedStruct.Nonce
-	rs := pc.GetPaperAndRandomness(p.Id).Rs //Rs generated in submit
-	rr := pc.GetPaperAndRandomness(p.Id).Rr //Rr generated in submit
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id)) //Converting the Paper to a big integer
+	submitterPK := pc.GetPaperSubmitterPK(p.Id)     //Retriving the public keys of the submitter
 
-	PaperBigInt := MsgToBigInt(EncodeToBytes(&p.Id))
+	proof := NewEqProofP256(PaperBigInt, rs, rr, nonce, &submitterPK, &pc.Keys.PublicKey) //NIZK
+	signedNIZK := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(proof), "")                //Signed NIZK
 
-	submitterPK := pc.GetPaperSubmitterPK(p.Id)
+	logmsg := model.Log{
+		State:      6,
+		LogMsg:     fmt.Sprintf("NIZK Proving the review commit and paper submission commit hide the same paper for P%v", p.Id),
+		FromUserID: 4000,
+		Value:      signedNIZK[1],
+		Signature:  signedNIZK[0],
+	}
+	model.CreateLogMsg(&logmsg) //NIZK published to log
 
-	proof := NewEqProofP256(PaperBigInt, rs, rr, nonce, &submitterPK, &pc.Keys.PublicKey)
-
-	C1 := &Commitment{
+	C1 := &Commitment{ //Converting commitments to structs
 		paperSubmissionCommit.X,
 		paperSubmissionCommit.Y,
 	}

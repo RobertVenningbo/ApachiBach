@@ -5,15 +5,54 @@ import (
 	"fmt"
 	"log"
 	Math "math"
+	"math/big"
+	random "math/rand"
+	"swag/model"
 )
 
 func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for step 12, repeated.
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(input), Kp.D.String())
-	logStr := fmt.Sprintf("Sending msg to the log by reviewer: %v", r.UserID)
+	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, []byte(input), Kp.D.String())
+	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
 	log.Println(logStr)
 	Trae.Put(logStr, encryptedSignedMsg)
+
+	logmsg := model.Log{
+		State:      12,
+		LogMsg:     logStr,
+		FromUserID: r.UserID,
+		Value:      encryptedSignedMsg[1],
+		Signature:  encryptedSignedMsg[0],
+	}
+	model.CreateLogMsg(&logmsg)
+}
+
+func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
+	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
+	var messages []string
+	var logmsgs []model.Log
+	model.GetAllLogMsgsByMsg(&logmsgs, logStr)
+	var logsmsgsnotbinded []model.Log
+
+	logsmsgsnotbinded = append(logsmsgsnotbinded, logmsgs...)
+	if len(logsmsgsnotbinded) > 0 {
+		reviewkpandrg := r.GetReviewKpAndRg()
+		Kp := reviewkpandrg.GroupKey
+		for _, v := range logsmsgsnotbinded {
+			bytes := Decrypt(v.Value, Kp.D.String())
+			messages = append(messages, string(bytes))
+			r.VerifyDiscussingMessage(bytes, logStr)
+		}
+	}
+	reviewStruct := r.GetCollectedReviews()
+	data := DiscussingViewData{
+		Title:   r.PaperCommittedValue.Paper.Title,
+		Msgs:    messages,
+		Reviews: reviewStruct,
+	}
+
+	return data
 }
 
 func (r *Reviewer) GradePaper(grade int) {
@@ -27,33 +66,124 @@ func (r *Reviewer) GradePaper(grade int) {
 	Kp := KpAndRg.GroupKey
 	encryptedSignedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
 	msg := fmt.Sprintf("Reviewer%v graded a paper", r.UserID)
-	Trae.Put(msg, encryptedSignedGradeStruct)
-	log.Println(msg)
-
+	logmsg := model.Log{
+		State:      12,
+		LogMsg:     msg,
+		FromUserID: r.UserID,
+		Value:      encryptedSignedGradeStruct[1],
+		Signature:  encryptedSignedGradeStruct[0],
+	}
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(msg, encryptedSignedGradeStruct[1])
 }
 
-func (r *Reviewer) GetGradeForReviewer(rId int) IndividualGrade {
+func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	msg := fmt.Sprintf("Reviewer%v graded a paper", rId)
-	gradeStruct := Trae.Find(msg).value
+	gradeStruct := Trae.Find(msg)
+	if gradeStruct == nil {
+		CheckStringAgainstDB(msg)
+		gradeStruct = Trae.Find(msg)
+		return nil
+	}
+
+	bytes := gradeStruct.value.([]byte)
+
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	_, encryptedGradeStruct := SplitSignatureAndMsg(gradeStruct.([][]byte))
-	encodedGradeStruct := Decrypt(encryptedGradeStruct, Kp.D.String())
+	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
-	return decodedGradeStruct
+
+	
+	return &decodedGradeStruct
 }
 
-func AgreeOnGrade(paper *Paper) int {
+func (r *Reviewer) AgreeOnGrade2(paper *Paper) GradeAndPaper {
+	gradeandpaper := r.GetAgreedGrade(paper.Id)
+	if gradeandpaper != nil {
+		return *gradeandpaper
+	}
+
+	return *gradeandpaper
+}
+
+func (r *Reviewer) CheckAllSubmittedGrades() bool {
+	for _, v := range r.PaperCommittedValue.Paper.ReviewerList {
+		if r.GetGradeForReviewer(v.UserID) == nil {
+			return false
+		}
+	}
+	return true
+}
+
+func (r *Reviewer) RandomizeGrades(grade int64, paperId int) *RandomizeGradesForProofStruct {
+	x := random.Int63n(1844674407370955161) //some random large number to generate from, 1 bit smaller than int64 max cap.
+	return &RandomizeGradesForProofStruct{
+		R:           x,
+		GradeBefore: grade,
+		GradeAfter:  grade + x,
+		PaperId:     paperId,
+	}
+}
+
+func (r *Reviewer) PublishAgreedGrade() {
 	result := 0
-	length := len(paper.ReviewerList)
-	for _, r := range paper.ReviewerList {
+	papir := r.PaperCommittedValue.Paper
+	length := len(papir.ReviewerList)
+
+	for _, r := range papir.ReviewerList {
 		gradeStruct := r.GetGradeForReviewer(r.UserID)
 		result += gradeStruct.Grade
 	}
+
 	avg := float64(result) / float64(length)
 	grade := CalculateNearestGrade(avg)
+	randomGradeStruct := r.RandomizeGrades(int64(grade), papir.Id)
+	KpAndRg := r.GetReviewKpAndRg()
+	EncryptedGradeStruct := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(randomGradeStruct), KpAndRg.GroupKey.D.String())
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", papir.Id)
+	logmsg := model.Log{
+		State:      13,
+		LogMsg:     str,
+		FromUserID: r.UserID,
+		Value:      EncryptedGradeStruct[1],
+		Signature:  EncryptedGradeStruct[0],
+	}
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(str, EncryptedGradeStruct[1])
+}
 
-	return grade
+func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
+	if !r.CheckAllSubmittedGrades() { //shouldn't happen but a way to make the program not fail entirely.
+		log.Panic("GetAgreedGroupGrade failed.")
+		return RandomizeGradesForProofStruct{}
+	}
+
+	papir := r.PaperCommittedValue.Paper
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", papir.Id)
+	item := Trae.Find(str)
+	if item == nil {
+		CheckStringAgainstDB(str)
+		item = Trae.Find(str)
+	}
+	bytes := item.value.([]byte)
+	KpAndRg := r.GetReviewKpAndRg()
+	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
+	agreedGrade := DecodeToStruct(encodedAgreedGrade).(RandomizeGradesForProofStruct)
+	return agreedGrade
+}
+
+func (r *Reviewer) GetAgreedGrade(pId int) *GradeAndPaper {
+	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", pId)
+	item := Trae.Find(str)
+	if item == nil {
+		CheckStringAgainstDB(str)
+		item = Trae.Find(str)
+	}
+	bytes := item.value.([]byte)
+	KpAndRg := r.GetReviewKpAndRg()
+	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
+	agreedGrade := DecodeToStruct(encodedAgreedGrade).(GradeAndPaper)
+	return &agreedGrade
 }
 
 func CalculateNearestGrade(avg float64) int {
@@ -77,11 +207,17 @@ func (r *Reviewer) MakeGradeCommit() *ecdsa.PublicKey {
 	if found == nil {
 		KpAndRg := r.GetReviewKpAndRg()
 		Rg := KpAndRg.Rg
-		grade := AgreeOnGrade(r.PaperCommittedValue.Paper)
-		GradeBigInt := MsgToBigInt(EncodeToBytes(grade))
-		GradeCommit, _ := r.GetCommitMessageReviewGrade(GradeBigInt, Rg)
+		gradeStruct := r.GetAgreedGroupGrade()
+		GradeCommit, _ := r.GetCommitMessageReviewGrade(big.NewInt(gradeStruct.GradeAfter), Rg)
+		logmsg := model.Log{
+			State:      13, //unsure about state
+			LogMsg:     str,
+			FromUserID: r.UserID,
+			Value:      EncodeToBytes(gradeStruct.GradeAfter),
+			Signature:  nil, //nothing signed
+		}
+		model.CreateLogMsg(&logmsg)
 		Trae.Put(str, EncodeToBytes(GradeCommit))
-		log.Println(str)
 		return GradeCommit
 	} else {
 		EncodedGradeCommit := found.value.([]byte)
@@ -101,20 +237,37 @@ func (r *Reviewer) SignCommitsAndNonce() { //Step 13, assumed to be ran when rev
 		GradeCommit,
 		Nonce,
 	}
-	fmt.Printf("%#v\n", gradeReviewCommits)
+
 	signedGradeReviewCommits := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeReviewCommits), "")
 	str := fmt.Sprintf("Reviewer %v signed GradeReviewCommits", r.UserID)
+	logmsg := model.Log{
+		State:      13, //Maybe change the state to 14
+		LogMsg:     str,
+		FromUserID: r.UserID,
+		Value:      signedGradeReviewCommits[1],
+		Signature:  signedGradeReviewCommits[0],
+	}
+	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signedGradeReviewCommits)
-	log.Println(str)
-
 }
 
-func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every reviewer
-	grade := AgreeOnGrade(r.PaperCommittedValue.Paper) //acquire agreed grade
+func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every reviewer as every reviewer has to agree on the grade by signing it. Step 14.
+	gradeStruct := r.GetAgreedGroupGrade()
 	KpAndRg := r.GetReviewKpAndRg()
 	Kp := KpAndRg.GroupKey
-	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(grade), Kp.D.String()) //Notice Kp.(ecdsa.PrivateKey).D.String() seems super fishy, plz work.
+
+	signedGrade := SignsPossiblyEncrypts(r.Keys, EncodeToBytes(gradeStruct), Kp.D.String())
 	submitStr := fmt.Sprintf("Reviewer %v signed and encrypted grade", r.UserID)
-	Trae.Put(submitStr, signedGrade)
-	log.Println(submitStr)
+
+	logmsg := model.Log{
+		State:      14,
+		LogMsg:     submitStr,
+		FromUserID: r.UserID,
+		Value:      signedGrade[1],
+		Signature:  signedGrade[0],
+	}
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(submitStr, signedGrade[1])
 }
+
+

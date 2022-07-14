@@ -1,13 +1,12 @@
 package backend
 
 import (
-	"log"
 	"swag/model"
 )
 
 var tree = *Trae
 
-func DatabaseToTree() (*Tree) {
+func DatabaseToTree() *Tree {
 	var msgs []model.Log
 	model.GetAllLogMsgs(&msgs)
 
@@ -20,13 +19,18 @@ func DatabaseToTree() (*Tree) {
 
 func CheckStringAgainstDB(str string) {
 	var msg model.Log
-	err := model.GetLogMsgByMsg(&msg, str)
-	
-	if err != nil {
-		log.Fatalf("String not found in Database")
-		return
-	}
-	
+	model.GetLogMsgByMsg(&msg, str)
 	Trae.Put(msg.LogMsg, msg.Value)
+}
 
+func CheckStringAgainstDBStruct(str string) {
+	var msg model.Log
+	model.GetLogMsgByMsg(&msg, str)
+
+	msglog := ValueSignature{
+		Value:     msg.Value,
+		Signature: msg.Signature,
+	}
+
+	Trae.Put(msg.LogMsg, msglog)
 }

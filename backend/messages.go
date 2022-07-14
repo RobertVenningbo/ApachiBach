@@ -10,9 +10,31 @@ type SubmitMessage struct {
 	EncryptedKpcs      []byte
 }
 
+
 type CommitMsg struct {
 	IdenityCommit []byte
 	PaperCommit   []byte
+}
+
+type ValueSignature struct {
+	Value     []byte
+	Signature []byte
+}
+
+type Message struct {
+	Title       string
+	ReviewerIds []int
+}
+
+type ShareReviewsMessage struct {
+	Reviews string
+	Msgs    []Message
+}
+
+type CheckSubmissionsMessage struct {
+	SubmittersLength int
+	Submissions      int
+	Submitters		 []string
 }
 
 //Review
@@ -34,6 +56,13 @@ type ReviewKpAndRg struct {
 }
 
 //Matching
+
+type AllBids struct {
+	PaperBidCount int
+	Status        string
+	ShowBool      bool
+	UsersLength   int
+}
 
 type ReviewSignedStruct struct {
 	Commit *ecdsa.PublicKey
@@ -59,12 +88,20 @@ type GradeReviewCommits struct {
 	Nonce             *big.Int
 }
 
+type DiscussingViewData struct {
+	Title   string
+	Msgs    []string
+	Reviews []ReviewStruct
+}
+
+
 //Decision
 
 type SendGradeStruct struct {
-	Reviews []string
+	Reviews []ReviewStruct
 	Grade   int
 }
+
 
 type RejectMessage struct {
 	Commit *ecdsa.PublicKey
@@ -75,6 +112,18 @@ type RejectMessage struct {
 type RevealPaper struct {
 	Paper Paper
 	Rs    *big.Int
+}
+
+type RandomizeGradesForProofStruct struct {
+	R           int64
+	GradeBefore int64
+	GradeAfter  int64
+	PaperId		int
+}
+
+type GradeAndPaper struct {
+	Grade int64
+	Papir Paper
 }
 
 //Claim
@@ -125,13 +174,6 @@ type Paper struct {
 	ReviewerList []Reviewer
 	Bytes        []byte
 	Title        string
-}
-
-type Paper2 struct {
-	Id           int
-	Selected     bool
-	ReviewerList []Reviewer
-	Bytes        []byte
 }
 
 type PaperBid struct {

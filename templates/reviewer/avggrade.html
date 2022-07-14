@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Reviewer</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+            .center{
+                margin: auto;
+                width: 50%;
+                padding: 10px;
+            }
+      </style>
+    </head>
+    <body style="background: lightgrey">
+        <div style="text-align: center; margin-top: 50px;">
+            <h1>{{ .Title }}</h1>
+            <p>An average grade has been calculated for the collected grades</p>
+            <div class="center">
+                <p>Grade: {{ .Grade }}</p>
+            </div> 
+            <form action="/confirmgrade" method="POST">
+                <input style="margin-top: 8px;" class="smoothborder" type="submit" value="Confirm grade">
+            </form>           
+        </div>
+    </body>
+</html>

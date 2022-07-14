@@ -26,7 +26,7 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 	reviewerList = append(reviewerList, reviewer, reviewer2)
 	reviewer.PaperCommittedValue.Paper = &paperListTest[0]
 	reviewer2.PaperCommittedValue.Paper = &paperListTest[0]
-	Pc.GenerateKeysForDiscussing(reviewerList)
+	Pc.GenerateKeysForDiscussing()
 	Pc.AllPapers = append(Pc.AllPapers, &paperListTest[0])
 	Pc.AllPapers[0].ReviewerList = reviewerList
 
@@ -97,8 +97,7 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 	// reviewer4.SignReviewPaperCommit() //step 9
 
 	// Generating keys for both paperReview groups.
-	Pc.GenerateKeysForDiscussing(paperListTest[0].ReviewerList) //step 10
-	Pc.GenerateKeysForDiscussing(paperListTest[1].ReviewerList) //step 10
+	Pc.GenerateKeysForDiscussing() //step 10
 
 	//Fabricating expected structs
 
@@ -115,7 +114,7 @@ func TestCollectReviews_OrEntireReviewing(t *testing.T) {
 		},
 	}
 
-	Pc.CollectReviews(Pc.AllPapers[0].Id) //step 11
+	Pc.CollectReviews() //step 11
 
 	ActualReviewStructList := reviewer.GetCollectedReviews()
 

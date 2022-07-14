@@ -24,26 +24,37 @@
         }
 
     </style>
-    <body style="background: lightgray;">
-        <h2>Decision</h2>
-        <div style="text-align: center;">
-            <p>Graded papers:</p> 
+
+<script>
+    function myFunction() {
+      var txt;
+      if (confirm("Confirm all submitters have claimed their submitted papers.")) {
+        xhr.open("POST", "/confirmowner");
+      } else {
+      }
+    }
+    </script>
+    
+    <body style="background: lightgray; text-align: center;">
+        <h2 style="margin-top: 72px;">Confirm ownership of accepted papers</h2>
+        <div>
+            <p>Accepted papers:</p> 
             {{range .}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
                 <div class="center">
-                    <form action="/decision" method="POST">
+                    <form action="/confirmowner" method="POST">
                         <p>Paper title: {{.Title}}</p> 
+                        <p>Grade: {{.Grade}}</p>
+                        <button onclick="myFunction()" type="submit">Confirm ownership</button>
                         <input class="hidden" type="text" name="paperid" value="{{ .ID }}" ></input>
-                        <p>Grade: {{.Grade}}</p>  
-                        <button type="submit">Accept</button>
-                        <button formaction="/rejectpaper" type="submit">Reject</button>
                     </form>
                 </div>   
             </div>
+            <a href="/checkreviews">
+                <button>
+                    Check reviews
+                </button>
             {{end}}
-            <form action="/compilegrades" method="POST">
-                <button type="submit">Compile grades (step 17)</button>
-            </form>
         </div>
     </body>
 </html>

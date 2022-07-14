@@ -15,8 +15,10 @@ import (
 )
 
 func TestNewEqProofP256(t *testing.T) {
-	submitter.Submit(&p)
-	submitterKey := Pc.GetPaperSubmitterPK(p.Id)
+	
+	InitGobs()
+	submitterKey := submitter.Keys.PublicKey
+	Pc.Keys = NewKeys()
 
 	curve1 := elliptic.P256()
 	curve := curve1.Params()
@@ -25,30 +27,30 @@ func TestNewEqProofP256(t *testing.T) {
 	r2, _ := rand.Int(rand.Reader, curve.N)
 	nonce, _ := rand.Int(rand.Reader, curve.N)
 
-	msg := MsgToBigInt(EncodeToBytes(p))
+	PaperBigInt := MsgToBigInt(EncodeToBytes(p))
 
-	commit1, err := submitter.GetCommitMessagePaper(msg, r1)
+	commit1, err := submitter.GetPaperSubmissionCommit(PaperBigInt, r1)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := Pc.GetCommitMessagePaperPC(msg, r2)
+	commit2, err := Pc.GetPaperReviewCommitPC(PaperBigInt, r2)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
 	}
 
 	c1 := &Commitment{
-		commit1.X,
-		commit1.Y,
+		X: commit1.X,
+		Y: commit1.Y,
 	}
 	c2 := &Commitment{
-		commit2.X,
-		commit2.Y,
+		X: commit2.X,
+		Y: commit2.Y,
 	}
 
-	proof := NewEqProofP256(msg, r1, r2, nonce, &submitterKey, &Pc.Keys.PublicKey)
+	proof := NewEqProofP256(PaperBigInt, r1, r2, nonce, &submitterKey, &Pc.Keys.PublicKey) //Commitment equality proof
 
-	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &Pc.Keys.PublicKey)
+	got := proof.OpenP256(c1, c2, nonce, &submitterKey, &Pc.Keys.PublicKey) //Verify commitment equality proof
 	fmt.Printf("\n%s %v", "Commits hold same paper: ", got)
 	want := true
 	assert.Equal(t, want, got, "TestEqProof Failed")
@@ -100,5 +102,5 @@ func TestZKSetMembership(t *testing.T) {
 func TestMsgToBigInt(t *testing.T) {
 	msg := MsgToBigInt(EncodeToBytes(p))
 	msg1 := MsgToBigInt(EncodeToBytes(p))
-	assert.Equal(t, msg, msg1, "failzzMsgToBigInt")
+	assert.Equal(t, msg, msg1, "TestMsgToBigInt failed")
 }

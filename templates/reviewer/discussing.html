@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <title>Reviewer</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+            .center{
+                margin: auto;
+                width: 50%;
+                padding: 10px;
+            }
+
+            .flexcolumn{
+                display: flex;
+                flex-direction: column;
+            }
+            .twocharinput{
+                width: 16px; 
+                height: 16px; 
+                margin-top: 14px;
+            }
+            .flexrowcenter{
+                display:flex; 
+                flex-direction: row; 
+                gap: 8px; 
+                justify-content: center;
+            }
+
+            .smoothborder{
+                border-radius: 4px; 
+                border-color: grey;
+            }
+      </style>
+    </head>
+    <body style="background: lightgrey; text-align: center;">
+        <div style="margin-top: 150px;" class="center">
+                <h3>Discussing stage for: {{ .Title }}</h3>
+                <textarea readonly style="resize: none;" class="smoothborder" id="textarea_id" name="textarea_name" rows="8" cols="50">{{ range .Msgs }}
+{{ . }}                         
+{{ end }}       
+                </textarea>
+                <form action="/discussing" method="POST">
+                    <textarea style="resize: none;" class="smoothborder" id="textarea_id" name="textarea_name" rows="2" cols="50"></textarea>
+                    <br>
+                    <input class="smoothborder" type="submit" value="Add comment">
+                </form>
+        </div>
+        <div class="flexcolumn center">
+            <form action="/submitgrade" method="POST">
+                <div class="flexrowcenter">
+                    <p>Grade:</p>
+                    <input type="text" maxlength="2" class="twocharinput smoothborder" id="grade_id" name="grade_name"></input>
+                </div>
+                <input style="margin-top: 8px;" class="smoothborder" type="submit" value="Submit grade">
+            </form>
+        </div>
+        <div class="flexrowcenter">
+            {{ range .Reviews}}
+            <div>
+                <h3>Review by {{ .ReviewerId }}</h3>
+                <textarea readonly style="resize: none;" class="smoothborder" rows="4" cols="50">
+{{ .Review }}
+                </textarea>
+            </div>
+            {{ end }}
+        </div>
+    </body>
+</html>

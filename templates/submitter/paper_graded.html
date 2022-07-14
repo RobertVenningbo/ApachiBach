@@ -8,18 +8,22 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
-    <body>
+    <body style="background: lightgrey;">
         <div style="margin: auto; width: 50%; padding: 10px; text-align: center;">
             <h2 style="margin-bottom: 50px;">You have submitted a paper</h2>
             <p>Your paper is being reviewed</p>            
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>            
-            
-            <div style="display: flex; justify-content: center; flex-direction: row">
-                {{ range .Count }}
-                <div style="margin: 30px">
-                    <h2>Very nice paper</h2> 
-                </div>            
+            <form action="/claimgrade" method="GET">
+                <button>Claim paper</button>          
+            </form>
+            <div class="flexrowcenter">
+                {{ range .Reviews}}
+                <div>
+                    <textarea readonly style="resize: none;" class="smoothborder" rows="4" cols="50">
+{{ .Review }}
+                    </textarea>
+                </div>
                 {{ end }}
             </div>
         </div>

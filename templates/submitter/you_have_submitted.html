@@ -8,12 +8,15 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
-    <body>
-        <div style="text-align: center;">
-            <h1 style="margin-bottom: 50px; margin-top: 100px">You have submitted a paper</h1>
+    <body style="background: lightgray;">
+        <div style="text-align: center; margin-top: 100px;">
+            <h1 style="margin-bottom: 50px;">You have submitted a paper</h1>
             <p>Your paper is being reviewed</p>            
-            <p>Status: {{ .Msg }}</p>
-            {{if .Cont }} <button>click me</button> {{end}}            
+            <p>Status: {{ .Status }}</p>
+            {{if .Cont }} 
+            <form action="/getgrade" method="GET">
+                <button>Continue</button> {{end}}            
+            </form>
         </div>
     </body>
 </html>

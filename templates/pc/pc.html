@@ -8,21 +8,27 @@
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <link rel="stylesheet" href="">
     </head>
-    <body>
-        <div style="text-align: center;">
+    <body style="background: lightgray;">
+        <div style="text-align: center; margin-top: 72px;">
           <h1>PC</h1>
           <label>Choose submission deadline</label>
           <input type="datetime-local">
           <button style="margin-bottom: 30px;">Set deadline</button>
-          <button href="">Get submitted papers</button>
-            <div>
-              {{ range . }}
-                <p>Paper: {{ .Title }}</p>
-              {{ end }}
-            </div>
-          <a href="/distributepapers">
+          <a href="/">
+            <button>Get submitted papers</button>
+          </a>
+          <br>
+          <a href="/bidwait">
             <button>Send papers to reviewers</button>
           </a>
+          <br>
+          <p>{{.Submissions}}/{{.SubmittersLength}} submitters have submitted a paper.</p>
+          <br>
+          <div>
+            {{ range .Submitters }}
+              <p>{{.}}</p>
+            {{ end }}
+          </div>
         </div>
     </body>
 </html>
