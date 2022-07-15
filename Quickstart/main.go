@@ -30,16 +30,18 @@ func main() {
 		log.Fatal("expected a number")
 	}
 	// script.Exec(outputpcstr)
-	str := outputpcstr + "\n"
+	str := "\nPC:             http://localhost:4000" + "\n"
 	for i := submittercount; i < submittercount+subnumber; i++ {
 		outputsubstr = fmt.Sprintf("go run main.go submitter %v", i)
-		str += outputsubstr + "\n"
+		ii := fmt.Sprint(i)
+		str += "Submitter " + ii + ": http://localhost:" + ii + " \n"
 		script.Exec(outputsubstr)
 	}
 
 	for i := reviewercount; i < reviewercount+revnumber; i++ {
 		outputrevstr = fmt.Sprintf("go run main.go reviewer %v", i)
-		str += outputrevstr + "\n"
+		ii := fmt.Sprint(i)
+		str += "Reviewer " + ii + ":  http://localhost:" + ii + " \n"
 		script.Exec(outputrevstr)
 	}
 	fmt.Println(str)
