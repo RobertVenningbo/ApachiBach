@@ -19,14 +19,10 @@ var paper *backend.Paper
 var reviewer backend.Reviewer
 var reviewerexists bool
 
-func PrepStageHandler(c *gin.Context) { //this really needs to be looked at
+func PrepStageHandler(c *gin.Context) { //this should be looked at
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 	var logMsg model.Log
-	err := model.GetLastLogMsg(&logMsg)
-	if err != nil {
-		log.Fatal("PrepStageHandler failed")
-		return
-	}
+	model.GetLastLogMsg(&logMsg)
 	proceedToMatch := false
 	proceedToBid := false
 	type Message struct {

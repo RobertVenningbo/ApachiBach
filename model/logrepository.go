@@ -44,12 +44,12 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 }
 
 //Retrieves the entire column "log_msg"
-func GetAllLogMsgsLogMsgs(logmsg *[]Log, msg string) { 
+func GetAllLogMsgsLogMsgs(logmsg *[]Log, msg string) {
 	err := database.DB.Select("log_msg").Where("log_msg = ?", msg).Find(logmsg).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Println("Error in GetAllLogMsgsLogMsgs")
 	}
-	
+
 }
 
 func GetAllLogMsgsFromSender(logmsg *[]Log, id int) {
@@ -85,10 +85,9 @@ func GetAllLogMsgsByMsg(logmsg *[]Log, msg string) {
 	}
 }
 
-func GetLastLogMsg(log *Log) (err error) {
-	err = database.DB.Last(log).Error
-	if err != nil {
-		return err
+func GetLastLogMsg(logg *Log) {
+	err := database.DB.Last(logg).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		log.Println("Error in GetAllLogMsgsByState")
 	}
-	return nil
 }

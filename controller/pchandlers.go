@@ -5,9 +5,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"crypto/ecdsa"
-	"fmt"
-	"math/big"
 	"swag/backend"
 	"swag/model"
 	"text/template"
@@ -269,7 +266,6 @@ func CompileGradesHandler(c *gin.Context) {
 
 	backend.Pc.CompileGrades()
 	backend.Pc.RevealAllAcceptedPapers()
-
 
 	type Paper struct {
 		Title string
