@@ -39,7 +39,7 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 			WhereTo: "/paperbid",
 		}
 	}
-	if logMsg.State > 6 {
+	if logMsg.State >= 6 {
 		proceedToBid = false
 		proceedToMatch = true
 		msg = Message{
@@ -228,16 +228,13 @@ func PostMessageDiscussingHandler(c *gin.Context) {
 func GetGradeDiscussingHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 13,
+		Proceed: true,
 		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}

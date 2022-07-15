@@ -286,17 +286,8 @@ func CompileGradesHandler(c *gin.Context) {
 		}
 	}
 
-	type Message struct {
-		Papers []Paper
-		Status string
-	}
 
-	msg := Message{
-		Papers: papers,
-		Status: "",
-	}
-
-	tpl.Execute(c.Writer, msg)
+	tpl.Execute(c.Writer, papers)
 }
 func FinishedProtocolHandler(c *gin.Context) {
 
