@@ -150,9 +150,26 @@ func ShareReviewsButtonHandler(c *gin.Context) {
 	backend.Pc.GenerateKeysForDiscussing() // This creates all Kp for each reviewerlist, i.e. each paper.
 	backend.Pc.CollectReviews()
 
-	messages := PaperRowHelper()
+	msgs := PaperRowHelper()
+	sharedreviews = true
+	var users []model.User
+	model.GetReviewers(&users)
+	size := len(users)
+	counter := 0
+	for _, p := range backend.Pc.AllPapers {
+		for _, r := range p.ReviewerList {
+			str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
+			backend.CheckStringAgainstDB(str)
+			item := backend.Trae.Find(str)
+			if item != nil {
+				counter++
+			}
+		}
+	}
 
-	tpl.Execute(c.Writer, &messages)
+	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
+
+	tpl.Execute(c.Writer, &msgs)
 }
 
 func PaperRowHelper() backend.ShareReviewsMessage {
@@ -177,7 +194,7 @@ func PaperRowHelper() backend.ShareReviewsMessage {
 
 func CheckReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
-	msgs := backend.ShareReviewsMessage{}
+	msgs := PaperRowHelper()
 	sharedreviews = true
 	var users []model.User
 	model.GetReviewers(&users)
@@ -193,6 +210,7 @@ func CheckReviewsHandler(c *gin.Context) {
 			}
 		}
 	}
+
 	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
 	tpl.Execute(c.Writer, msgs)
 }
@@ -335,7 +353,6 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 		papersData = append(papersData, msg)
 	}
 
-
 	type Message struct {
 		Papers []PaperData
 		Status string
@@ -347,6 +364,6 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 		Papers: papersData,
 		Status: status,
 	}
-	
+
 	tpl.Execute(c.Writer, msg)
 }

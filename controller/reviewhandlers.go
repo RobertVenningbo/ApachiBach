@@ -82,7 +82,7 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 	model.CreateLogMsg(&msg2)
 }
 
-func PaperBidHandler(c *gin.Context) { //TODO: Implement a way to refresh without adding the same paper to the paper list
+func PaperBidHandler(c *gin.Context) { 
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
