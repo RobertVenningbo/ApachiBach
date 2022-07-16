@@ -267,28 +267,27 @@ func CompileGradesHandler(c *gin.Context) {
 	backend.Pc.CompileGrades()
 	backend.Pc.RevealAllAcceptedPapers()
 
-	type Paper struct {
+	type PaperData struct {
 		Title string
 		Grade int
 		ID    int
 	}
-	var papers []Paper
 
-	for _, p := range backend.Pc.AllPapers {
-		if backend.Pc.CheckAcceptedPapers(p.Id) {
-			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-			msg := Paper{
-				Title: p.Title,
-				Grade: int(GradeAndPaper.GradeBefore),
-				ID:    p.Id,
-			}
-			papers = append(papers, msg)
+	var papersData []PaperData
+	paperz := backend.Pc.GetAcceptedPapers()
+	for _, v := range paperz {
+		GradeAndPaper := backend.Pc.GetGradeAndPaper(v.Id)
+		msg := PaperData{
+			Title: v.Title,
+			Grade: int(GradeAndPaper.GradeBefore),
+			ID:    v.Id,
 		}
+		papersData = append(papersData, msg)
 	}
 
-
-	tpl.Execute(c.Writer, papers)
+	tpl.Execute(c.Writer, papersData)
 }
+
 func FinishedProtocolHandler(c *gin.Context) {
 
 	c.Redirect(303, "/postconfirmowner")
@@ -318,34 +317,36 @@ func ConfirmOwnershipHandler(c *gin.Context) {
 
 func GetConfirmOwnershipHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/confirm_owner.html"))
-	type Paper struct {
+	type PaperData struct {
 		Title string
 		Grade int
 		ID    int
 	}
-	var papers []Paper
-	for _, p := range backend.Pc.AllPapers {
-		if backend.Pc.CheckAcceptedPapers(p.Id) { // this check doesn't make sense? at least not how its used. No time currently, will check up on this later
-			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-			msg := Paper{
-				Title: p.Title,
-				Grade: int(GradeAndPaper.GradeBefore),
-				ID:    p.Id,
-			}
-			papers = append(papers, msg)
+
+	var papersData []PaperData
+	paperz := backend.Pc.GetAcceptedPapers()
+	for _, v := range paperz {
+		GradeAndPaper := backend.Pc.GetGradeAndPaper(v.Id)
+		msg := PaperData{
+			Title: v.Title,
+			Grade: int(GradeAndPaper.GradeBefore),
+			ID:    v.Id,
 		}
+		papersData = append(papersData, msg)
 	}
 
+
 	type Message struct {
-		Papers []Paper
+		Papers []PaperData
 		Status string
 	}
 
 	status := CheckConfirmedOwnerships()
 
 	msg := Message{
-		Papers: papers,
+		Papers: papersData,
 		Status: status,
 	}
+	
 	tpl.Execute(c.Writer, msg)
 }

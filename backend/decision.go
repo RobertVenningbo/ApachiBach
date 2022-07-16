@@ -18,12 +18,10 @@ func (pc *PC) GetKPCSFromLog(pId int) []byte {
 		item = Trae.Find(msg)
 	}
 
-	
 	bytes := item.value.([]byte)
 	decodedSubmitMessage := DecodeToStruct(bytes)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
-
 
 	return kpcs
 }
@@ -275,7 +273,6 @@ func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
 
 	return decodedGradeAndPaper
 }
-
 
 func (pc *PC) GetReviewsOnly(pId int) []ReviewStruct {
 	reviews := []ReviewStruct{}
