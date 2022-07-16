@@ -93,17 +93,7 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
 
-	
 	return &decodedGradeStruct
-}
-
-func (r *Reviewer) AgreeOnGrade2(paper *Paper) GradeAndPaper {
-	gradeandpaper := r.GetAgreedGrade(paper.Id)
-	if gradeandpaper != nil {
-		return *gradeandpaper
-	}
-
-	return *gradeandpaper
 }
 
 func (r *Reviewer) CheckAllSubmittedGrades() bool {
@@ -126,6 +116,9 @@ func (r *Reviewer) RandomizeGrades(grade int64, paperId int) *RandomizeGradesFor
 }
 
 func (r *Reviewer) PublishAgreedGrade() {
+	if !r.CheckAllSubmittedGrades() {
+		return
+	}
 	result := 0
 	papir := r.PaperCommittedValue.Paper
 	length := len(papir.ReviewerList)
@@ -269,5 +262,3 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(submitStr, signedGrade[1])
 }
-
-
