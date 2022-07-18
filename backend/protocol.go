@@ -27,7 +27,7 @@ func InitLocalPC() {
 	pc := model.User{}
 	err := model.GetPC(&pc)
 	if err != nil {
-		log.Fatalf("Couldn't retrieve PC")
+		log.Println("Couldn't retrieve PC")
 	}
 	var key ecdsa.PrivateKey
 	pkeys := DecodeToStruct(pc.PublicKeys).(ecdsa.PublicKey)
@@ -89,10 +89,6 @@ func GetMessageHash(xd []byte) ([]byte, error) {
 	return md.Sum(xd), nil
 }
 
-// func ECPointToEcdsa(ec *crypto.ECPoint) (*ecdsa.PublicKey){
-// 	return &ecdsa.PublicKey{ec.Curve(), ec[0], ec.coords[1]}
-// }
-
 func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 	return e.X.Cmp(b.X) == 0 && e.Y.Cmp(b.Y) == 0
 }
@@ -117,7 +113,6 @@ func InitGobs() {
 	gob.Register(ReviewCommitNonceStruct{})
 	gob.Register(IndividualGrade{})
 	gob.Register(GradeReviewCommits{})
-	gob.Register(Grade{})
 	gob.Register(RevealPaper{})
 	gob.Register(RejectMessage{})
 	gob.Register(SendGradeStruct{})
@@ -151,37 +146,21 @@ func DecodeToStruct(s []byte) (x interface{}) { //Decodes encoded struct to stru
 }
 
 func Verify(pub *ecdsa.PublicKey, signature interface{}, hash []byte) bool {
-
-
 	return ecdsa.VerifyASN1(pub, hash, signature.([]byte))
-}
-
-func VerifySignature(str string, encodedMsg []byte, keys *ecdsa.PublicKey) bool {
-	var sigmsg model.Log 
-	model.GetLogMsgByMsg(&sigmsg, str)
-	sig := sigmsg.Signature
-
-	hash, _ := GetMessageHash(encodedMsg)
-	isLegit := Verify(&Pc.Keys.PublicKey, sig, hash)
-
-	if !isLegit {
-		return false
-	} 
-    return true
 }
 
 func (reviewer *Reviewer) VerifyDiscussingMessage(bytes []byte, logStr string) { //Verifies signature for each msg, bad thing is it does it for all messages when refreshing
 	var isLegit bool
 	for _, r := range reviewer.PaperCommittedValue.Paper.ReviewerList {
-			hash, _  := GetMessageHash(bytes)
-			var sigmsg model.Log 
-			model.GetLogMsgByMsg(&sigmsg, logStr)
-			sig := sigmsg.Signature
-			isLegit = Verify(&r.Keys.PublicKey, sig, hash)
-			if isLegit {
-				fmt.Printf("\nReviewer %v verifies disccusing message from Reviewer %v", reviewer.UserID, r.UserID )
-				return
-			}
+		hash, _ := GetMessageHash(bytes)
+		var sigmsg model.Log
+		model.GetLogMsgByMsg(&sigmsg, logStr)
+		sig := sigmsg.Signature
+		isLegit = Verify(&r.Keys.PublicKey, sig, hash)
+		if isLegit {
+			fmt.Printf("\nReviewer %v verifies disccusing message from Reviewer %v", reviewer.UserID, r.UserID)
+			return
+		}
 	}
 }
 
@@ -189,14 +168,14 @@ func (pc *PC) VerifyGradesFromReviewers(pId int, msg []byte, logstr string) {
 	for _, p := range pc.AllPapers { //Verifies submitted grade for each reviewer, need to double check it works with multiple reviewers
 		if pId == p.Id {
 			for _, r := range p.ReviewerList {
-				hash, _  := GetMessageHash(msg)
-				var sigmsg model.Log 
+				hash, _ := GetMessageHash(msg)
+				var sigmsg model.Log
 				model.GetLogMsgByMsg(&sigmsg, logstr)
 				sig := sigmsg.Signature
 				isLegit := Verify(&r.Keys.PublicKey, sig, hash)
 				if isLegit {
 					fmt.Printf("\nPC verifies signature for grade from reviewer %v", r.UserID)
-				} 
+				}
 			}
 		}
 	}
@@ -244,8 +223,7 @@ func UserToSubmitter(user model.User) Submitter {
 			D:         big.NewInt(0),
 		},
 		SubmitterCommittedValue: &CommitStruct{},
-		PaperCommittedValue: &CommitStructPaper{},
-		Receiver: &Receiver{},
+		PaperCommittedValue:     &CommitStructPaper{},
+		Receiver:                &Receiver{},
 	}
 }
-

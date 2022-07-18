@@ -6,6 +6,8 @@ import (
 )
 
 //confirm this isnt being called for rejected submitters, they dont need to claim anything.
+// 18/07/2022: can confirm this is being called despite rejected, i.e. submitters claims their paper despite it being rejected
+// also maybe bring emphasis on the submitter also revealing themselves, idk?
 func (s *Submitter) ClaimPaper(pId int) { //step 19
 	paper := s.PaperCommittedValue.Paper
 	ri := s.SubmitterCommittedValue.Val

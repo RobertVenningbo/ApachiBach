@@ -319,7 +319,7 @@ func ConfirmOwnershipHandler(c *gin.Context) {
 		log.Println("\nerror converting string to id int")
 		return
 	}
-	backend.Pc.ConfirmOwnership(paperidint)
+	backend.Pc.ConfirmOwnership(paperidint) // we should check for CheckConfirmedOwnerships() first
 	var tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {

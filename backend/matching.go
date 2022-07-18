@@ -202,10 +202,8 @@ func (pc *PC) MatchPapers() {
 			reviewerKeyList = append(reviewerKeyList, r.Keys.PublicKey)
 		}
 		rr := pc.GetPaperAndRandomness(p.Id).Rr
-		commit, err := pc.GetPaperReviewCommitPC(PaperBigInt, rr) //paper review commit
-		if err != nil {
-			log.Panic("Error in MatchPapers")
-		}
+		commit := pc.GetPaperReviewCommitPC(PaperBigInt, rr) //paper review commit
+
 		reviewStruct := ReviewSignedStruct{
 			commit,
 			reviewerKeyList,

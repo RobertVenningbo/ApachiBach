@@ -34,7 +34,7 @@ func TestNewEqProofP256(t *testing.T) {
 		t.Errorf("Error in GetCommitMsgPaper: %v", err)
 	}
 
-	commit2, err := Pc.GetPaperReviewCommitPC(PaperBigInt, r2)
+	commit2 := Pc.GetPaperReviewCommitPC(PaperBigInt, r2)
 	if err != nil {
 		t.Errorf("Error in GetCommitMsgPaperPC: %v", err)
 	}

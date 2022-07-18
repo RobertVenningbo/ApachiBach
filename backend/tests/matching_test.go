@@ -5,10 +5,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"fmt"
+	. "swag/backend"
 	_ "swag/ec"
 	ec "swag/ec"
 	"testing"
-	. "swag/backend"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -113,7 +113,7 @@ func TestSupplyNizk(t *testing.T) {
 
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 	nonce, _ := rand.Int(rand.Reader, curve.N)
-	ReviewCommit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
+	ReviewCommit := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 
 	reviewStruct := ReviewSignedStruct{
 		ReviewCommit,
@@ -146,7 +146,7 @@ func TestGetReviewSignedStruct(t *testing.T) {
 	rr := ec.GetRandomInt(Pc.Keys.D)
 	PaperBigInt := MsgToBigInt(EncodeToBytes(p.Id))
 
-	commit, _ := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
+	commit := Pc.GetPaperReviewCommitPC(PaperBigInt, rr)
 	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 
 	//reviewerKeyList := []ecdsa.PublicKey{}
@@ -178,10 +178,10 @@ func TestPCGetBiddedPaper(t *testing.T) {
 
 }
 
-// func TestMatchPapers(t *testing.T) {
-// 	submitter.Submit(&p)
-// 	reviewerSlice := []*Reviewer{&reviewer}
-// 	reviewer.SignBidAndEncrypt(&p)
-// 	Pc.AssignPaper(reviewerSlice)
-// 	Pc.MatchPapers()
-// }
+ func TestMatchPapers(t *testing.T) {
+ 	submitter.Submit(&p)
+ 	reviewer.SignBidAndEncrypt(&p)
+	bid := reviewer.MakeBid(&p)
+ 	Pc.AssignPaper([]*PaperBid{bid})
+ 	Pc.MatchPapers()
+ }

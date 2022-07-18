@@ -246,10 +246,10 @@ func (pc *PC) CheckAllSignedGrades(pId int) bool {
 }
 
 func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
-	// AOK := pc.CheckAllSignedGrades(pId)
-	// if !AOK {
-	// 	return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
-	// }
+	AOK := pc.CheckAllSignedGrades(pId) // this is more correct, but maybe we need to limit pc to not being able to proceed at all if this is no good, or redo or whatevs
+	if !AOK {
+		return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
+	}
 	holder := 0
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {

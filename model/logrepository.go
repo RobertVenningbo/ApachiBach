@@ -17,15 +17,6 @@ func CreateLogMsg(log *Log) (err error) {
 	return nil
 }
 
-//get logmsg by id
-func GetLogMsgById(log *Log, id string) (err error) {
-	err = database.DB.Where("id = ?", id).First(log).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 //get a single log entry by a string
 func GetLogMsgByMsg(logmsg *Log, msg string) {
 	result := database.DB.Where("log_msg = ?", msg).First(logmsg)
@@ -41,22 +32,6 @@ func GetAllLogMsgs(log *[]Log) (err error) {
 		return err
 	}
 	return nil
-}
-
-//Retrieves the entire column "log_msg"
-func GetAllLogMsgsLogMsgs(logmsg *[]Log, msg string) {
-	err := database.DB.Select("log_msg").Where("log_msg = ?", msg).Find(logmsg).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Println("Error in GetAllLogMsgsLogMsgs")
-	}
-
-}
-
-func GetAllLogMsgsFromSender(logmsg *[]Log, id int) {
-	err := database.DB.Select("from_user_id").Where("from_user_id = ?", id).Find(&logmsg).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Println("Error in GetAllLogMsgsFromSender")
-	}
 }
 
 func GetAllLogMsgsByState(logmsg *[]Log, state int) {

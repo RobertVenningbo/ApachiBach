@@ -1,7 +1,7 @@
 - download in path "../makereview" doesn't work.
 - make download popup too (should be some HTTP headers not being set)
 - only accepted papers should be checked in the claim stage.
-- pc needs to sign the last three messages of the submitters claim message
+- more work in claim stage needed (submitter needs different page if they got rejected, they shouldn't be able to claim)
 - more testing with multiple reviewers for one paper (suspecious of "PublishAgreedGrade", the place we randomize grades) (I THINK I FIXED IT, PLS CHECK TY :) )
 
 --bash script seems to introduce bugs? certain places, dunno why

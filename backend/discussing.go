@@ -165,20 +165,6 @@ func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
 	return agreedGrade
 }
 
-func (r *Reviewer) GetAgreedGrade(pId int) *GradeAndPaper {
-	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", pId)
-	item := Trae.Find(str)
-	if item == nil {
-		CheckStringAgainstDB(str)
-		item = Trae.Find(str)
-	}
-	bytes := item.value.([]byte)
-	KpAndRg := r.GetReviewKpAndRg()
-	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
-	agreedGrade := DecodeToStruct(encodedAgreedGrade).(GradeAndPaper)
-	return &agreedGrade
-}
-
 func CalculateNearestGrade(avg float64) int {
 	closest := 999
 	minDiff := 999.0

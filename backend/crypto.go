@@ -6,10 +6,7 @@ import (
 	"crypto/md5"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 )
 
 func CreateHash(key string) string {
@@ -49,25 +46,4 @@ func Decrypt(data []byte, passphrase string) []byte {
 		panic(err.Error())
 	}
 	return plaintext
-}
-
-func EncryptFile(filename string, data []byte, passphrase string) {
-	f, _ := os.Create(filename)
-	defer f.Close()
-	f.Write(Encrypt(data, passphrase))
-}
-
-func DecryptFile(filename string, passphrase string) []byte {
-	data, _ := ioutil.ReadFile(filename)
-	return Decrypt(data, passphrase)
-}
-
-func main2() {
-	fmt.Println("Starting the application...")
-	ciphertext := Encrypt([]byte("Hello World"), "password")
-	fmt.Printf("Encrypted: %x\n", ciphertext)
-	plaintext := Decrypt(ciphertext, "password")
-	fmt.Printf("Decrypted: %s\n", plaintext)
-	EncryptFile("sample.txt", []byte("Hello World"), "password1")
-	fmt.Println(string(DecryptFile("sample.txt", "password1")))
 }

@@ -10,6 +10,11 @@ type SubmitMessage struct {
 	EncryptedKpcs      []byte
 }
 
+type SubmitStruct struct {
+	Paper *Paper
+	Rr    *big.Int
+	Rs    *big.Int
+}
 
 type CommitMsg struct {
 	IdenityCommit []byte
@@ -55,6 +60,10 @@ type ReviewKpAndRg struct {
 	Rg       *big.Int
 }
 
+type PaperBid struct {
+	Paper    *Paper
+	Reviewer *Reviewer
+}
 //Matching
 
 type AllBids struct {
@@ -75,11 +84,6 @@ type IndividualGrade struct {
 	PaperId    int
 	ReviewerId int
 	Grade      int
-}
-
-type Grade struct {
-	Grade      int
-	Randomness int
 }
 
 type GradeReviewCommits struct {
@@ -174,17 +178,6 @@ type Paper struct {
 	ReviewerList []Reviewer
 	Bytes        []byte
 	Title        string
-}
-
-type PaperBid struct {
-	Paper    *Paper
-	Reviewer *Reviewer
-}
-
-type SubmitStruct struct {
-	Paper *Paper
-	Rr    *big.Int
-	Rs    *big.Int
 }
 
 type Receiver struct {

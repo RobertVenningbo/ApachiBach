@@ -14,8 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var papers []*backend.Paper
-var paper *backend.Paper
+var papers []*backend.Paper //delete if possible, only used in the downloading. Maybe other way? Could use Pc.allpapers maybe idk.
 var reviewer backend.Reviewer
 var reviewerexists bool
 
@@ -86,7 +85,7 @@ func PaperBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
-	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 	tpl.Execute(c.Writer, papers)
 }
 
@@ -163,8 +162,7 @@ func MakeBidHandler(c *gin.Context) {
 func MakeReviewHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
 
-	paper = reviewer.GetAssignedPaperFromPCLog()
-	fmt.Println(paper.Id)
+	paper := reviewer.GetAssignedPaperFromPCLog()
 	reviewer.PaperCommittedValue.Paper = paper
 
 	tpl.Execute(c.Writer, paper)
@@ -285,7 +283,7 @@ func GetAgreedGradeHandler(c *gin.Context) {
 		Grade int
 	}
 	msg := Msg{
-		Title: paper.Title,
+		Title: reviewer.PaperCommittedValue.Paper.Title,
 		Grade: int(gradeStruct.GradeBefore),
 	}
 
