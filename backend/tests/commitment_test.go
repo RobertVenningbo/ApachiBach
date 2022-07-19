@@ -22,7 +22,6 @@ func TestVerifyTrapdoorSubmitter(t *testing.T) {
 	}
 }
 
-
 func TestPedersenCommitment(t *testing.T) {
 
 	submitter.Receiver = NewReceiver(submitter.Keys)

@@ -3,13 +3,16 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"swag/backend"
 	"swag/model"
 	"text/template"
 	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,8 +49,8 @@ func GetGradesAndReviewsHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
 	gradeandreviews := submitter.RetrieveGradeAndReviews()
 	type Message struct {
-		Status string
-		Grade int
+		Status  string
+		Grade   int
 		Reviews []backend.ReviewStruct
 	}
 
@@ -57,40 +60,40 @@ func GetGradesAndReviewsHandler(c *gin.Context) {
 	var msg Message
 	if model.DoesLogMsgExist(str_rejected) {
 		msg = Message{
-			Status: "Rejected",
-			Grade: gradeandreviews.Grade,
+			Status:  "Rejected",
+			Grade:   gradeandreviews.Grade,
 			Reviews: gradeandreviews.Reviews,
 		}
 	} else if model.DoesLogMsgExist(str_accepted) {
 		msg = Message{
-			Status: "Accepted",
-			Grade: gradeandreviews.Grade,
+			Status:  "Accepted",
+			Grade:   gradeandreviews.Grade,
 			Reviews: gradeandreviews.Reviews,
 		}
 	}
 	tpl.Execute(c.Writer, &msg)
 }
 
-func WaitHandler(c *gin.Context) {
+func WaitHandler(c *gin.Context) { // this is where you wanna go one of two places if its rejected or accepted. its a TODO:
 	type Message struct {
-		Status  string
-		Cont    bool
+		Status string
+		Cont   bool
 	}
 
 	msg := Message{
-		Status: "Pending.",
-		Cont: false,
+		Status: "Pending...",
+		Cont:   false,
 	}
-	
+
 	str_rejected := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
 	str_accepted := fmt.Sprintf("PC reveals accepted paper: %v", submitter.PaperCommittedValue.Paper.Id)
 	if model.DoesLogMsgExist(str_rejected) || model.DoesLogMsgExist(str_accepted) {
 		msg = Message{
 			Status: "Your paper has been graded.",
-			Cont: true,
+			Cont:   true,
 		}
 	}
-	
+
 	tpl = template.Must(template.ParseFiles("templates/submitter/you_have_submitted.html"))
 	tpl.Execute(c.Writer, &msg)
 }
@@ -116,35 +119,57 @@ func UploadFile(c *gin.Context) {
 		fmt.Println(err)
 	}
 
-
 	source := rand.NewSource(time.Now().UnixNano())
 	rand := rand.New(source)
-	paperid := rand.Intn(99999-10000)
+	paperid := rand.Intn(99999 - 10000)
 
 	paper := backend.Paper{
-		Id:    paperid, 
+		Id:    paperid,
 		Bytes: fileBytes,
 		Title: title,
 	}
-	
+
 	submitter.Submit(&paper)
 
 	c.Redirect(303, "/wait")
 }
 
-func ClaimPaperHandler(c *gin.Context) {
-	tpl = template.Must(template.ParseFiles("templates/public/finished.html")) 
+func ClaimPaperHandler(c *gin.Context) { //only if accepted
+	tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {
-		Status  string
+		Status string
 	}
 
 	msg := Message{
-		Status:  "Thank you for participating as a submitter! 📝😉 ",
+		Status: "Thank you for participating as a submitter! 📝😉 ",
 	}
 
-	
 	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
 	tpl.Execute(c.Writer, msg)
+}
+
+func DownloadFile(c *gin.Context) { //dunno if this should be here
+	var logstr string
+	var logmsg model.Log
+	model.GetLogMsgByMsg(&logmsg, logstr)
+
+	file, err := os.OpenFile(
+		"paper.pdf",
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	bytes := logmsg.Value
+
+	writeBytes, err := file.Write(bytes)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Wrote %d bytes \n", writeBytes)
 }

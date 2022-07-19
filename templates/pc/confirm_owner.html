@@ -39,7 +39,7 @@
         <h2 style="margin-top: 72px;">Confirm ownership of accepted papers</h2>
         <div>
             <p>Accepted papers:</p> 
-            {{range .Papers}}
+            {{range .}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
                 <div class="center">
                     <form action="/confirmowner" method="POST">
@@ -50,16 +50,11 @@
                     </form>
                 </div>   
             </div>
-            <br>
-            {{end}}
-            <form action="/confirmowner" method="GET">
+            <a href="/checkreviews">
                 <button>
-                    Check confirmed owners
+                    Check reviews
                 </button>
-                <div>
-                    {{ .Status }}
-                </div>
-            </form>
+            {{end}}
         </div>
     </body>
 </html>

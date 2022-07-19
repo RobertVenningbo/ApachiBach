@@ -15,6 +15,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	Kp := KpAndRg.GroupKey
 	encryptedSignedMsg := SignsPossiblyEncrypts(r.Keys, []byte(input), Kp.D.String())
 	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
+	log.Println(logStr)
 	Trae.Put(logStr, encryptedSignedMsg)
 
 	logmsg := model.Log{
@@ -27,7 +28,7 @@ func (r *Reviewer) SendSecretMsgToReviewers(input string) { //intended to be for
 	model.CreateLogMsg(&logmsg)
 }
 
-func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData { 
+func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 	logStr := fmt.Sprintf("Discussing message for paper: %v", r.PaperCommittedValue.Paper.Id)
 	var messages []string
 	var logmsgs []model.Log
@@ -39,11 +40,9 @@ func (r *Reviewer) GetSecretMsgsFromReviewers() DiscussingViewData {
 		reviewkpandrg := r.GetReviewKpAndRg()
 		Kp := reviewkpandrg.GroupKey
 		for _, v := range logsmsgsnotbinded {
-			
 			bytes := Decrypt(v.Value, Kp.D.String())
 			messages = append(messages, string(bytes))
 			r.VerifyDiscussingMessage(bytes, logStr)
-
 		}
 	}
 	reviewStruct := r.GetCollectedReviews()
@@ -94,10 +93,8 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	encodedGradeStruct := Decrypt(bytes, Kp.D.String())
 	decodedGradeStruct := DecodeToStruct(encodedGradeStruct).(IndividualGrade)
 
-	
 	return &decodedGradeStruct
 }
-
 
 func (r *Reviewer) CheckAllSubmittedGrades() bool {
 	for _, v := range r.PaperCommittedValue.Paper.ReviewerList {
@@ -119,6 +116,9 @@ func (r *Reviewer) RandomizeGrades(grade int64, paperId int) *RandomizeGradesFor
 }
 
 func (r *Reviewer) PublishAgreedGrade() {
+	if !r.CheckAllSubmittedGrades() {
+		return
+	}
 	result := 0
 	papir := r.PaperCommittedValue.Paper
 	length := len(papir.ReviewerList)
@@ -163,20 +163,6 @@ func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
 	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
 	agreedGrade := DecodeToStruct(encodedAgreedGrade).(RandomizeGradesForProofStruct)
 	return agreedGrade
-}
-
-func (r *Reviewer) GetAgreedGrade(pId int) *GradeAndPaper {
-	str := fmt.Sprintf("Reviewers agreed on a grade for paper%v", pId)
-	item := Trae.Find(str)
-	if item == nil {
-		CheckStringAgainstDB(str)
-		item = Trae.Find(str)
-	}
-	bytes := item.value.([]byte)
-	KpAndRg := r.GetReviewKpAndRg()
-	encodedAgreedGrade := Decrypt(bytes, KpAndRg.GroupKey.D.String())
-	agreedGrade := DecodeToStruct(encodedAgreedGrade).(GradeAndPaper)
-	return &agreedGrade
 }
 
 func CalculateNearestGrade(avg float64) int {
@@ -262,5 +248,3 @@ func (r *Reviewer) SignAndEncryptGrade() { //Expected to be called for every rev
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(submitStr, signedGrade[1])
 }
-
-

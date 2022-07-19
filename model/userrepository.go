@@ -20,14 +20,6 @@ func UpdatePCKeys(keys []byte) (err error) {
 	return nil
 }
 
-func UpdateUsername(id int, username string) (err error) {
-	err = database.DB.Model(User{}).Where("id = ?", id).Update("username", username).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetPC(user *User) (err error){
 	err = database.DB.Where("usertype = ?", "pc").First(user).Error
 	if err != nil {
@@ -38,7 +30,6 @@ func GetPC(user *User) (err error){
 
 func GetReviewers(user *[]User) (err error){
 	err = database.DB.Where("usertype = ?", "reviewer").Find(user).Error
-	//err = database.DB.Where("usertype = ?", "reviewer").Error
 	if err != nil {
 		return err
 	}
@@ -47,7 +38,6 @@ func GetReviewers(user *[]User) (err error){
 
 func GetSubmitters(user *[]User) (err error){
 	err = database.DB.Where("usertype = ?", "submitter").Find(user).Error
-	//err = database.DB.Where("usertype = ?", "reviewer").Error
 	if err != nil {
 		return err
 	}

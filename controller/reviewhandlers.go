@@ -14,20 +14,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var papers []*backend.Paper
-var paper *backend.Paper
+var papers []*backend.Paper //delete if possible, only used in the downloading. Maybe other way? Could use Pc.allpapers maybe idk.
 var reviewer backend.Reviewer
 var reviewerexists bool
 var madeBid bool
 
-func PrepStageHandler(c *gin.Context) {
+func PrepStageHandler(c *gin.Context) { //this should be looked at
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 	var logMsg model.Log
-	err := model.GetLastLogMsg(&logMsg)
-	if err != nil {
-		log.Fatal("PrepStageHandler failed")
-		return
-	}
+	model.GetLastLogMsg(&logMsg)
 	proceedToMatch := false
 	proceedToBid := false
 	type Message struct {
@@ -44,7 +39,7 @@ func PrepStageHandler(c *gin.Context) {
 			WhereTo: "/paperbid",
 		}
 	}
-	if logMsg.State > 6 {
+	if logMsg.State >= 6 {
 		proceedToBid = false
 		proceedToMatch = true
 		msg = Message{
@@ -87,11 +82,11 @@ func PrepStageHandler(c *gin.Context) {
 	model.CreateLogMsg(&msg2)
 }
 
-func PaperBidHandler(c *gin.Context) { //TODO: Implement a way to refresh without adding the same paper to the paper list
+func PaperBidHandler(c *gin.Context) { 
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
-	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 	tpl.Execute(c.Writer, papers)
 }
 
@@ -171,8 +166,7 @@ func MakeBidHandler(c *gin.Context) {
 func MakeReviewHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/makereview.html"))
 
-	paper = reviewer.GetAssignedPaperFromPCLog()
-	fmt.Println(paper.Id)
+	paper := reviewer.GetAssignedPaperFromPCLog()
 	reviewer.PaperCommittedValue.Paper = paper
 
 	tpl.Execute(c.Writer, paper)
@@ -236,16 +230,13 @@ func PostMessageDiscussingHandler(c *gin.Context) {
 func GetGradeDiscussingHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 
-	logmsg := model.Log{}
-	model.GetLastLogMsg(&logmsg)
-
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	msg := Message{
-		Proceed: logmsg.State == 13,
+		Proceed: true,
 		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
@@ -283,7 +274,7 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		return
 	}
 
-	reviewer.PublishAgreedGrade() //This will never be called if we have more than 1 reviewer
+	reviewer.PublishAgreedGrade()
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
@@ -296,7 +287,7 @@ func GetAgreedGradeHandler(c *gin.Context) {
 		Grade int
 	}
 	msg := Msg{
-		Title: paper.Title,
+		Title: reviewer.PaperCommittedValue.Paper.Title,
 		Grade: int(gradeStruct.GradeBefore),
 	}
 

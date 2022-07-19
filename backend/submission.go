@@ -107,7 +107,7 @@ func (s *Submitter) StorePrivateBigInt(i *big.Int, txt string) {
 	Trae.Put(str, Encrypt(EncodeToBytes(i), s.Keys.D.String()))
 }
 
-func (s *Submitter) GetPrivateBigInt(txt string) *big.Int {
+func (s *Submitter) GetPrivateBigInt(txt string) *big.Int { //might still need this as the submitter must "leak" this r_i
 	str := fmt.Sprintf("Submitter %v privately stores a %s", s.UserID, txt)
 	log.Println("GETTING:" + str)
 	item := Trae.Find(str)

@@ -18,12 +18,10 @@ func (pc *PC) GetKPCSFromLog(pId int) []byte {
 		item = Trae.Find(msg)
 	}
 
-	
 	bytes := item.value.([]byte)
 	decodedSubmitMessage := DecodeToStruct(bytes)
 	submitMessage := decodedSubmitMessage.(SubmitMessage)
 	kpcs := Decrypt(submitMessage.EncryptedKpcs, pc.Keys.X.String())
-
 
 	return kpcs
 }
@@ -218,7 +216,6 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 	}
 	for _, p := range pc.AllPapers {
 		if p.Id == pId {
-			//AcceptedPapers = append(AcceptedPapers, *p)
 			str := fmt.Sprintf("PC accepts Paper: %v", pId)
 			logmsg := model.Log{
 				State:      16,
@@ -249,10 +246,10 @@ func (pc *PC) CheckAllSignedGrades(pId int) bool {
 }
 
 func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
-	// AOK := pc.CheckAllSignedGrades(pId)
-	// if !AOK {
-	// 	return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
-	// }
+	AOK := pc.CheckAllSignedGrades(pId) // this is more correct, but maybe we need to limit pc to not being able to proceed at all if this is no good, or redo or whatevs
+	if !AOK {
+		return RandomizeGradesForProofStruct{R: -1, GradeBefore: -1, GradeAfter: -1, PaperId: -1}
+	}
 	holder := 0
 	for _, v := range pc.AllPapers {
 		if pId == v.Id {
@@ -277,7 +274,6 @@ func (pc *PC) GetGradeAndPaper(pId int) RandomizeGradesForProofStruct {
 	return decodedGradeAndPaper
 }
 
-
 func (pc *PC) GetReviewsOnly(pId int) []ReviewStruct {
 	reviews := []ReviewStruct{}
 	for _, v := range pc.AllPapers {
@@ -301,18 +297,9 @@ func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 		CheckStringAgainstDB(getStr)
 		item = Trae.Find(getStr)
 	}
-
 	bytes := item.value.([]byte)
 	encoded := Decrypt(bytes, Kpcs)
 	decoded := DecodeToStruct(encoded).(SendGradeStruct)
-
-	isLegit := VerifySignature(getStr, encoded, &Pc.Keys.PublicKey)
-	if !isLegit {
-		fmt.Printf("\n Submitter %v couldn't verify PC signature when collecting grades & reviews", s.UserID)
-	} else {
-		fmt.Printf("\n Submitter %v verifies PC signature when collecting reviews", s.UserID)
-	}
-
 
 	return decoded
 }

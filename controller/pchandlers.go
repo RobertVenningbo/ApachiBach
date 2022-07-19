@@ -150,9 +150,26 @@ func ShareReviewsButtonHandler(c *gin.Context) {
 	backend.Pc.GenerateKeysForDiscussing() // This creates all Kp for each reviewerlist, i.e. each paper.
 	backend.Pc.CollectReviews()
 
-	messages := PaperRowHelper()
+	msgs := PaperRowHelper()
+	sharedreviews = true
+	var users []model.User
+	model.GetReviewers(&users)
+	size := len(users)
+	counter := 0
+	for _, p := range backend.Pc.AllPapers {
+		for _, r := range p.ReviewerList {
+			str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
+			backend.CheckStringAgainstDB(str)
+			item := backend.Trae.Find(str)
+			if item != nil {
+				counter++
+			}
+		}
+	}
 
-	tpl.Execute(c.Writer, &messages)
+	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
+
+	tpl.Execute(c.Writer, &msgs)
 }
 
 func PaperRowHelper() backend.ShareReviewsMessage {
@@ -177,7 +194,7 @@ func PaperRowHelper() backend.ShareReviewsMessage {
 
 func CheckReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
-	msgs := backend.ShareReviewsMessage{}
+	msgs := PaperRowHelper()
 	sharedreviews = true
 	var users []model.User
 	model.GetReviewers(&users)
@@ -193,6 +210,7 @@ func CheckReviewsHandler(c *gin.Context) {
 			}
 		}
 	}
+
 	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
 	tpl.Execute(c.Writer, msgs)
 }
@@ -267,37 +285,27 @@ func CompileGradesHandler(c *gin.Context) {
 	backend.Pc.CompileGrades()
 	backend.Pc.RevealAllAcceptedPapers()
 
-	type Paper struct {
+	type PaperData struct {
 		Title string
 		Grade int
 		ID    int
 	}
-	var papers []Paper
 
-	for _, p := range backend.Pc.AllPapers {
-		if backend.Pc.CheckAcceptedPapers(p.Id) {
-			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-			msg := Paper{
-				Title: p.Title,
-				Grade: int(GradeAndPaper.GradeBefore),
-				ID:    p.Id,
-			}
-			papers = append(papers, msg)
+	var papersData []PaperData
+	paperz := backend.Pc.GetAcceptedPapers()
+	for _, v := range paperz {
+		GradeAndPaper := backend.Pc.GetGradeAndPaper(v.Id)
+		msg := PaperData{
+			Title: v.Title,
+			Grade: int(GradeAndPaper.GradeBefore),
+			ID:    v.Id,
 		}
+		papersData = append(papersData, msg)
 	}
 
-	type Message struct {
-		Papers []Paper
-		Status string
-	}
-
-	msg := Message{
-		Papers: papers,
-		Status: "",
-	}
-
-	tpl.Execute(c.Writer, msg)
+	tpl.Execute(c.Writer, papersData)
 }
+
 func FinishedProtocolHandler(c *gin.Context) {
 
 	c.Redirect(303, "/postconfirmowner")
@@ -311,7 +319,7 @@ func ConfirmOwnershipHandler(c *gin.Context) {
 		log.Println("\nerror converting string to id int")
 		return
 	}
-	backend.Pc.ConfirmOwnership(paperidint)
+	backend.Pc.ConfirmOwnership(paperidint) // we should check for CheckConfirmedOwnerships() first
 	var tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {
@@ -327,34 +335,35 @@ func ConfirmOwnershipHandler(c *gin.Context) {
 
 func GetConfirmOwnershipHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/confirm_owner.html"))
-	type Paper struct {
+	type PaperData struct {
 		Title string
 		Grade int
 		ID    int
 	}
-	var papers []Paper
-	for _, p := range backend.Pc.AllPapers {
-		if backend.Pc.CheckAcceptedPapers(p.Id) { // this check doesn't make sense? at least not how its used. No time currently, will check up on this later
-			GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-			msg := Paper{
-				Title: p.Title,
-				Grade: int(GradeAndPaper.GradeBefore),
-				ID:    p.Id,
-			}
-			papers = append(papers, msg)
+
+	var papersData []PaperData
+	paperz := backend.Pc.GetAcceptedPapers()
+	for _, v := range paperz {
+		GradeAndPaper := backend.Pc.GetGradeAndPaper(v.Id)
+		msg := PaperData{
+			Title: v.Title,
+			Grade: int(GradeAndPaper.GradeBefore),
+			ID:    v.Id,
 		}
+		papersData = append(papersData, msg)
 	}
 
 	type Message struct {
-		Papers []Paper
+		Papers []PaperData
 		Status string
 	}
 
 	status := CheckConfirmedOwnerships()
 
 	msg := Message{
-		Papers: papers,
+		Papers: papersData,
 		Status: status,
 	}
+
 	tpl.Execute(c.Writer, msg)
 }
