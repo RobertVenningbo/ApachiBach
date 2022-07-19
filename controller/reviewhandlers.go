@@ -18,6 +18,7 @@ var papers []*backend.Paper
 var paper *backend.Paper
 var reviewer backend.Reviewer
 var reviewerexists bool
+var madeBid bool
 
 func PrepStageHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
@@ -95,7 +96,6 @@ func PaperBidHandler(c *gin.Context) { //TODO: Implement a way to refresh withou
 }
 
 func WriteToFileHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	c.Request.ParseForm()
 	var PaperIds []string
 	for _, v := range c.Request.Form {
@@ -125,7 +125,10 @@ func WriteToFileHandler(c *gin.Context) {
 			}
 		}
 	}
-	tpl.Execute(c.Writer, papers)
+	if madeBid {
+		c.Redirect(303, "/makereview")
+	}
+	c.Redirect(303, "/paperbid")
 }
 
 func MakeBidHandler(c *gin.Context) {
@@ -144,6 +147,7 @@ func MakeBidHandler(c *gin.Context) {
 			}
 			if idInt == v.Id {
 				reviewer.SignBidAndEncrypt(v)
+				madeBid = true
 			}
 		}
 	}
