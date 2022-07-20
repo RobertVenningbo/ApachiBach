@@ -116,9 +116,9 @@ func (r *Reviewer) RandomizeGrades(grade int64, paperId int) *RandomizeGradesFor
 }
 
 func (r *Reviewer) PublishAgreedGrade() {
-	if !r.CheckAllSubmittedGrades() {
-		return
-	}
+	// if !r.CheckAllSubmittedGrades() {
+	// 	return
+	// }
 	result := 0
 	papir := r.PaperCommittedValue.Paper
 	length := len(papir.ReviewerList)
@@ -146,10 +146,10 @@ func (r *Reviewer) PublishAgreedGrade() {
 }
 
 func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
-	if !r.CheckAllSubmittedGrades() { //shouldn't happen but a way to make the program not fail entirely.
-		log.Panic("GetAgreedGroupGrade failed.")
-		return RandomizeGradesForProofStruct{}
-	}
+	// if !r.CheckAllSubmittedGrades() { //shouldn't happen but a way to make the program not fail entirely.
+	// 	log.Panic("GetAgreedGroupGrade failed.")
+	// 	return RandomizeGradesForProofStruct{}
+	// }
 
 	papir := r.PaperCommittedValue.Paper
 	str := fmt.Sprintf("All grades have been submitted for Paper: %v", papir.Id)

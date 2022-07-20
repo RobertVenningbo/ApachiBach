@@ -1,6 +1,6 @@
 
 - make download popup too (should be some HTTP headers not being set)
-- more testing with multiple reviewers for one paper (suspecious of "PublishAgreedGrade", the place we randomize grades) (I THINK I FIXED IT, PLS CHECK TY :) )
+- more testing with multiple reviewers for one paper (suspecious of "PublishAgreedGrade", the place we randomize grades) (I THINK I FIXED IT, PLS CHECK TY :)
 
 --bash script seems to introduce bugs? certain places, dunno why
 

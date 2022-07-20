@@ -92,6 +92,8 @@ func PaperBidHandler(c *gin.Context) {
 
 func WriteToFileHandler(c *gin.Context) {
 	c.Request.ParseForm()
+	c.Writer.Header().Set("Content-Disposition", "attachment; filename=paper")
+	c.Writer.Header().Set("Content-Type", c.Request.Header.Get("Content-Type"))
 	var PaperIds []string
 	for _, v := range c.Request.Form {
 		PaperIds = append(PaperIds, v...)
@@ -127,6 +129,7 @@ func WriteToFileHandler(c *gin.Context) {
 }
 
 func MakeBidHandler(c *gin.Context) {
+	fmt.Println(madeBid)
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	c.Request.ParseForm()
 	var PaperIdBids []string
