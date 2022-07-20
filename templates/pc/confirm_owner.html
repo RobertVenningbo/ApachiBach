@@ -50,11 +50,16 @@
                     </form>
                 </div>   
             </div>
-            <a href="/checkreviews">
-                <button>
-                    Check reviews
-                </button>
+            <br>
             {{end}}
+            <form action="/confirmowner" method="GET">
+                <button>
+                    Check confirmed owners
+                </button>
+                <div>
+                    {{ .Status }}
+                </div>
+            </form>
         </div>
     </body>
 </html>
