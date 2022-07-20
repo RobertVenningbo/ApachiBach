@@ -13,10 +13,14 @@
             <h2 style="margin-bottom: 50px;">You have submitted a paper</h2>
             <p>Your paper has been reviewed</p>            
             <p>Status: {{ .Status }}</p>
-            <p>Grade: {{ .Grade }}</p>            
+            <p>Grade: {{ .Grade }}</p>
+            {{ if .CanConfirm}}            
             <form action="/claimgrade" method="GET">
                 <button>Claim paper</button>          
             </form>
+            {{ else}}
+            <h1>Thank you for participating as a submitter! 📝😉 </h1>
+            {{ end }}
             <div class="flexrowcenter">
                 {{ range .Reviews}}
                 <div>

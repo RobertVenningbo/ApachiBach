@@ -3,9 +3,7 @@ package controller
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 	"swag/backend"
@@ -49,9 +47,10 @@ func GetGradesAndReviewsHandler(c *gin.Context) {
 	tpl = template.Must(template.ParseFiles("templates/submitter/paper_graded.html"))
 	gradeandreviews := submitter.RetrieveGradeAndReviews()
 	type Message struct {
-		Status  string
-		Grade   int
-		Reviews []backend.ReviewStruct
+		Status     string
+		Grade      int
+		Reviews    []backend.ReviewStruct
+		CanConfirm bool
 	}
 
 	str_rejected := fmt.Sprintf("PC rejects Paper: %v", submitter.PaperCommittedValue.Paper.Id)
@@ -63,12 +62,14 @@ func GetGradesAndReviewsHandler(c *gin.Context) {
 			Status:  "Rejected",
 			Grade:   gradeandreviews.Grade,
 			Reviews: gradeandreviews.Reviews,
+			CanConfirm: false,
 		}
 	} else if model.DoesLogMsgExist(str_accepted) {
 		msg = Message{
 			Status:  "Accepted",
 			Grade:   gradeandreviews.Grade,
 			Reviews: gradeandreviews.Reviews,
+			CanConfirm: true,
 		}
 	}
 	tpl.Execute(c.Writer, &msg)
@@ -148,28 +149,4 @@ func ClaimPaperHandler(c *gin.Context) { //only if accepted
 	submitter.ClaimPaper(submitter.PaperCommittedValue.Paper.Id)
 
 	tpl.Execute(c.Writer, msg)
-}
-
-func DownloadFile(c *gin.Context) { //dunno if this should be here
-	var logstr string
-	var logmsg model.Log
-	model.GetLogMsgByMsg(&logmsg, logstr)
-
-	file, err := os.OpenFile(
-		"paper.pdf",
-		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
-		0666,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	bytes := logmsg.Value
-
-	writeBytes, err := file.Write(bytes)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Wrote %d bytes \n", writeBytes)
 }

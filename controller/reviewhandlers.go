@@ -86,7 +86,7 @@ func PaperBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
-	papers := reviewer.GetPapersReviewer(backend.Pc.AllPapers)
+	papers = reviewer.GetPapersReviewer(backend.Pc.AllPapers)
 	tpl.Execute(c.Writer, papers)
 }
 

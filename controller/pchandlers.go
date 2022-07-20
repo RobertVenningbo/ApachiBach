@@ -303,7 +303,16 @@ func CompileGradesHandler(c *gin.Context) {
 		papersData = append(papersData, msg)
 	}
 
-	tpl.Execute(c.Writer, papersData)
+	type Message struct {
+		Papers []PaperData
+		Status string
+	}
+	msg := Message{
+		Papers: papersData,
+		Status: CheckConfirmedOwnerships(),
+	}
+
+	tpl.Execute(c.Writer, msg)
 }
 
 func FinishedProtocolHandler(c *gin.Context) {
