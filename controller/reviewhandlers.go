@@ -92,8 +92,6 @@ func PaperBidHandler(c *gin.Context) {
 
 func WriteToFileHandler(c *gin.Context) {
 	c.Request.ParseForm()
-	c.Writer.Header().Set("Content-Disposition", "attachment; filename=paper")
-	c.Writer.Header().Set("Content-Type", c.Request.Header.Get("Content-Type"))
 	var PaperIds []string
 	for _, v := range c.Request.Form {
 		PaperIds = append(PaperIds, v...)
@@ -106,6 +104,7 @@ func WriteToFileHandler(c *gin.Context) {
 			}
 			if idInt == p.Id {
 				paperbytes := p.Bytes
+				
 				if err != nil {
 					panic(err)
 				}
@@ -114,7 +113,8 @@ func WriteToFileHandler(c *gin.Context) {
 					panic(err)
 				}
 				downloads := currentuser.HomeDir + "/Downloads/"
-				fmt.Println(downloads) //del once it all works
+				fmt.Println(downloads) //del once it all work
+
 				err = os.WriteFile(downloads+p.Title+".pdf", paperbytes, 0644)
 				if err != nil {
 					log.Println("error writing file")
@@ -124,19 +124,18 @@ func WriteToFileHandler(c *gin.Context) {
 	}
 	if madeBid {
 		c.Redirect(303, "/makereview")
+	} else {
+		c.Redirect(303, "/paperbid")
 	}
-	c.Redirect(303, "/paperbid")
 }
 
 func MakeBidHandler(c *gin.Context) {
-	fmt.Println(madeBid)
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 	c.Request.ParseForm()
 	var PaperIdBids []string
 	for _, value := range c.Request.PostForm {
 		PaperIdBids = append(PaperIdBids, value...)
 	}
-
 	for _, v := range papers {
 		for _, id := range PaperIdBids {
 			idInt, err := strconv.Atoi(id)
