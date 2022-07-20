@@ -39,7 +39,7 @@
         <h2 style="margin-top: 72px;">Confirm ownership of accepted papers</h2>
         <div>
             <p>Accepted papers:</p> 
-            {{range .}}
+            {{range .Papers}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
                 <div class="center">
                     <form action="/confirmowner" method="POST">

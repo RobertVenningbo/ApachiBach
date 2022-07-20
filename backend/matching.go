@@ -15,10 +15,7 @@ func (pc *PC) DistributePapers(reviewerSlice []Reviewer, paperSlice []*Paper) {
 		Kpcr := pc.GetKPCRFromLog(reviewerSlice[r].UserID) //Shared key between R and PC (Kpcr) -
 		for p := range paperSlice {
 			SignedAndEncryptedPaper := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(paperSlice[p]), Kpcr)
-			_, val := SplitSignatureAndMsg(SignedAndEncryptedPaper)
-			fmt.Sprintln(val)
 			msg := fmt.Sprintf("SignedAndEncryptedPaper P%v for R%v", paperSlice[p].Id, reviewerSlice[r].UserID)
-			fmt.Println(msg)
 			Trae.Put(msg, SignedAndEncryptedPaper)
 			logmsg := model.Log{
 				State:      4,

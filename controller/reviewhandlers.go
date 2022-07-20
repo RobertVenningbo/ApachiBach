@@ -23,27 +23,27 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/prepstage.html"))
 	var logMsg model.Log
 	model.GetLastLogMsg(&logMsg)
-	proceedToMatch := false
-	proceedToBid := false
 	type Message struct {
 		Proceed bool
 		Status  string
 		WhereTo string
 	}
 	var msg Message
-	if logMsg.State == 4 {
-		proceedToBid = true
+	haveBidded := true //ugly logic i know :)
+	if (reviewer != backend.Reviewer{}) {
+		haveBidded = model.DoesLogMsgExist(fmt.Sprintf("EncryptedSignedBids %v", reviewer.UserID))
+	}
+
+	if !haveBidded {
 		msg = Message{
-			Proceed: proceedToBid,
+			Proceed: true,
 			Status:  "Continue to bid on papers.",
 			WhereTo: "/paperbid",
 		}
 	}
 	if logMsg.State >= 6 {
-		proceedToBid = false
-		proceedToMatch = true
 		msg = Message{
-			Proceed: proceedToMatch,
+			Proceed: true,
 			Status:  "You have been assigned a paper, please continue.",
 			WhereTo: "/makereview",
 		}
@@ -74,7 +74,7 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 	Kpcr := backend.GenerateSharedSecret(&backend.Pc, nil, &reviewer)
 	str := fmt.Sprintf("KPCR with PC and R%v", reviewer.UserID)
 	msg2 := model.Log{
-		State:      3, //This needs to be something else
+		State:      0,
 		LogMsg:     str,
 		FromUserID: reviewer.UserID,
 		Value:      backend.EncodeToBytes(Kpcr),
@@ -82,7 +82,7 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 	model.CreateLogMsg(&msg2)
 }
 
-func PaperBidHandler(c *gin.Context) { 
+func PaperBidHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/reviewer/bidstage.html"))
 
 	backend.InitLocalPCPaperList()
@@ -265,6 +265,10 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	str := fmt.Sprintf("All grades have been submitted for Paper: %v", reviewer.PaperCommittedValue.Paper.Id)
 
 	exists := model.DoesLogMsgExist(str)
+	if !exists {
+		reviewer.PublishAgreedGrade()
+	}
+
 	msg := Message{
 		Proceed: exists, //change later
 		Status:  "All grades have been submitted. Please continue.",
@@ -272,12 +276,6 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 	}
 
 	tpl.Execute(c.Writer, msg)
-
-	if exists {
-		return
-	}
-
-	reviewer.PublishAgreedGrade()
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
