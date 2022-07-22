@@ -6,6 +6,11 @@ import (
 	ec "swag/ec"
 )
 
+//////////////////////////////////////////////////////////////////////////////////
+// 								modified code from                              //
+// https://github.com/xlab-si/emmy/blob/master/crypto/ecpedersen/commitment.go  //
+//////////////////////////////////////////////////////////////////////////////////
+
 func NewReceiver(key *ecdsa.PrivateKey) *Receiver {
 	return &Receiver{
 		Keys: key,
