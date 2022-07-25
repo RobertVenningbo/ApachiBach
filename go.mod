@@ -48,6 +48,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gin-gonic/gin v1.8.1
 	github.com/lib/pq v1.10.5
+	github.com/mazen160/go-random v0.0.0-20210308102632-d2b501c85c03
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/postgres v1.3.5

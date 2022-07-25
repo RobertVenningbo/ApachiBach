@@ -7,6 +7,8 @@ import (
 	"log"
 	ec "swag/ec"
 	"swag/model"
+
+	"github.com/mazen160/go-random"
 )
 
 //step 4
@@ -178,11 +180,12 @@ func (pc *PC) AssignPaper(bidList []*PaperBid) {
 	for _, r := range reviewersBidsTaken {
 		if r.UserID != -1 {
 			r.PaperCommittedValue = &CommitStructPaper{}
-			for _, p := range pc.AllPapers {
-				p.Selected = true
-				p.ReviewerList = append(p.ReviewerList, *r)
-				break
+			rand, err := random.IntRange(0, len(pc.AllPapers))
+			if err != nil {
+				log.Panicln("Panic in AssignPapers when generating random number")
 			}
+			pc.AllPapers[rand].ReviewerList = append(pc.AllPapers[rand].ReviewerList, *r)
+			pc.AllPapers[rand].Selected = true
 		}
 	}
 }
