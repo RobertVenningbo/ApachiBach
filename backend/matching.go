@@ -46,7 +46,15 @@ func (r *Reviewer) GetPapersReviewer(paperSlice []*Paper) []*Paper {
 			CheckStringAgainstDB(GetMsg)
 			treeItem = Trae.Find(GetMsg)
 		}
-
+		if treeItem.value.([]byte) == nil {
+			pList = append(pList, &Paper{
+				Id:           0,
+				Selected:     true,
+				ReviewerList: []Reviewer{},
+				Bytes:        []byte{},
+				Title:        "ERROR: WAIT FOR PC ACTIONS AND REFRESH/F5",
+			})
+		}
 		bytes := treeItem.value.([]byte)
 		decrypted := Decrypt(bytes, Kpcr)
 		decoded := DecodeToStruct(decrypted)

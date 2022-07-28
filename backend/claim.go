@@ -8,12 +8,13 @@ import (
 func (s *Submitter) ClaimPaper(pId int) { //step 19
 	paper := s.PaperCommittedValue.Paper
 	ri := s.SubmitterCommittedValue.Val
+	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s.UserID))
 	msg := ClaimMessage{
 		paper,
 		s,
 		ri,
+		SubmitterBigInt,
 	}
-	SubmitterBigInt := MsgToBigInt(EncodeToBytes(s.UserID))
 	fmt.Println("SubmitterBigInt in ClaimPaper" + fmt.Sprint(SubmitterBigInt)) //check. Probably need to reveal its own ID as bigInt for checking commitment havent changed. Since we do commitment with this bigInt
 	str := fmt.Sprintf("Submitter claims paper %v by revealing paper and ri.", pId)
 	signature := SignsPossiblyEncrypts(s.Keys, EncodeToBytes(msg), "")
@@ -31,41 +32,24 @@ func (s *Submitter) ClaimPaper(pId int) { //step 19
 func (pc *PC) ConfirmOwnership(pId int) { //step 20
 	if pc.GetClaimMessage(pId) == nil {
 		return
-	} else {
-		claim := pc.GetClaimMessage(pId)
+	} 
 
-		claimBytes := EncodeToBytes(claim)
-		signature := SignsPossiblyEncrypts(pc.Keys, claimBytes, "")
-
-		putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
-
-		logmsg := model.Log{
-			State:      20,
-			LogMsg:     putStr,
-			FromUserID: 4000,
-			Value:      signature[1],
-			Signature:  signature[0],
-		}
-		model.CreateLogMsg(&logmsg)
-		Trae.Put(putStr, signature)
-	}
-}
-
-//Not used -- yet?
-func (pc *PC) GetConfirmMessage(pId int) ([]byte, *ClaimMessage) { //returns signature from the submitter and the ClaimMessage
 	claim := pc.GetClaimMessage(pId)
-	getStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
-	item := Trae.Find(getStr)
-	if item == nil {
-		CheckStringAgainstDB(getStr)
-		item = Trae.Find(getStr)
+
+	claimBytes := EncodeToBytes(claim)
+	signature := SignsPossiblyEncrypts(pc.Keys, claimBytes, "")
+
+	putStr := fmt.Sprintf("PC confirms the ownership of paper, %v, to submitter: %v", claim.Paper.Id, claim.Submitter.UserID)
+
+	logmsg := model.Log{
+		State:      20,
+		LogMsg:     putStr,
+		FromUserID: 4000,
+		Value:      signature[1],
+		Signature:  signature[0],
 	}
-
-	claimMsgBytes := item.value.([][]byte)
-	sig, encoded := SplitSignatureAndMsg(claimMsgBytes)
-	claimMsg := DecodeToStruct(encoded).(ClaimMessage)
-
-	return sig, &claimMsg
+	model.CreateLogMsg(&logmsg)
+	Trae.Put(putStr, signature)
 }
 
 func (pc *PC) GetClaimMessage(pId int) *ClaimMessage {

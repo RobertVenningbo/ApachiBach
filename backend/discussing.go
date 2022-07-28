@@ -83,7 +83,7 @@ func (r *Reviewer) GetGradeForReviewer(rId int) *IndividualGrade {
 	if gradeStruct == nil {
 		CheckStringAgainstDB(msg)
 		gradeStruct = Trae.Find(msg)
-		return &IndividualGrade{}
+		return nil
 	}
 
 	bytes := gradeStruct.value.([]byte)
@@ -158,6 +158,10 @@ func (r *Reviewer) GetAgreedGroupGrade() RandomizeGradesForProofStruct {
 	item := Trae.Find(str)
 	if item == nil {
 		CheckStringAgainstDB(str)
+		item = Trae.Find(str)
+	}
+	if item == nil { // case if it is still null but somehow got here. Then publish anew
+		r.PublishAgreedGrade()
 		item = Trae.Find(str)
 	}
 	bytes := item.value.([]byte)

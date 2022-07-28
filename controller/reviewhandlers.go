@@ -29,7 +29,7 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 		WhereTo string
 	}
 	var msg Message
-	haveBidded := true //ugly logic i know :)
+	haveBidded := true
 	if (reviewer != backend.Reviewer{}) {
 		haveBidded = model.DoesLogMsgExist(fmt.Sprintf("EncryptedSignedBids %v", reviewer.UserID))
 	}
@@ -92,9 +92,15 @@ func PaperBidHandler(c *gin.Context) {
 
 func WriteToFileHandler(c *gin.Context) {
 	c.Request.ParseForm()
+	var title string
+	var downloads string
+	var paperbytes []byte
 	var PaperIds []string
 	for _, v := range c.Request.Form {
 		PaperIds = append(PaperIds, v...)
+		for _, v := range PaperIds {
+			fmt.Println(v)
+		}
 	}
 	for _, p := range papers {
 		for _, id := range PaperIds {
@@ -103,8 +109,8 @@ func WriteToFileHandler(c *gin.Context) {
 				log.Println("error converting id string to id int")
 			}
 			if idInt == p.Id {
-				paperbytes := p.Bytes
-				
+				paperbytes = p.Bytes
+
 				if err != nil {
 					panic(err)
 				}
@@ -112,16 +118,24 @@ func WriteToFileHandler(c *gin.Context) {
 				if err != nil {
 					panic(err)
 				}
-				downloads := currentuser.HomeDir + "/Downloads/"
+				downloads = currentuser.HomeDir + "\\Downloads\\"
 				fmt.Println(downloads) //del once it all work
+				title = p.Title
 
-				err = os.WriteFile(downloads+p.Title+".pdf", paperbytes, 0644)
+				err = os.WriteFile(downloads+title+".pdf", paperbytes, 0644)
 				if err != nil {
 					log.Println("error writing file")
 				}
 			}
 		}
 	}
+	defer c.Writer.Header().Set("Content-Type", c.Request.Header.Get("Content-Type"))
+	defer c.Writer.Header().Set("Content-Length", c.Request.Header.Get("Content-Length"))
+	str := "attachment; filename=" + title + "_copy.pdf"
+	defer c.Writer.Header().Set("Content-Disposition", str) // doesn't work yet.
+}
+
+func DownloadRedirect(c *gin.Context) {
 	if madeBid {
 		c.Redirect(303, "/makereview")
 	} else {
@@ -237,8 +251,16 @@ func GetGradeDiscussingHandler(c *gin.Context) {
 		Status  string
 		WhereTo string
 	}
+	str := fmt.Sprintf("All grades have been submitted for Paper: %v", reviewer.PaperCommittedValue.Paper.Id)
+	if !model.DoesLogMsgExist(str) {
+		reviewer.PublishAgreedGrade()
+	}
+	willProceed := false
+	if model.DoesLogMsgExist(str) {
+		willProceed = true
+	}
 	msg := Message{
-		Proceed: true,
+		Proceed: willProceed,
 		Status:  "All grades are now submitted. Please continue.",
 		WhereTo: "/signgradecommit",
 	}
@@ -268,13 +290,7 @@ func PostGradeDiscussingHandler(c *gin.Context) {
 		reviewer.PublishAgreedGrade()
 	}
 
-	msg := Message{
-		Proceed: exists, //change later
-		Status:  "All grades have been submitted. Please continue.",
-		WhereTo: "/signgradecommit",
-	}
-
-	tpl.Execute(c.Writer, msg)
+	c.Redirect(303, "/submitgrade")
 }
 
 func GetAgreedGradeHandler(c *gin.Context) {
@@ -292,6 +308,10 @@ func GetAgreedGradeHandler(c *gin.Context) {
 	}
 
 	tpl.Execute(c.Writer, msg)
+
+	if (gradeStruct == backend.RandomizeGradesForProofStruct{}) {
+		c.Redirect(303, "/signgradecommit")
+	}
 }
 
 func SignGradeHandler(c *gin.Context) {

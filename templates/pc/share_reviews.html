@@ -36,23 +36,33 @@
                 </table>
             </blockquote>   
         </div>
-        <a href="/decision">
-            <button>
-                Proceed to decision
-            </button>
-        </a>
-        <form action="javascript:var rslt=confirm('Confirm all reviewers have made reviews.');if(rslt){window.location.replace('/collectreviews')}else{}" method="POST"> 
-            <button type="submit"> 
-                Share all reviews with other reviewers of same paper 
-            </button>
-        </form>
-        <a href="/checkreviews">
-            <button>
-                Check reviews
-            </button>
+        {{ if .ProceedToDecision }}
+            <div>
+                <a href="/decision">
+                    <button>
+                        Proceed to decision
+                    </button>
+                </a>
+            </div>
+        {{ end }}
+
+        {{ if .ProceedToShareReviews}}
+            <div>
+                <form action="javascript:var rslt=confirm('Confirm all reviewers have made reviews.');if(rslt){window.location.replace('/collectreviews')}else{}" method="POST"> 
+                    <button type="submit"> 
+                        Share all reviews with other reviewers of same paper 
+                    </button>
+                </form>
+            </div>
+        {{ end }}
+
+            <a href="/checkreviews">
+                <button>
+                    Check reviews
+                </button>
             </a>
             <div>
-            {{ .Reviews }}
+                {{ .Reviews }}
             </div>
         </div>
     </body>

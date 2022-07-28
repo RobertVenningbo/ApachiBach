@@ -51,7 +51,7 @@ func (pc *PC) SendGrades2(pId int) { //Step 15 new
 
 /*PC DECLINES PAPER PATH*/
 
-func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
+func (pc *PC) RejectPaper(pId int) { //step 16
 	GradeAndPaper := pc.GetGradeAndPaper(pId)
 
 	KpAndRg := pc.GetKpAndRgPC(pId)
@@ -59,12 +59,6 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 	ReviewSignedStruct := pc.GetReviewSignedStruct(pId)
 	ReviewCommit := ReviewSignedStruct.Commit
 
-	// type RejectMessage struct {
-	// 	Commit *ecdsa.PublicKey
-	// 	Grade  int
-	// 	Rg     *big.Int
-	// }
-	// maybe check the commit like the protocol describes any third party can do
 	rejectMsg := RejectMessage{
 		ReviewCommit,
 		int(GradeAndPaper.GradeBefore),
@@ -83,13 +77,11 @@ func (pc *PC) RejectPaper(pId int) RejectMessage { //step 16
 	}
 	model.CreateLogMsg(&logmsg)
 	Trae.Put(str, signature)
-
-	return rejectMsg
 }
 
 /*PC ACCEPTS PAPER PATH*/
 
-var AcceptedPapers []RandomizeGradesForProofStruct //Global
+var AcceptedPapers []*RandomizeGradesForProofStruct //Global
 
 func (pc *PC) CompileGrades() { //step 17
 	if len(AcceptedPapers) == 0 {
@@ -97,8 +89,7 @@ func (pc *PC) CompileGrades() { //step 17
 	}
 	grades := []int{}
 	for _, p := range AcceptedPapers {
-		GradeAndPaper := pc.GetGradeAndPaper(p.PaperId)
-		grades = append(grades, int(GradeAndPaper.GradeAfter))
+		grades = append(grades, int(p.GradeAfter))
 	}
 
 	signStr := SignsPossiblyEncrypts(pc.Keys, EncodeToBytes(grades), "")
@@ -224,7 +215,7 @@ func (pc *PC) AcceptPaper(pId int) { //Helper function, "step 16.5"
 			}
 			model.CreateLogMsg(&logmsg)
 			GradeAndPaper := pc.GetGradeAndPaper(pId)
-			AcceptedPapers = append(AcceptedPapers, GradeAndPaper)
+			AcceptedPapers = append(AcceptedPapers, &GradeAndPaper)
 		}
 	}
 }
@@ -302,4 +293,12 @@ func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 	decoded := DecodeToStruct(encoded).(SendGradeStruct)
 
 	return decoded
+}
+
+func (pc *PC) DisplayPaperHelper() []Paper {
+	var papers []Paper
+	for _, v := range pc.AllPapers {
+		papers = append(papers, *v)
+	}
+	return papers
 }

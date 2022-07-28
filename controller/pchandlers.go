@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"strconv"
@@ -62,13 +63,12 @@ func CheckSubmissions() backend.CheckSubmissionsMessage {
 		SubmittersLength: len(submitters),
 		Submissions:      len(logmsgs),
 		Submitters:       str,
+		Proceed:          len(submitters) == len(logmsgs) && len(submitters) > 0,
 	}
 	return msg
-
 }
 
 func BidWaitHandler(c *gin.Context) {
-	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
 	users := []model.User{}
 	model.GetReviewers(&users)
 	var reviewerSlice []backend.Reviewer
@@ -82,9 +82,7 @@ func BidWaitHandler(c *gin.Context) {
 	fmt.Printf("\n BidWaitHandler allpapers length: %v", len(backend.Pc.AllPapers))
 	backend.Pc.DistributePapers(reviewerSlice, backend.Pc.AllPapers)
 
-	data := GetAllBids()
-
-	tpl.Execute(c.Writer, data)
+	c.Redirect(303, "/getallbids")
 }
 
 func GetAllBids() backend.AllBids { //Helper function to check if reviewers have bidded on papers
@@ -104,21 +102,24 @@ func GetAllBids() backend.AllBids { //Helper function to check if reviewers have
 	}
 	str := ""
 	showBool := false
-	if len(users) == len(unique) {
+	canMatch := false
+	if len(users) == len(unique) && len(users) > 0 {
 		str = "All reviewers have made bids"
 		showBool = true
-
+		canMatch = true
 	} else {
 		str = "Not all reviewers have made bids"
 		showBool = true
 	}
 
 	data := backend.AllBids{
-		PaperBidCount: len(unique),
-		Status:        str,
-		ShowBool:      showBool,
-		UsersLength:   len(users),
+		PaperBidCount:  len(unique),
+		Status:         str,
+		ShowBool:       showBool,
+		UsersLength:    len(users),
+		CanMatchPapers: canMatch,
 	}
+
 	return data
 }
 
@@ -126,7 +127,6 @@ func GetAllBidsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/match_papers.html"))
 	data := GetAllBids()
 	tpl.Execute(c.Writer, data)
-
 }
 
 func ShareReviewsHandler(c *gin.Context) {
@@ -137,11 +137,13 @@ func ShareReviewsHandler(c *gin.Context) {
 	backend.Pc.MatchPapers()
 	backend.Pc.DeliverAssignedPaper()
 	messages := backend.ShareReviewsMessage{}
+	str := ""
 	if !sharedreviews {
 		messages = PaperRowHelper()
+		_, str = HowManyReviewersHaveMadeReviews()
 		sharedreviews = true
 	}
-
+	messages.Reviews = str
 	tpl.Execute(c.Writer, &messages)
 }
 
@@ -152,10 +154,28 @@ func ShareReviewsButtonHandler(c *gin.Context) {
 
 	msgs := PaperRowHelper()
 	sharedreviews = true
+	msgs.ProceedToDecision = true
+
+	msgs.Reviews = "Reviews have been shared with reviewers"
+	strcheckgrade := ""
+
+	for _, v := range backend.Pc.AllPapers {
+		strcheckgrade = fmt.Sprintf("All grades have been submitted for Paper: %v", v.Id)
+		if !model.DoesLogMsgExist(strcheckgrade) {
+			msgs.ProceedToDecision = false
+		}
+	}
+
+	msgs.ProceedToShareReviews = false
+	tpl.Execute(c.Writer, &msgs)
+}
+
+func HowManyReviewersHaveMadeReviews() (bool, string) {
 	var users []model.User
 	model.GetReviewers(&users)
 	size := len(users)
 	counter := 0
+	str := ""
 	for _, p := range backend.Pc.AllPapers {
 		for _, r := range p.ReviewerList {
 			str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
@@ -166,10 +186,8 @@ func ShareReviewsButtonHandler(c *gin.Context) {
 			}
 		}
 	}
-
-	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
-
-	tpl.Execute(c.Writer, &msgs)
+	str = fmt.Sprintf("%v/%v reviewers have made their review", counter, size)
+	return counter == size, str
 }
 
 func PaperRowHelper() backend.ShareReviewsMessage {
@@ -186,45 +204,60 @@ func PaperRowHelper() backend.ShareReviewsMessage {
 		}
 		messages = append(messages, message)
 	}
+
 	return backend.ShareReviewsMessage{
-		Reviews: "",
-		Msgs:    messages,
+		Reviews:               "",
+		Msgs:                  messages,
+		ProceedToShareReviews: false,
+		ProceedToDecision:     false,
 	}
 }
 
 func CheckReviewsHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/share_reviews.html"))
 	msgs := PaperRowHelper()
-	sharedreviews = true
-	var users []model.User
-	model.GetReviewers(&users)
-	size := len(users)
-	counter := 0
+	proceed, str := HowManyReviewersHaveMadeReviews()
+
+	msgs.Reviews = str
+	msgs.ProceedToShareReviews = proceed
+	//OVERWRITE SHAREREVIEWS TO FALSE IF ALREADY SHARED, CHECK. done i think
+	putStr := ""
 	for _, p := range backend.Pc.AllPapers {
-		for _, r := range p.ReviewerList {
-			str := fmt.Sprintf("Reviewer, %v, finish review on paper", r.UserID)
-			backend.CheckStringAgainstDB(str)
-			item := backend.Trae.Find(str)
-			if item != nil {
-				counter++
-			}
+		putStr = fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", p.Id)
+		if model.DoesLogMsgExist(putStr) {
+			msgs.ProceedToShareReviews = false
 		}
 	}
 
-	msgs.Reviews = fmt.Sprintf("%v/%v reviewers have made their review.", counter, size)
+	//CHECK FOR GRADE HERE THEN PROCEED TO DECISION
+	msgs.ProceedToDecision = CheckProceedToDecision()
+
 	tpl.Execute(c.Writer, msgs)
 }
 
-//check up on this
+func CheckProceedToDecision() bool {
+	strCheckSpecificGrade := ""
+	returnbool := true
+	for _, v := range backend.Pc.AllPapers {
+		for _, p := range v.ReviewerList {
+			strCheckSpecificGrade = fmt.Sprintf("Reviewer %v signed and encrypted grade", p.UserID)
+			if !model.DoesLogMsgExist(strCheckSpecificGrade) {
+				returnbool = false
+			}
+		}
+	}
+	return returnbool
+}
+
 func CheckConfirmedOwnerships() string {
 	userlength := len(backend.AcceptedPapers)
 	confirmedLength := 0
 
 	for _, p := range backend.AcceptedPapers {
 		str := fmt.Sprintf("Submitter claims paper %v by revealing paper and ri.", p.PaperId)
-		var logmsgs []model.Log
-		model.GetAllLogMsgsByMsg(&logmsgs, str)
-		confirmedLength = len(logmsgs)
+		if model.DoesLogMsgExist(str) {
+			confirmedLength++
+		}
 	}
 
 	str := fmt.Sprintf("%v/%v submitters have claimed ownership of their accepted paper", confirmedLength, userlength)
@@ -234,23 +267,32 @@ func CheckConfirmedOwnerships() string {
 
 func DecisionHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
-	type Paper struct {
+	type Msg struct {
 		Title string
 		Grade int
 		ID    int
 	}
-	var papers []Paper
 
+	type somemsg struct {
+		Messages   []Msg
+		CanCompile bool
+	}
+	message := somemsg{}
 	for _, p := range backend.Pc.AllPapers {
+		if p.Id == -2 || 0 == (bytes.Compare(p.Bytes, []byte{64})) { // :)
+			break
+		}
 		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-		msg := Paper{
+		msg := Msg{
 			Title: p.Title,
 			Grade: int(GradeAndPaper.GradeBefore),
 			ID:    p.Id,
 		}
-		papers = append(papers, msg)
+		message.Messages = append(message.Messages, msg)
 	}
-	tpl.Execute(c.Writer, &papers)
+
+	message.CanCompile = len(backend.AcceptedPapers) > 0
+	tpl.Execute(c.Writer, &message)
 }
 
 func AcceptPaperHandler(c *gin.Context) {
@@ -262,6 +304,12 @@ func AcceptPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.AcceptPaper(paperidint)
+
+	for _, v := range backend.Pc.AllPapers {
+		if v.Id == paperidint {
+			v.Bytes = []byte{64}
+		}
+	}
 
 	c.Redirect(303, "/decision")
 }
@@ -275,6 +323,12 @@ func RejectPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.RejectPaper(paperidint)
+
+	for _, v := range backend.Pc.AllPapers {
+		if v.Id == paperidint {
+			v.Id = -2
+		}
+	}
 
 	c.Redirect(303, "/decision")
 }
@@ -328,7 +382,7 @@ func ConfirmOwnershipHandler(c *gin.Context) {
 		log.Println("\nerror converting string to id int")
 		return
 	}
-	backend.Pc.ConfirmOwnership(paperidint) // we should check for CheckConfirmedOwnerships() first
+	backend.Pc.ConfirmOwnership(paperidint)
 	var tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {

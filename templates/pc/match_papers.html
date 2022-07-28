@@ -17,9 +17,11 @@
           {{ if .ShowBool }}
           <p>{{ .PaperBidCount }} / {{ .UsersLength}} reviewers have made bids. </p>
           {{ end }}
+          {{ if .CanMatchPapers}}
           <form action="/sharereviews" method="GET">
             <button type="submit">Match papers</button>
           </form>
+          {{ end }}
         </div>
     </body>
 </html>

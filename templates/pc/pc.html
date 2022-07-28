@@ -11,16 +11,19 @@
     <body style="background: lightgray;">
         <div style="text-align: center; margin-top: 72px;">
           <h1>PC</h1>
-          <label>Choose submission deadline</label>
-          <input type="datetime-local">
-          <button style="margin-bottom: 30px;">Set deadline</button>
-          <a href="/">
-            <button>Get submitted papers</button>
-          </a>
+          <div style="margin-bottom: 10px;">
+            <a href="/">
+              <button>Get submitted papers</button>
+            </a>
+          </div>
           <br>
-          <a href="/bidwait">
-            <button>Send papers to reviewers</button>
-          </a>
+          {{ if .Proceed}}
+          <div>
+            <a href="/bidwait">
+              <button>Send papers to reviewers</button>
+            </a>
+          </div>
+          {{ end }}
           <br>
           <p>{{.Submissions}}/{{.SubmittersLength}} submitters have submitted a paper.</p>
           <br>

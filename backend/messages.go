@@ -29,17 +29,21 @@ type ValueSignature struct {
 type Message struct {
 	Title       string
 	ReviewerIds []int
+	Proceed     bool
 }
 
 type ShareReviewsMessage struct {
-	Reviews string
-	Msgs    []Message
+	Reviews               string
+	Msgs                  []Message
+	ProceedToShareReviews bool
+	ProceedToDecision     bool
 }
 
 type CheckSubmissionsMessage struct {
 	SubmittersLength int
 	Submissions      int
-	Submitters		 []string
+	Submitters       []string
+	Proceed          bool
 }
 
 //Review
@@ -64,13 +68,15 @@ type PaperBid struct {
 	Paper    *Paper
 	Reviewer *Reviewer
 }
+
 //Matching
 
 type AllBids struct {
-	PaperBidCount int
-	Status        string
-	ShowBool      bool
-	UsersLength   int
+	PaperBidCount  int
+	Status         string
+	ShowBool       bool
+	CanMatchPapers bool
+	UsersLength    int
 }
 
 type ReviewSignedStruct struct {
@@ -98,14 +104,12 @@ type DiscussingViewData struct {
 	Reviews []ReviewStruct
 }
 
-
 //Decision
 
 type SendGradeStruct struct {
 	Reviews []ReviewStruct
 	Grade   int
 }
-
 
 type RejectMessage struct {
 	Commit *ecdsa.PublicKey
@@ -122,7 +126,7 @@ type RandomizeGradesForProofStruct struct {
 	R           int64
 	GradeBefore int64
 	GradeAfter  int64
-	PaperId		int
+	PaperId     int
 }
 
 type GradeAndPaper struct {
@@ -133,9 +137,10 @@ type GradeAndPaper struct {
 //Claim
 
 type ClaimMessage struct {
-	Paper     *Paper
-	Submitter *Submitter
-	Ri        *big.Int
+	Paper           *Paper
+	Submitter       *Submitter
+	Ri              *big.Int
+	SubmitterBigInt *big.Int
 }
 
 //Agents

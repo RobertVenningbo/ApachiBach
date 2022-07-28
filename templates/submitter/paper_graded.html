@@ -30,8 +30,7 @@
     </head>
     <body style="background: lightgrey;">
         <div style="margin: auto; width: 50%; padding: 10px; text-align: center;">
-            <h2 style="margin-bottom: 50px;">You have submitted a paper</h2>
-            <p>Your paper has been reviewed</p>            
+            <h2 style="margin-bottom: 50px;">Your paper has been reviewed</h2>
             <p>Status: {{ .Status }}</p>
             <p>Grade: {{ .Grade }}</p>
             {{ if .CanConfirm}}            
@@ -45,7 +44,7 @@
                 {{ range .Reviews}}
                 <div>
                     <p>
-                        Your review
+                        A review
                     </p>
                     <textarea readonly style="resize: none;" class="smoothborder" rows="4" cols="50">
 {{ .Review }}

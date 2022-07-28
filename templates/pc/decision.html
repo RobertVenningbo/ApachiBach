@@ -24,11 +24,11 @@
         }
 
     </style>
-    <body style="background: lightgray;">
-        <h2>Decision</h2>
-        <div style="text-align: center;">
-            <p>Graded papers:</p> 
-            {{range .}}
+    <body style="background: lightgray; text-align: center; margin-top: 68px;">
+        <h1>㋡_㋡ Decision ㋡_㋡</h1>
+        <div>
+            <h3>Graded papers</h3> 
+            {{range .Messages}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
                 <div class="center">
                     <form action="/decision" method="POST">
@@ -41,9 +41,13 @@
                 </div>   
             </div>
             {{end}}
-            <form action="/compilegrades" method="POST">
-                <button type="submit">Compile grades</button>
-            </form>
+            {{ if .CanCompile }}
+            <div style="margin-top: 10px;">
+                <form action="/compilegrades" method="POST">
+                    <button type="submit">Compile grades</button>
+                </form>
+            </div>
+            {{ end }}
         </div>
     </body>
 </html>

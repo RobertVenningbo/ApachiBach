@@ -1,6 +1,7 @@
 
 - make download popup too (should be some HTTP headers not being set) --not possible with current setup
-- more testing with multiple reviewers for one paper (suspecious of "PublishAgreedGrade", the place we randomize grades) (I THINK I FIXED IT, PLS CHECK TY :)
+PC knapper, flow.
+En overordnet confirm ownership?
 
 --bash script seems to introduce bugs? certain places, dunno why
 
