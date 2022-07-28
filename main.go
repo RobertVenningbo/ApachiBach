@@ -63,7 +63,6 @@ func main() {
 		router.POST("/decision", controller.AcceptPaperHandler)
 		router.POST("/rejectpaper", controller.RejectPaperHandler)
 		router.POST("/compilegrades", controller.CompileGradesHandler)
-		router.GET("/finished", controller.FinishedProtocolHandler)
 		router.POST("/confirmowner", controller.ConfirmOwnershipHandler)
 		router.GET("/confirmowner", controller.GetConfirmOwnershipHandler)
 		router.Run(":" + serverport)

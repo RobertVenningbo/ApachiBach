@@ -31,12 +31,12 @@
             {{range .Messages}}
             <div class="paper" style="display: flex; justify-content: center; flex-direction: column">
                 <div class="center">
-                    <form action="/decision" method="POST">
+                    <form method="POST">
                         <p>Paper title: {{.Title}}</p> 
                         <input class="hidden" type="text" name="paperid" value="{{ .ID }}" ></input>
                         <p>Grade: {{.Grade}}</p>  
-                        <button type="submit">Accept</button>
-                        <button formaction="/rejectpaper" type="submit">Reject</button>
+                        <button formaction="/decision" method="POST" type="submit">Accept</button>
+                        <button formaction="/rejectpaper" method="POST" type="submit">Reject</button>
                     </form>
                 </div>   
             </div>

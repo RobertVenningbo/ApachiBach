@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"strconv"
@@ -278,10 +277,8 @@ func DecisionHandler(c *gin.Context) {
 		CanCompile bool
 	}
 	message := somemsg{}
-	for _, p := range backend.Pc.AllPapers {
-		if p.Id == -2 || 0 == (bytes.Compare(p.Bytes, []byte{64})) { // :)
-			break
-		}
+	// paperz := backend.DecisionPaperShow()
+	for _, p := range /*paperz*/ backend.Pc.AllPapers {
 		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
 		msg := Msg{
 			Title: p.Title,
@@ -304,15 +301,21 @@ func AcceptPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.AcceptPaper(paperidint)
+	// blacklist = append(blacklist, paperidint)
 
-	for _, v := range backend.Pc.AllPapers {
-		if v.Id == paperidint {
-			v.Bytes = []byte{64}
-		}
-	}
-
+	// var papertemp []backend.Paper
+	// for _, v := range backend.Pc.AllPapers {
+	// 	for _, b := range blacklist {
+	// 		if b != v.Id {
+	// 			papertemp = append(papertemp, *v)
+	// 		}
+	// 	}
+	// }
+	// backend.DecisionPaperStore(backend.EncodeToBytes(papertemp))
 	c.Redirect(303, "/decision")
 }
+
+// var blacklist []int
 
 func RejectPaperHandler(c *gin.Context) {
 	paperid := c.Request.FormValue("paperid")
@@ -323,12 +326,16 @@ func RejectPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.RejectPaper(paperidint)
-
-	for _, v := range backend.Pc.AllPapers {
-		if v.Id == paperidint {
-			v.Id = -2
-		}
-	}
+	// blacklist = append(blacklist, paperidint)
+	// var papertemp []backend.Paper
+	// for _, v := range backend.Pc.AllPapers {
+	// 	for _, b := range blacklist {
+	// 		if b != v.Id {
+	// 			papertemp = append(papertemp, *v)
+	// 		}
+	// 	}
+	// }
+	// backend.DecisionPaperStore(backend.EncodeToBytes(papertemp))
 
 	c.Redirect(303, "/decision")
 }
@@ -369,20 +376,11 @@ func CompileGradesHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, msg)
 }
 
-func FinishedProtocolHandler(c *gin.Context) {
-
-	c.Redirect(303, "/postconfirmowner")
-}
-
 func ConfirmOwnershipHandler(c *gin.Context) {
-	paperid := c.Request.FormValue("paperid")
-	fmt.Printf("\nPaperID: %v", paperid)
-	paperidint, err := strconv.Atoi(paperid)
-	if err != nil {
-		log.Println("\nerror converting string to id int")
-		return
+	paperz := backend.Pc.GetAcceptedPapers()
+	for _, v := range paperz {
+		backend.Pc.ConfirmOwnership(v.Id)
 	}
-	backend.Pc.ConfirmOwnership(paperidint)
 	var tpl = template.Must(template.ParseFiles("templates/public/finished.html"))
 
 	type Message struct {

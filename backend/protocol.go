@@ -95,6 +95,8 @@ func Equals(e *ecdsa.PublicKey, b *ecdsa.PublicKey) bool {
 
 func InitGobs() {
 	gob.Register(Paper{})
+	gob.Register([]Paper{})
+	gob.Register([]*Paper{})
 	gob.Register(ReviewSignedStruct{})
 	gob.Register(CommitStruct{})
 	gob.Register(CommitStructPaper{})

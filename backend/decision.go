@@ -298,7 +298,33 @@ func (s *Submitter) RetrieveGradeAndReviews() SendGradeStruct {
 func (pc *PC) DisplayPaperHelper() []Paper {
 	var papers []Paper
 	for _, v := range pc.AllPapers {
-		papers = append(papers, *v)
+		papers = append(papers, Paper{
+			v.Id,
+			v.Selected,
+			v.ReviewerList,
+			v.Bytes,
+			v.Title,
+		})
 	}
 	return papers
 }
+
+// func DecisionPaperStore(pp []byte) {
+// 	paper := Trae.Find("DecisionPaper")
+// 	if paper != nil {
+// 		paper.value = nil
+// 	}
+// 	Trae.Put("DecisionPaper", pp)
+// }
+
+// func DecisionPaperShow() []Paper {
+// 	paper := Trae.Find("DecisionPaper")
+// 	if paper == nil {
+// 		DecisionPaperStore(EncodeToBytes(Pc.DisplayPaperHelper()))
+// 		paper = Trae.Find("DecisionPaper")
+// 	}
+
+// 	bytes := paper.value.([]byte)
+
+// 	return DecodeToStruct(bytes).([]Paper)
+// }
