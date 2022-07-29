@@ -98,10 +98,9 @@ func WriteToFileHandler(c *gin.Context) {
 	var PaperIds []string
 	for _, v := range c.Request.Form {
 		PaperIds = append(PaperIds, v...)
-		for _, v := range PaperIds {
-			fmt.Println(v)
-		}
 	}
+	fmt.Printf("PaperIds length: %v", len(PaperIds))
+	fmt.Printf("Papers length: %v", len(papers))
 	for _, p := range papers {
 		for _, id := range PaperIds {
 			idInt, err := strconv.Atoi(id)
@@ -118,8 +117,7 @@ func WriteToFileHandler(c *gin.Context) {
 				if err != nil {
 					panic(err)
 				}
-				downloads = currentuser.HomeDir + "\\Downloads\\"
-				fmt.Println(downloads) //del once it all work
+				downloads = currentuser.HomeDir + "/Downloads/"
 				title = p.Title
 
 				err = os.WriteFile(downloads+title+".pdf", paperbytes, 0644)
@@ -129,10 +127,12 @@ func WriteToFileHandler(c *gin.Context) {
 			}
 		}
 	}
-	defer c.Writer.Header().Set("Content-Type", c.Request.Header.Get("Content-Type"))
-	defer c.Writer.Header().Set("Content-Length", c.Request.Header.Get("Content-Length"))
-	str := "attachment; filename=" + title + "_copy.pdf"
-	defer c.Writer.Header().Set("Content-Disposition", str) // doesn't work yet.
+	if madeBid {
+		c.Redirect(303, "/makereview")
+	} else {
+		c.Redirect(303, "/paperbid")
+	}
+	
 }
 
 func DownloadRedirect(c *gin.Context) {
