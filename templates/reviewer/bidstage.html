@@ -13,8 +13,8 @@
             .flexcolumn{
                 display: flex;
                 flex-direction: column;
-                text-align:
-                center;
+                width: fit-content;
+                display: inline-flex;
             }
       </style>
     </head>
@@ -30,7 +30,7 @@
                     {{ end }}
                     <div class="flexcolumn" >
                         <input style="margin-bottom: 2px; margin-top: 2px;" type="submit" value="Send bid(s)">
-                        <input type="submit" value="Download selected papers" formaction="/downloadpaper" formmethod="POST">
+                        <input type="submit" value="Download selected papers" formaction="/downloadpaper" formmethod="GET">
                     </div>
                 </form>
             </div>            

@@ -256,7 +256,7 @@ func CheckProceedToDecision() bool {
 	return returnbool
 }
 
-func CheckConfirmedOwnerships() string {
+func CheckConfirmedOwnerships() (string, bool) {
 	userlength := len(backend.AcceptedPapers)
 	confirmedLength := 0
 
@@ -269,7 +269,7 @@ func CheckConfirmedOwnerships() string {
 
 	str := fmt.Sprintf("%v/%v submitters have claimed ownership of their accepted paper", confirmedLength, userlength)
 
-	return str
+	return str, confirmedLength == userlength
 }
 
 func contains(s []int, e int) bool {
@@ -362,12 +362,16 @@ func CompileGradesHandler(c *gin.Context) {
 	}
 
 	type Message struct {
-		Papers []PaperData
-		Status string
+		Papers     []PaperData
+		Status     string
+		ShowButton bool
 	}
+	str, showbtn := CheckConfirmedOwnerships()
+
 	msg := Message{
-		Papers: papersData,
-		Status: CheckConfirmedOwnerships(),
+		Papers:     papersData,
+		Status:     str,
+		ShowButton: showbtn,
 	}
 
 	tpl.Execute(c.Writer, msg)
@@ -412,15 +416,17 @@ func GetConfirmOwnershipHandler(c *gin.Context) {
 	}
 
 	type Message struct {
-		Papers []PaperData
-		Status string
+		Papers     []PaperData
+		Status     string
+		ShowButton bool
 	}
 
-	status := CheckConfirmedOwnerships()
+	status, showbtn := CheckConfirmedOwnerships()
 
 	msg := Message{
-		Papers: papersData,
-		Status: status,
+		Papers:     papersData,
+		Status:     status,
+		ShowButton: showbtn,
 	}
 
 	tpl.Execute(c.Writer, msg)

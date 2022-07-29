@@ -44,7 +44,6 @@
                     <form action="/confirmowner" method="POST">
                         <p>Paper title: {{.Title}}</p> 
                         <p>Grade: {{.Grade}}</p>
-                        <button onclick="myFunction()" type="submit">Confirm ownership</button>
                         <input class="hidden" type="text" name="paperid" value="{{ .ID }}" ></input>
                     </form>
                 </div>   
@@ -55,10 +54,17 @@
                 <button>
                     Check confirmed owners
                 </button>
-                <div>
-                    {{ .Status }}
-                </div>
             </form>
+                {{ if .ShowButton }}
+                    <div>
+                        <form method="POST" action="/confirmowner">
+                            <button onclick="myFunction()" type="submit">Confirm ownership</button>
+                        </form>
+                    </div>
+                {{ end }}
+            <div>
+                {{ .Status }}
+            </div>
         </div>
     </body>
 </html>

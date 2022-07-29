@@ -29,18 +29,31 @@ func PrepStageHandler(c *gin.Context) { //this should be looked at
 		WhereTo string
 	}
 	var msg Message
-	haveBidded := true
+	shouldBid := false
 	if (reviewer != backend.Reviewer{}) {
-		haveBidded = model.DoesLogMsgExist(fmt.Sprintf("EncryptedSignedBids %v", reviewer.UserID))
-	}
-
-	if !haveBidded {
-		msg = Message{
-			Proceed: true,
-			Status:  "Continue to bid on papers.",
-			WhereTo: "/paperbid",
+		msgs := []model.Log{}
+		model.GetAllLogMsgs(&msgs)
+		for _, msg := range msgs {
+			if strings.Contains(msg.LogMsg, "SignedAndEncryptedPaper") {
+				shouldBid = true
+				break
+			}
 		}
 	}
+
+	if shouldBid {
+		str := fmt.Sprintf("EncryptedSignedBids %v", reviewer.UserID)
+		if !model.DoesLogMsgExist(str) {
+			msg = Message{
+				Proceed: true,
+				Status:  "Continue to bid on papers.",
+				WhereTo: "/paperbid",
+			}
+		} else {
+			msg.Proceed = false
+		}
+	}
+
 	if logMsg.State >= 6 {
 		msg = Message{
 			Proceed: true,
@@ -99,8 +112,6 @@ func WriteToFileHandler(c *gin.Context) {
 	for _, v := range c.Request.Form {
 		PaperIds = append(PaperIds, v...)
 	}
-	fmt.Printf("PaperIds length: %v", len(PaperIds))
-	fmt.Printf("Papers length: %v", len(papers))
 	for _, p := range papers {
 		for _, id := range PaperIds {
 			idInt, err := strconv.Atoi(id)
@@ -118,9 +129,14 @@ func WriteToFileHandler(c *gin.Context) {
 					panic(err)
 				}
 				downloads = currentuser.HomeDir + "/Downloads/"
+				downloadsWin := currentuser.HomeDir + "\\Downloads\\"
 				title = p.Title
 
 				err = os.WriteFile(downloads+title+".pdf", paperbytes, 0644)
+				if err != nil {
+					log.Println("error writing file")
+				}
+				err = os.WriteFile(downloadsWin+title+".pdf", paperbytes, 0644)
 				if err != nil {
 					log.Println("error writing file")
 				}
@@ -132,7 +148,7 @@ func WriteToFileHandler(c *gin.Context) {
 	} else {
 		c.Redirect(303, "/paperbid")
 	}
-	
+
 }
 
 func DownloadRedirect(c *gin.Context) {
@@ -307,11 +323,11 @@ func GetAgreedGradeHandler(c *gin.Context) {
 		Grade: int(gradeStruct.GradeBefore),
 	}
 
-	tpl.Execute(c.Writer, msg)
-
 	if (gradeStruct == backend.RandomizeGradesForProofStruct{}) {
 		c.Redirect(303, "/signgradecommit")
 	}
+
+	tpl.Execute(c.Writer, msg)
 }
 
 func SignGradeHandler(c *gin.Context) {
