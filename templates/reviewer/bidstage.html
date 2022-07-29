@@ -8,8 +8,13 @@
             .center{
                 margin: auto;
                 width: 50%;
-                border: 3px solid green;
                 padding: 10px;
+            }
+            .flexcolumn{
+                display: flex;
+                flex-direction: column;
+                text-align:
+                center;
             }
       </style>
     </head>
@@ -21,10 +26,12 @@
                 <form action="/sendbid" method="POST">
                     {{ range . }}
                     <input type="checkbox" id="{{ .Id }}" name="paperbid" value="{{ .Id }}">
-                    <input type="submit" value="Download" formaction="/downloadpaper" formmethod="GET">
                     <label> {{ .Title }} </label><br>
                     {{ end }}
-                    <input type="submit" value="Send bid(s)">
+                    <div class="flexcolumn" >
+                        <input style="margin-bottom: 2px; margin-top: 2px;" type="submit" value="Send bid(s)">
+                        <input type="submit" value="Download selected papers" formaction="/downloadpaper" formmethod="POST">
+                    </div>
                 </form>
             </div>            
         </div>
