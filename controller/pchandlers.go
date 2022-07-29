@@ -221,15 +221,23 @@ func CheckReviewsHandler(c *gin.Context) {
 	msgs.ProceedToShareReviews = proceed
 	//OVERWRITE SHAREREVIEWS TO FALSE IF ALREADY SHARED, CHECK. done i think
 	putStr := ""
+	alreadysharedstr := "Reviews have been shared with reviewers"
 	for _, p := range backend.Pc.AllPapers {
 		putStr = fmt.Sprintf("Sharing reviews with Reviewers matched to paper: %v", p.Id)
+
 		if model.DoesLogMsgExist(putStr) {
 			msgs.ProceedToShareReviews = false
 		}
 	}
+	if msgs.ProceedToShareReviews == false && proceed {
+		msgs.Reviews = alreadysharedstr
+	}
 
-	//CHECK FOR GRADE HERE THEN PROCEED TO DECISION
-	msgs.ProceedToDecision = CheckProceedToDecision()
+	//CHECK FOR SIGNED ENCRYPTED GRADES HERE, THEN PROCEED TO DECISION
+	if CheckProceedToDecision() {
+		msgs.Reviews = "Please proceed to the decision stage"
+		msgs.ProceedToDecision = true
+	}
 
 	tpl.Execute(c.Writer, msgs)
 }
@@ -264,23 +272,30 @@ func CheckConfirmedOwnerships() string {
 	return str
 }
 
+func contains(s []int, e int) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
 func DecisionHandler(c *gin.Context) {
 	var tpl = template.Must(template.ParseFiles("templates/pc/decision.html"))
-	type Msg struct {
-		Title string
-		Grade int
-		ID    int
-	}
 
 	type somemsg struct {
-		Messages   []Msg
+		Messages   []backend.DecisionMsg
 		CanCompile bool
 	}
-	message := somemsg{}
-	// paperz := backend.DecisionPaperShow()
-	for _, p := range /*paperz*/ backend.Pc.AllPapers {
+	message := new(somemsg)
+
+	for _, p := range backend.Pc.AllPapers {
+		if contains(blacklist, p.Id) {
+			continue
+		}
 		GradeAndPaper := backend.Pc.GetGradeAndPaper(p.Id)
-		msg := Msg{
+		msg := backend.DecisionMsg{
 			Title: p.Title,
 			Grade: int(GradeAndPaper.GradeBefore),
 			ID:    p.Id,
@@ -301,21 +316,12 @@ func AcceptPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.AcceptPaper(paperidint)
-	// blacklist = append(blacklist, paperidint)
+	blacklist = append(blacklist, paperidint)
 
-	// var papertemp []backend.Paper
-	// for _, v := range backend.Pc.AllPapers {
-	// 	for _, b := range blacklist {
-	// 		if b != v.Id {
-	// 			papertemp = append(papertemp, *v)
-	// 		}
-	// 	}
-	// }
-	// backend.DecisionPaperStore(backend.EncodeToBytes(papertemp))
 	c.Redirect(303, "/decision")
 }
 
-// var blacklist []int
+var blacklist []int
 
 func RejectPaperHandler(c *gin.Context) {
 	paperid := c.Request.FormValue("paperid")
@@ -326,16 +332,7 @@ func RejectPaperHandler(c *gin.Context) {
 	}
 	backend.Pc.SendGrades2(paperidint)
 	backend.Pc.RejectPaper(paperidint)
-	// blacklist = append(blacklist, paperidint)
-	// var papertemp []backend.Paper
-	// for _, v := range backend.Pc.AllPapers {
-	// 	for _, b := range blacklist {
-	// 		if b != v.Id {
-	// 			papertemp = append(papertemp, *v)
-	// 		}
-	// 	}
-	// }
-	// backend.DecisionPaperStore(backend.EncodeToBytes(papertemp))
+	blacklist = append(blacklist, paperidint)
 
 	c.Redirect(303, "/decision")
 }

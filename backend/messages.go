@@ -134,6 +134,12 @@ type GradeAndPaper struct {
 	Papir Paper
 }
 
+type DecisionMsg struct {
+	Title string
+	Grade int
+	ID    int
+}
+
 //Claim
 
 type ClaimMessage struct {
