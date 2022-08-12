@@ -11,7 +11,7 @@ import (
 )
 
 func TestFinishReview_And_GetReviewStruct(t *testing.T) {
-	reviewer.PaperCommittedValue.Paper = &p //TODO: intended to be removed in later stages as the struct reference shouldn't exist.
+	reviewer.PaperCommittedValue.Paper = &p 
 
 	reviewer.FinishReview("Very nice paper (y)")
 
@@ -40,7 +40,7 @@ func TestGenerateKeysForDiscussing_And_GetReviewKpAndRg(t *testing.T) {
 }
 
 func TestSignReviewPaperCommit_And_GetReviewCommitNonceStruct(t *testing.T) {
-	reviewer.PaperCommittedValue.Paper = &p //TODO: intended to be removed in later stages as the struct reference shouldn't exist.
+	reviewer.PaperCommittedValue.Paper = &p
 
 	nonce_r := ec.GetRandomInt(Pc.Keys.D)
 

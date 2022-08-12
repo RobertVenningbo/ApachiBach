@@ -305,7 +305,7 @@ func (pc *PC) SupplyNIZK(p *Paper) bool {
 	return proof.OpenP256(C1, C2, nonce, &submitterPK, &pc.Keys.PublicKey)
 }
 
-func (pc *PC) GetKPCRFromLog(id int) string { //TODO: Maybe encrypt the KPCR when putting it on the log otherwise everyone can access it
+func (pc *PC) GetKPCRFromLog(id int) string { 
 	str := fmt.Sprintf("KPCR with PC and R%v", id)
 	logmsg := model.Log{}
 	model.GetLogMsgByMsg(&logmsg, str)

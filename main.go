@@ -25,7 +25,7 @@ func main() {
 	db.AutoMigrate(&model.User{})
 	backend.InitGobs()
 
-	router.GET("/testing", controller.TestPlatform) //TODO OBS.
+	router.GET("/testing", controller.TestPlatform) 
 	router.GET("/log", controller.LogHandler)
 
 	serverport := os.Args[2]

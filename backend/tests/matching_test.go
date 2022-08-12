@@ -92,7 +92,7 @@ func TestAssignPapers(t *testing.T) {
 
 	Pc.AssignPaper(bidSlice)
 
-	//TODO insert assert
+
 }
 
 func TestSupplyNizk(t *testing.T) {

@@ -150,7 +150,7 @@ func TestGetPaperAndRandomness(t *testing.T) {
 		Encrypt(EncodeToBytes(sharedKpcs), Pc.Keys.PublicKey.X.String()),
 	}
 
-	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "") //Signed and encrypted submit message --TODO is this what we need to return in the function?
+	SignedSubmitMsg := SignsPossiblyEncrypts(submitter.Keys, EncodeToBytes(submitMsg), "") 
 	msg := fmt.Sprintf("SignedSubmitMsg %v", p.Id)
 	Trae.Put(msg, SignedSubmitMsg) //Signed and encrypted paper + randomness + shared kpcs logged (step 1 done)
 

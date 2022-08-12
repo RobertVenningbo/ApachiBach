@@ -75,7 +75,7 @@ func GetGradesAndReviewsHandler(c *gin.Context) {
 	tpl.Execute(c.Writer, &msg)
 }
 
-func WaitHandler(c *gin.Context) { // this is where you wanna go one of two places if its rejected or accepted. its a TODO:
+func WaitHandler(c *gin.Context) { 
 	type Message struct {
 		Status string
 		Cont   bool

@@ -64,7 +64,7 @@ func TestMakeGradeCommit(t *testing.T) {
 	assert.Equal(t, gradeCommit, gradeCommit2, "TestMakeGradeCommit Failed")
 }
 
-// func TestSignCommitsAndNonce(t *testing.T) { //TODO Test with Get functions
+// func TestSignCommitsAndNonce(t *testing.T) { 
 // 	Pc.AllPapers = append(Pc.AllPapers, &p)
 // 	submitter.Submit(&p)
 // 	reviewerSlice := []*Reviewer{&reviewer}
